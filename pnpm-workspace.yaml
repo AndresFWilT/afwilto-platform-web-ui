@@ -1,0 +1,4 @@
+packages:
+  - packages/*
+  - apps/*
+  - afwilto-slab-homepage-web-ui

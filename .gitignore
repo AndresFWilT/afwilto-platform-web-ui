@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+*.local
+
+# legacy monolith keeps its own independent git repository
+/afwilto-slab-homepage-web-ui/

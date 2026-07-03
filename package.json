@@ -1,0 +1,12 @@
+{
+  "name": "afwilto-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "packageManager": "pnpm@11.9.0"
+}
