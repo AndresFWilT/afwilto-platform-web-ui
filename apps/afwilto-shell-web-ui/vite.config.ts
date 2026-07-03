@@ -15,11 +15,6 @@ export default defineConfig(({ mode }) => {
         dts: false,
         name: 'shell',
         remotes: {
-          mfe_legacy: {
-            type: 'module',
-            name: 'mfe_legacy',
-            entry: env.VITE_REMOTE_LEGACY_URL ?? 'http://localhost:3007/remoteEntry.js',
-          },
           afwilto_home: {
             type: 'module',
             name: 'afwilto_home',

@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('@/remotes/remotes', () => ({
-  LegacyApp: () => <div data-testid="legacy-app" />,
   SlabHomeApp: () => <div data-testid="slab-home-app" />,
   AfwiltoHomeApp: () => <div data-testid="afwilto-home-app" />,
   UDApp: () => <div data-testid="ud-app" />,
@@ -79,11 +78,11 @@ describe('host URL gateway', () => {
     }
   )
 
-  it.each(['/universidad-distrital/computer-science-1', '/uniandes', '/home'])(
-    '%s mounts the legacy remote slot (AC-3)',
+  it.each(['/universidad-distrital/computer-science-1', '/uniandes', '/home', '/nope'])(
+    '%s renders the host NotFoundPage (Spec 09 AC-1)',
     async (path) => {
       renderAt(path)
-      expect(await screen.findByTestId('legacy-app')).toBeTruthy()
+      expect(await screen.findByText('Page not found')).toBeTruthy()
     }
   )
 })
