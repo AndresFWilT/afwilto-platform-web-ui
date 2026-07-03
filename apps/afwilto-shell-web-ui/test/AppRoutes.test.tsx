@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 vi.mock('@/remotes/remotes', () => ({
   LegacyApp: () => <div data-testid="legacy-app" />,
   SlabHomeApp: () => <div data-testid="slab-home-app" />,
+  AfwiltoHomeApp: () => <div data-testid="afwilto-home-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -32,7 +33,13 @@ describe('host URL gateway', () => {
     expect(screen.queryByTestId('legacy-app')).toBeNull()
   })
 
-  it.each(['/', '/home', '/universidad-distrital/computer-science-1', '/uniandes'])(
+  it('/ mounts the afwilto root homepage remote (Spec 04 AC-4)', async () => {
+    renderAt('/')
+    expect(await screen.findByTestId('afwilto-home-app')).toBeTruthy()
+    expect(screen.queryByTestId('legacy-app')).toBeNull()
+  })
+
+  it.each(['/universidad-distrital/computer-science-1', '/uniandes', '/home'])(
     '%s mounts the legacy remote slot (AC-3)',
     async (path) => {
       renderAt(path)

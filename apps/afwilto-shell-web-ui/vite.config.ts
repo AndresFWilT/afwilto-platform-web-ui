@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => {
             name: 'mfe_legacy',
             entry: env.VITE_REMOTE_LEGACY_URL ?? 'http://localhost:3007/remoteEntry.js',
           },
+          afwilto_home: {
+            type: 'module',
+            name: 'afwilto_home',
+            entry: env.VITE_REMOTE_AFWILTO_HOME_URL ?? 'http://localhost:3001/remoteEntry.js',
+          },
           slab_home: {
             type: 'module',
             name: 'slab_home',
