@@ -40,6 +40,11 @@ export default defineConfig(({ mode }) => {
             name: 'finance',
             entry: env.VITE_REMOTE_FINANCE_URL ?? 'http://localhost:3005/remoteEntry.js',
           },
+          certifications: {
+            type: 'module',
+            name: 'certifications',
+            entry: env.VITE_REMOTE_CERTIFICATIONS_URL ?? 'http://localhost:3006/remoteEntry.js',
+          },
           slab_home: {
             type: 'module',
             name: 'slab_home',

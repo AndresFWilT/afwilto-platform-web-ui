@@ -35,6 +35,6 @@ export const PRODUCTS: Product[] = [
       'Certification catalog and learning roadmap — obtained badges and the path ahead.',
     to: '/certifications',
     icon: '🎓',
-    status: 'soon',
+    status: 'live',
   },
 ]

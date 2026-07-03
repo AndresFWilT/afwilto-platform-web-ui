@@ -9,6 +9,7 @@ vi.mock('@/remotes/remotes', () => ({
   UDApp: () => <div data-testid="ud-app" />,
   MatiApp: () => <div data-testid="mati-app" />,
   FinanceApp: () => <div data-testid="finance-app" />,
+  CertificationsApp: () => <div data-testid="certifications-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -65,6 +66,15 @@ describe('host URL gateway', () => {
     async (path) => {
       renderAt(path)
       expect(await screen.findByTestId('finance-app')).toBeTruthy()
+      expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/certifications', '/certifications/roadmap', '/certifications/some-cert'])(
+    '%s mounts the certifications remote (Spec 08 AC-7)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('certifications-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
     }
   )
