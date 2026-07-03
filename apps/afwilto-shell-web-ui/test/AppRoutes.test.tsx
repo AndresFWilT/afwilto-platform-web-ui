@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('@/remotes/remotes', () => ({
   LegacyApp: () => <div data-testid="legacy-app" />,
+  SlabHomeApp: () => <div data-testid="slab-home-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -22,6 +23,12 @@ describe('host URL gateway', () => {
     expect(
       await screen.findByText('Component library and visual language for AFWILTO Software Lab.', { exact: false })
     ).toBeTruthy()
+    expect(screen.queryByTestId('legacy-app')).toBeNull()
+  })
+
+  it('/slab mounts the slab homepage remote (Spec 03 AC-4)', async () => {
+    renderAt('/slab')
+    expect(await screen.findByTestId('slab-home-app')).toBeTruthy()
     expect(screen.queryByTestId('legacy-app')).toBeNull()
   })
 

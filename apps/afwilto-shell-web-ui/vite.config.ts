@@ -12,12 +12,18 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       federation({
+        dts: false,
         name: 'shell',
         remotes: {
           mfe_legacy: {
             type: 'module',
             name: 'mfe_legacy',
-            entry: env.VITE_REMOTE_LEGACY_URL ?? 'http://localhost:3002/remoteEntry.js',
+            entry: env.VITE_REMOTE_LEGACY_URL ?? 'http://localhost:3007/remoteEntry.js',
+          },
+          slab_home: {
+            type: 'module',
+            name: 'slab_home',
+            entry: env.VITE_REMOTE_SLAB_HOME_URL ?? 'http://localhost:3002/remoteEntry.js',
           },
         },
         shared: {
