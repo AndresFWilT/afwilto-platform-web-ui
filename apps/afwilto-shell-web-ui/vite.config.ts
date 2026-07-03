@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => {
             name: 'afwilto_home',
             entry: env.VITE_REMOTE_AFWILTO_HOME_URL ?? 'http://localhost:3001/remoteEntry.js',
           },
+          ud: {
+            type: 'module',
+            name: 'ud',
+            entry: env.VITE_REMOTE_UD_URL ?? 'http://localhost:3003/remoteEntry.js',
+          },
           slab_home: {
             type: 'module',
             name: 'slab_home',

@@ -1,0 +1,1 @@
+export { ChessHttpAdapter } from './ChessHttpAdapter'

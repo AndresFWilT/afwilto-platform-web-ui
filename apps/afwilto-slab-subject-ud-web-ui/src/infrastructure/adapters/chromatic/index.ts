@@ -1,0 +1,1 @@
+export { ChromaticGraphHttpAdapter } from './ChromaticGraphHttpAdapter'

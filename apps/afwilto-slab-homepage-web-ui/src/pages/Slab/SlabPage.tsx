@@ -67,7 +67,7 @@ function UniversitiesSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <UniversityCard
-          to="/universidad-distrital"
+          to="/slab/ud"
           logoUrl={UD_INFO.logoUrl}
           name={UD_INFO.name}
           acronym={UD_INFO.acronym}

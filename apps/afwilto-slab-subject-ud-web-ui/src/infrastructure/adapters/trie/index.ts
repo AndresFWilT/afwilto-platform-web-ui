@@ -1,0 +1,1 @@
+export { TrieHttpAdapter } from './TrieHttpAdapter'

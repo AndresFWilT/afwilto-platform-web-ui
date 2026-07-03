@@ -1,0 +1,1 @@
+export { HashTableHttpAdapter } from './HashTableHttpAdapter'

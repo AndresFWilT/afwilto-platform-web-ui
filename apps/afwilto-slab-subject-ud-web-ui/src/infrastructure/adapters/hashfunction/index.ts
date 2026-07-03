@@ -1,0 +1,1 @@
+export { HashFunctionHttpAdapter } from './HashFunctionHttpAdapter'

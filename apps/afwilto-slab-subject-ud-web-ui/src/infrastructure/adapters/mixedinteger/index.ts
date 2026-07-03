@@ -1,0 +1,1 @@
+export { MixedIntegerHttpAdapter } from './MixedIntegerHttpAdapter'

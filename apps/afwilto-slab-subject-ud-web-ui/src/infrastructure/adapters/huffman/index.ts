@@ -1,0 +1,1 @@
+export { HuffmanHttpAdapter } from './HuffmanHttpAdapter'

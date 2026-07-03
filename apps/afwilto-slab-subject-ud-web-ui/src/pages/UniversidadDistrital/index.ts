@@ -1,0 +1,1 @@
+export { UniversidadDistritalPage } from './UniversidadDistritalPage'

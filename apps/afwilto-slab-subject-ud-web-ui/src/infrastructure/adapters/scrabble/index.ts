@@ -1,0 +1,1 @@
+export { ScrabbleHttpAdapter } from './ScrabbleHttpAdapter'

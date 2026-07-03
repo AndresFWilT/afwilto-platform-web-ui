@@ -1,0 +1,1 @@
+export { GraphTraversalHttpAdapter } from './GraphTraversalHttpAdapter'

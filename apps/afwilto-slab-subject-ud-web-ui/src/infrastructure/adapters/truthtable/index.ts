@@ -1,0 +1,1 @@
+export { TruthTableHttpAdapter } from './TruthTableHttpAdapter'

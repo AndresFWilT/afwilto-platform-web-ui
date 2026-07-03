@@ -1,0 +1,1 @@
+export { WeatherStationHttpAdapter } from './WeatherStationHttpAdapter'
