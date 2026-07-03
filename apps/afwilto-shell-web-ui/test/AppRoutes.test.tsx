@@ -7,6 +7,7 @@ vi.mock('@/remotes/remotes', () => ({
   SlabHomeApp: () => <div data-testid="slab-home-app" />,
   AfwiltoHomeApp: () => <div data-testid="afwilto-home-app" />,
   UDApp: () => <div data-testid="ud-app" />,
+  MatiApp: () => <div data-testid="mati-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -45,6 +46,15 @@ describe('host URL gateway', () => {
     async (path) => {
       renderAt(path)
       expect(await screen.findByTestId('ud-app')).toBeTruthy()
+      expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/slab/mati', '/slab/mati/business-architecture'])(
+    '%s mounts the MATI remote (Spec 06 AC-5)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('mati-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
     }
   )

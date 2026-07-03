@@ -27,11 +27,11 @@ describe('SlabPage via exposed App', () => {
     expect(screen.getByText('Universidad de los Andes')).toBeTruthy()
   })
 
-  it('links the UD card to /slab/ud and Uniandes card to /uniandes (AC-2)', () => {
+  it('links the UD card to /slab/ud and Uniandes card to /slab/mati (AC-2)', () => {
     renderApp()
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(links).toContain('/slab/ud')
-    expect(links).toContain('/uniandes')
+    expect(links).toContain('/slab/mati')
   })
 
   it('renders inside an external router without a nested router (AC-3)', () => {

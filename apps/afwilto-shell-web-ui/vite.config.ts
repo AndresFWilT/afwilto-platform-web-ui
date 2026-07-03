@@ -30,6 +30,11 @@ export default defineConfig(({ mode }) => {
             name: 'ud',
             entry: env.VITE_REMOTE_UD_URL ?? 'http://localhost:3003/remoteEntry.js',
           },
+          mati: {
+            type: 'module',
+            name: 'mati',
+            entry: env.VITE_REMOTE_MATI_URL ?? 'http://localhost:3004/remoteEntry.js',
+          },
           slab_home: {
             type: 'module',
             name: 'slab_home',

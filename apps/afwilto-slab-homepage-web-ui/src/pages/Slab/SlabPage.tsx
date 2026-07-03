@@ -83,7 +83,7 @@ function UniversitiesSection() {
           ]}
         />
         <UniversityCard
-          to="/uniandes"
+          to="/slab/mati"
           logoUrl={UNIANDES_INFO.logoUrl}
           name={UNIANDES_INFO.name}
           acronym={UNIANDES_INFO.acronym}

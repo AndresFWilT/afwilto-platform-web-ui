@@ -1,0 +1,1 @@
+export { MatiPage } from './MatiPage'
