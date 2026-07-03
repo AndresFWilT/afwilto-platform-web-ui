@@ -22,6 +22,12 @@ declare module 'mati/App' {
   export default App
 }
 
+declare module 'finance/App' {
+  import type { ComponentType } from 'react'
+  const App: ComponentType
+  export default App
+}
+
 declare module 'slab_home/App' {
   import type { ComponentType } from 'react'
   const App: ComponentType

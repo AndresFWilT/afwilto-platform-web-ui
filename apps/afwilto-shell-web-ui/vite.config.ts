@@ -35,6 +35,11 @@ export default defineConfig(({ mode }) => {
             name: 'mati',
             entry: env.VITE_REMOTE_MATI_URL ?? 'http://localhost:3004/remoteEntry.js',
           },
+          finance: {
+            type: 'module',
+            name: 'finance',
+            entry: env.VITE_REMOTE_FINANCE_URL ?? 'http://localhost:3005/remoteEntry.js',
+          },
           slab_home: {
             type: 'module',
             name: 'slab_home',

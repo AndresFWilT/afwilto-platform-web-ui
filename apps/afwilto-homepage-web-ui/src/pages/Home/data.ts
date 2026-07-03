@@ -26,7 +26,7 @@ export const PRODUCTS: Product[] = [
       'Personal finance tracker — accounts, budgets and spending insight in one place.',
     to: '/finance',
     icon: '📊',
-    status: 'soon',
+    status: 'live',
   },
   {
     slug: 'certifications',

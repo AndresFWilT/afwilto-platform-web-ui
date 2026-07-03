@@ -25,18 +25,18 @@ describe('afwilto root HomePage via exposed App', () => {
     expect(screen.getByText('Certifications')).toBeTruthy()
   })
 
-  it('links the live Software Lab card to /slab (AC-2)', () => {
+  it('links the live cards to /slab and /finance (AC-2, Spec 07 AC-4)', () => {
     renderApp()
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(links).toContain('/slab')
+    expect(links).toContain('/finance')
   })
 
   it('renders soon cards without links and with a Coming soon badge (AC-2)', () => {
     renderApp()
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
-    expect(links).not.toContain('/finance')
     expect(links).not.toContain('/certifications')
-    expect(screen.getAllByText('Coming soon')).toHaveLength(2)
+    expect(screen.getAllByText('Coming soon')).toHaveLength(1)
   })
 
   it('renders inside an external router (AC-3)', () => {

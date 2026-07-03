@@ -8,6 +8,7 @@ vi.mock('@/remotes/remotes', () => ({
   AfwiltoHomeApp: () => <div data-testid="afwilto-home-app" />,
   UDApp: () => <div data-testid="ud-app" />,
   MatiApp: () => <div data-testid="mati-app" />,
+  FinanceApp: () => <div data-testid="finance-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -55,6 +56,15 @@ describe('host URL gateway', () => {
     async (path) => {
       renderAt(path)
       expect(await screen.findByTestId('mati-app')).toBeTruthy()
+      expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/finance', '/finance/incomes', '/finance/goals/3'])(
+    '%s mounts the finance remote (Spec 07 AC-4)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('finance-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
     }
   )
