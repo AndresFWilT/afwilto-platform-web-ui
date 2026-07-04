@@ -1,7 +1,24 @@
 # Spec 10 — Single `docker compose up -d` for the Whole Platform
 
-> Status: **Proposed (plan — not yet implemented)**
+> Status: **Implemented** (2026-07-04) — all acceptance criteria verified
 > Depends on: `00-system-architecture.md` (final gateway per Spec 09)
+>
+> Implementation notes (deviations from the proposal):
+> - **D2 resolved:** compose lives at `afwilto-software-lab/docker-compose.yml`;
+>   a git repo was initialized at that root (nested repos ignored).
+> - The old standalone finance stack (`personal-finances-*` containers) was
+>   stopped and replaced; its Postgres **data volume is reused** via
+>   `finance_pgdata: { name: personal-financial-status_pgdata }` so existing
+>   finance data carries over. The finance backend gained a production
+>   `Dockerfile` (its previous one was hot-reload-only).
+> - `nc-db` carries the network alias `db` because the Laravel image bakes
+>   `DB_HOST=db` into its `.env`, which request workers read even when the
+>   compose environment says otherwise (R1 materialized exactly there).
+> - Smoke script accepts any HTTP status from backend roots (frameworks
+>   disagree about `/`); functional probes verified real routes instead.
+> - R2 (CORS) verified per service on real routes: cs `*`, theater `*`,
+>   nc `*`, physics/programming/finance echo the shell origin, or `*` on
+>   preflight, os/ai `*`.
 
 ---
 
