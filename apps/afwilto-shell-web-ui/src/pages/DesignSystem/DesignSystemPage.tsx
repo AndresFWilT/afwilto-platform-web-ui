@@ -9,20 +9,35 @@ import {
   FormField,
   Card,
   Alert,
+  Select,
+  Textarea,
+  Skeleton,
+  Tag,
+  Dialog,
+  ToastProvider,
+  useToast,
+  Pagination,
+  EmptyState,
+  DateField,
+  Table,
 } from '@afwilto/design-system'
+import type { TableColumn, TableSort } from '@afwilto/design-system'
 import { colors } from '@afwilto/design-system'
 
 export function DesignSystemPage() {
   return (
     <BaseLayout>
-      <div className="flex flex-col gap-16 pb-16">
-        <PageHeader />
-        <ColorsSection />
-        <TypographySection />
-        <AtomsSection />
-        <MoleculesSection />
-        <OrganismsNote />
-      </div>
+      <ToastProvider>
+        <div className="flex flex-col gap-16 pb-16">
+          <PageHeader />
+          <ColorsSection />
+          <TypographySection />
+          <AtomsSection />
+          <MoleculesSection />
+          <JourneySection />
+          <OrganismsNote />
+        </div>
+      </ToastProvider>
     </BaseLayout>
   )
 }
@@ -196,6 +211,8 @@ function AtomsSection() {
           <Button variant="secondary">Secondary</Button>
           <Button variant="ghost">Ghost</Button>
           <Button variant="danger">Danger</Button>
+          <Button variant="success">Success</Button>
+          <Button variant="info">Info</Button>
         </ShowRow>
         <ShowRow label="Sizes">
           <Button size="sm">Small</Button>
@@ -350,6 +367,100 @@ function MoleculesSection() {
             type="email"
           />
         </div>
+      </SubSection>
+    </Section>
+  )
+}
+
+/* ── Journey additions (spec 11) ─────────────────────────────────────────── */
+
+function JourneySection() {
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [tags, setTags] = useState(['status: achieved', 'category: TI / Cloud'])
+  const [page, setPage] = useState(1)
+  const [sort, setSort] = useState<TableSort | undefined>(undefined)
+  const { showToast } = useToast()
+
+  const rows = [
+    { id: '1', name: 'AWS SAA', status: 'in_progress' },
+    { id: '2', name: 'CKA', status: 'achieved' },
+  ]
+  const columns: TableColumn<(typeof rows)[number]>[] = [
+    { key: 'name', header: 'Name', sortable: true },
+    { key: 'status', header: 'Status' },
+  ]
+
+  return (
+    <Section title="Journey Components">
+      <SubSection title="Select & Textarea">
+        <div className="flex flex-col gap-4 max-w-md">
+          <Select aria-label="Sort by" defaultValue="createdAt">
+            <option value="createdAt">Newest first</option>
+            <option value="name">Name</option>
+          </Select>
+          <Textarea placeholder="Why are you pursuing this certification?" />
+        </div>
+      </SubSection>
+
+      <SubSection title="Skeleton & EmptyState">
+        <div className="flex flex-col gap-2 max-w-md">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <Card padding="none" border>
+          <EmptyState
+            icon="📚"
+            title="Nothing planned yet"
+            description="Register your first certification to start the journey."
+            action={<Button size="sm">Plan a certification</Button>}
+          />
+        </Card>
+      </SubSection>
+
+      <SubSection title="Tag, Toast, Dialog & DateField">
+        <ShowRow label="Dismissible tags">
+          {tags.map((t) => (
+            <Tag key={t} onDismiss={() => setTags(tags.filter((x) => x !== t))}>
+              {t}
+            </Tag>
+          ))}
+        </ShowRow>
+        <ShowRow label="Actions">
+          <Button size="sm" onClick={() => showToast('Saved successfully', 'success')}>
+            Show toast
+          </Button>
+          <Button size="sm" variant="danger" onClick={() => setDialogOpen(true)}>
+            Open dialog
+          </Button>
+        </ShowRow>
+        <div className="max-w-xs">
+          <DateField id="ds-date" label="Expected exam date" defaultValue="2026-11-15" />
+        </div>
+        <Dialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          title="Delete certification"
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => setDialogOpen(false)}>
+                Delete
+              </Button>
+            </>
+          }
+        >
+          <Text variant="body" color="muted">
+            This hides the certification everywhere. The record is kept for a future trash view.
+          </Text>
+        </Dialog>
+      </SubSection>
+
+      <SubSection title="Table & Pagination">
+        <Table columns={columns} rows={rows} rowKey={(r) => r.id} sort={sort} onSortChange={setSort} label="Demo certifications" />
+        <Pagination page={page} totalPages={3} totalItems={45} onPageChange={setPage} />
       </SubSection>
     </Section>
   )

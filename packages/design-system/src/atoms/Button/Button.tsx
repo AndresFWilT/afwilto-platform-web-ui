@@ -7,6 +7,8 @@ const variantClasses: Record<string, string> = {
   secondary: 'bg-brand-700 text-neutral-100 border border-brand-600 hover:bg-brand-600 focus-visible:ring-brand-500',
   ghost: 'bg-transparent text-neutral-300 hover:bg-brand-800 hover:text-neutral-100 focus-visible:ring-brand-600',
   danger: 'bg-red-600 text-white hover:bg-red-500 focus-visible:ring-red-400',
+  success: 'bg-success-600 text-white hover:bg-success-500 focus-visible:ring-success-400',
+  info: 'bg-info-600 text-white hover:bg-info-500 focus-visible:ring-info-400',
 }
 
 const sizeClasses: Record<string, string> = {

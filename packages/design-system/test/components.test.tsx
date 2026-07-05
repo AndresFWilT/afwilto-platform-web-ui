@@ -19,6 +19,24 @@ describe('Button (AC-7)', () => {
   })
 })
 
+describe('Button semantic variants (AC-12, design-system-migration spec)', () => {
+  it('success variant uses the success scale with white text', () => {
+    render(<Button variant="success">Add income</Button>)
+    const cls = screen.getByRole('button', { name: 'Add income' }).className
+    expect(cls).toContain('bg-success-600')
+    expect(cls).toContain('hover:bg-success-500')
+    expect(cls).toContain('text-white')
+  })
+
+  it('info variant uses the info scale with white text', () => {
+    render(<Button variant="info">Add credit</Button>)
+    const cls = screen.getByRole('button', { name: 'Add credit' }).className
+    expect(cls).toContain('bg-info-600')
+    expect(cls).toContain('hover:bg-info-500')
+    expect(cls).toContain('text-white')
+  })
+})
+
 describe('Alert (AC-7)', () => {
   it('renders with role="alert" and its message', () => {
     render(<Alert variant="error">Something failed</Alert>)
