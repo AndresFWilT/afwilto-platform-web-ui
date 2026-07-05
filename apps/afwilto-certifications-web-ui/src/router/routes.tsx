@@ -2,14 +2,11 @@ import type { RouteObject } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { Spinner, ErrorBoundary } from '@afwilto/design-system'
 
-const CatalogPage = lazy(() =>
-  import('@/pages/Catalog/CatalogPage').then((m) => ({ default: m.CatalogPage }))
+const JourneyListPage = lazy(() =>
+  import('@/pages/Journey/JourneyListPage').then((m) => ({ default: m.JourneyListPage }))
 )
-const RoadmapPage = lazy(() =>
-  import('@/pages/Roadmap/RoadmapPage').then((m) => ({ default: m.RoadmapPage }))
-)
-const CertDetailPage = lazy(() =>
-  import('@/pages/Detail/CertDetailPage').then((m) => ({ default: m.CertDetailPage }))
+const CertificationDetailPage = lazy(() =>
+  import('@/pages/Detail/CertificationDetailPage').then((m) => ({ default: m.CertificationDetailPage }))
 )
 
 function Fallback() {
@@ -30,9 +27,19 @@ function withSuspense(Component: React.ComponentType) {
   )
 }
 
+function Stub({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-surface-base">
+      <span className="text-neutral-400">{label}</span>
+    </div>
+  )
+}
+
 export const routes: RouteObject[] = [
-  { path: '',          element: withSuspense(CatalogPage) },
-  { path: 'roadmap',   element: withSuspense(RoadmapPage) },
-  { path: ':certSlug', element: withSuspense(CertDetailPage) },
-  { path: '*',         element: withSuspense(CertDetailPage) },
+  { path: '',           element: withSuspense(JourneyListPage) },
+  { path: 'new',        element: <Stub label="New certification — coming soon" /> },
+  { path: 'timeline',   element: <Stub label="Timeline — coming soon" /> },
+  { path: ':id',        element: withSuspense(CertificationDetailPage) },
+  { path: ':id/edit',   element: <Stub label="Edit — coming soon" /> },
+  { path: '*',          element: <Stub label="Not found" /> },
 ]

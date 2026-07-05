@@ -1,10 +1,20 @@
-import type { ICertificationService } from '@/application/ports'
-import { StaticCertificationAdapter } from '@/infrastructure/adapters/static/StaticCertificationAdapter'
+import { FetchHttpClient } from '@afwilto/http-client'
+import type { ICertificationJourneyService } from '@/application/ports'
+import { CertificationHttpAdapter } from '@/infrastructure/adapters/http/CertificationHttpAdapter'
+import { InMemoryCertificationAdapter } from '@/infrastructure/adapters/memory/InMemoryCertificationAdapter'
 
 export interface ServiceContainer {
-  certificationService: ICertificationService
+  certificationJourneyService: ICertificationJourneyService
+}
+
+function createCertificationService(): ICertificationJourneyService {
+  const apiUrl = import.meta.env['VITE_CERTIFICATIONS_API_URL'] as string | undefined
+  if (apiUrl) {
+    return new CertificationHttpAdapter(new FetchHttpClient(apiUrl))
+  }
+  return new InMemoryCertificationAdapter()
 }
 
 export const container: ServiceContainer = {
-  certificationService: new StaticCertificationAdapter(),
+  certificationJourneyService: createCertificationService(),
 }

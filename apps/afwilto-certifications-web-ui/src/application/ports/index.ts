@@ -1,5 +1,12 @@
 export type {
-  ICertificationService,
+  ICertificationJourneyService,
   Certification,
+  CertificationCategory,
   CertificationStatus,
-} from './ICertificationService'
+  CertificationPage,
+  ListMeta,
+  ListQuery,
+  CreateCertificationCommand,
+  UpdateCertificationCommand,
+  CategoryInUse,
+} from './ICertificationJourneyService'

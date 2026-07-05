@@ -3,8 +3,8 @@ import { container, type ServiceContainer } from './container'
 
 const ServiceContext = createContext<ServiceContainer>(container)
 
-export function ServiceProvider({ children }: { children: ReactNode }) {
-  return <ServiceContext.Provider value={container}>{children}</ServiceContext.Provider>
+export function ServiceProvider({ children, value = container }: { children: ReactNode; value?: ServiceContainer }) {
+  return <ServiceContext.Provider value={value}>{children}</ServiceContext.Provider>
 }
 
 export function useServices(): ServiceContainer {

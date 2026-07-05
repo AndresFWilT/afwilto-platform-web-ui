@@ -1,3 +1,4 @@
+import { HttpError } from './HttpError'
 import type { IHttpClient, RequestOptions } from './IHttpClient'
 
 export class FetchHttpClient implements IHttpClient {
@@ -24,9 +25,11 @@ export class FetchHttpClient implements IHttpClient {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      const errorBody = await response.json().catch(() => null)
+      throw new HttpError(response.status, response.statusText, errorBody)
     }
 
+    if (response.status === 204) return undefined as unknown as T
     return response.json() as Promise<T>
   }
 
@@ -38,11 +41,32 @@ export class FetchHttpClient implements IHttpClient {
     return this.request<T>('POST', url, body, options)
   }
 
+  patch<T>(url: string, body: unknown, options?: RequestOptions) {
+    return this.request<T>('PATCH', url, body, options)
+  }
+
   put<T>(url: string, body: unknown, options?: RequestOptions) {
     return this.request<T>('PUT', url, body, options)
   }
 
   delete<T>(url: string, options?: RequestOptions) {
     return this.request<T>('DELETE', url, undefined, options)
+  }
+
+  async postMultipart<T>(url: string, form: FormData, options?: RequestOptions): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${url}`, {
+      method: 'POST',
+      headers: { ...options?.headers },
+      body: form,
+      signal: options?.signal,
+    })
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null)
+      throw new HttpError(response.status, response.statusText, errorBody)
+    }
+
+    if (response.status === 204) return undefined as unknown as T
+    return response.json() as Promise<T>
   }
 }

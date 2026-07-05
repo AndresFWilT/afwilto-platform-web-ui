@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { FetchHttpClient, type IHttpClient } from '@afwilto/http-client'
+import { FetchHttpClient, HttpError, type IHttpClient } from '@afwilto/http-client'
 
 const BASE = 'http://localhost:9999'
 
@@ -43,6 +43,14 @@ describe('FetchHttpClient', () => {
     expect(init.body).toBe(JSON.stringify({ value: 7 }))
   })
 
+  it('PATCH serializes the body with JSON.stringify', async () => {
+    await client.patch('/certifications/abc', { status: 'achieved' })
+
+    const [, init] = fetchSpy.mock.calls[0]
+    expect(init.method).toBe('PATCH')
+    expect(init.body).toBe(JSON.stringify({ status: 'achieved' }))
+  })
+
   it('PUT serializes the body with JSON.stringify (AC-3)', async () => {
     await client.put('/rbt/7', { value: 8 })
 
@@ -75,9 +83,21 @@ describe('FetchHttpClient', () => {
     expect(init.signal).toBe(controller.signal)
   })
 
-  it('non-ok response throws Error("HTTP <status>: <statusText>") (AC-5)', async () => {
+  it('non-ok response throws HttpError with status, statusText, and body (AC-5)', async () => {
+    fetchSpy.mockImplementation(() =>
+      Promise.resolve(jsonResponse({ error: 'nope' }, { status: 422, statusText: 'Unprocessable Entity' }))
+    )
+
+    const err = await client.get('/boom').catch(e => e) as HttpError
+    expect(err).toBeInstanceOf(HttpError)
+    expect(err.message).toBe('HTTP 422: Unprocessable Entity')
+    expect(err.status).toBe(422)
+    expect(err.body).toEqual({ error: 'nope' })
+  })
+
+  it('500 error throws HttpError (AC-5)', async () => {
     fetchSpy.mockResolvedValue(
-      jsonResponse({ error: 'nope' }, { status: 500, statusText: 'Internal Server Error' })
+      jsonResponse({ error: 'internal' }, { status: 500, statusText: 'Internal Server Error' })
     )
 
     await expect(client.get('/boom')).rejects.toThrow('HTTP 500: Internal Server Error')
@@ -87,5 +107,34 @@ describe('FetchHttpClient', () => {
     fetchSpy.mockRejectedValue(new TypeError('Failed to fetch'))
 
     await expect(client.get('/down')).rejects.toThrow('Failed to fetch')
+  })
+
+  it('delete returns undefined for 204 No Content', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 204, statusText: 'No Content' }))
+
+    const result = await client.delete('/certifications/abc')
+    expect(result).toBeUndefined()
+  })
+
+  describe('postMultipart', () => {
+    it('sends POST with FormData body and no Content-Type override', async () => {
+      const form = new FormData()
+      form.append('file', new Blob(['hello'], { type: 'text/plain' }), 'file.txt')
+      await client.postMultipart('/upload', form)
+
+      const [url, init] = fetchSpy.mock.calls[0]
+      expect(url).toBe(`${BASE}/upload`)
+      expect(init.method).toBe('POST')
+      expect(init.body).toBe(form)
+      expect(init.headers['Content-Type']).toBeUndefined()
+    })
+
+    it('throws HttpError on non-ok response', async () => {
+      fetchSpy.mockResolvedValue(
+        jsonResponse({ error: 'too large' }, { status: 413, statusText: 'Content Too Large' })
+      )
+      const form = new FormData()
+      await expect(client.postMultipart('/upload', form)).rejects.toBeInstanceOf(HttpError)
+    })
   })
 })
