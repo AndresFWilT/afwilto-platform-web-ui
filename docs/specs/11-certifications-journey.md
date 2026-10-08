@@ -162,6 +162,12 @@ without dates (§3) and the list flags them as "unscheduled".
 
 ### FR-6 Categories (dynamic, never predefined)
 
+> **Superseded** — categories are now explicitly managed (full CRUD) with a
+> persisted color, not implicitly created. See
+> `backend/afwilto-certifications-mngr/docs/specs/category-management.md` and
+> `frontend/apps/afwilto-certifications-web-ui/docs/specs/category-management.md`.
+> The rest of this section is kept as historical context.
+
 - A category is a free hierarchical path: `TI / Cloud / AWS`, `Soft Skills`,
   `Languages / English`. Segments separated by `/`; display form preserves the
   user's casing, matching/uniqueness uses a normalized form (trimmed segments,
@@ -982,6 +988,10 @@ items, ranges clipped by the year boundary, empty input, single item,
 100-item stress (lane count ≤ theoretical max overlap).
 
 ### 12.4 Category colors
+
+> **Superseded** — the §19 upgrade mentioned below has been specced and
+> implemented: color is now persisted per category and user-chosen, not
+> hash-derived. See the category-management specs referenced under FR-6.
 
 Stable hash of the category **id** (not path — survives renames) into an
 8-color curated palette (cyan, violet, amber, emerald, rose, sky, lime,

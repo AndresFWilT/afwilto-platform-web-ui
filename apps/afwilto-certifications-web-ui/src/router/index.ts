@@ -1,1 +1,1 @@
-export { routes } from './routes'
+export { routes, childRoutes } from './routes'

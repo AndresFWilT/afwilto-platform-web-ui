@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Alert,
   Button,
@@ -12,6 +12,8 @@ import {
 } from '@afwilto/design-system'
 import type { TableColumn, TableSort } from '@afwilto/design-system'
 import { useCertificationList } from '@/hooks/useCertificationList'
+import { useTimelineData } from '@/hooks/useTimelineData'
+import { TimelineCanvas } from '@/pages/Timeline/TimelineCanvas'
 import { StatusBadge } from '@/pages/shared/StatusBadge'
 import type { Certification, CertificationStatus } from '@/application/ports'
 
@@ -43,9 +45,18 @@ const COLUMNS: TableColumn<Certification>[] = [
     key: 'category',
     header: 'Category',
     render: (row) => (
-      <Text as="span" variant="small" color="muted">
-        {row.category?.path ?? '—'}
-      </Text>
+      <span className="inline-flex items-center gap-1.5">
+        {row.category && (
+          <span
+            aria-hidden
+            className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+            style={{ backgroundColor: row.category.color }}
+          />
+        )}
+        <Text as="span" variant="small" color="muted">
+          {row.category?.path ?? '—'}
+        </Text>
+      </span>
     ),
   },
   {
@@ -82,6 +93,9 @@ export function JourneyListPage() {
   const navigate = useNavigate()
   const { items, meta, loading, error, query, setQuery } = useCertificationList()
 
+  const currentYear = new Date().getFullYear()
+  const { laned: timelineLaned } = useTimelineData(currentYear)
+
   const sortValue = query.sortBy && query.sortOrder
     ? `${query.sortBy}:${query.sortOrder}`
     : 'createdAt:asc'
@@ -100,20 +114,37 @@ export function JourneyListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-base px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-6xl flex flex-col gap-6">
+    <div className="mx-auto max-w-6xl flex flex-col gap-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <Text as="h1" variant="h2">
-            Certifications
-          </Text>
-          <Button size="sm" variant="primary" onClick={() => navigate('new')}>
-            + New
-          </Button>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <Text as="h1" variant="h2">
+          Certifications
+        </Text>
+        <Button size="sm" variant="primary" onClick={() => navigate('new')}>
+          + New
+        </Button>
+      </div>
+
+      {/* Front-page timeline overview (current year) */}
+      {timelineLaned.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <Text as="h2" variant="h4" color="muted">
+              {currentYear} at a glance
+            </Text>
+            <Link
+              to="/certifications/timeline"
+              className="text-primary-400 text-sm font-medium hover:text-primary-300 transition-colors"
+            >
+              Full timeline →
+            </Link>
+          </div>
+          <TimelineCanvas year={currentYear} laned={timelineLaned} />
         </div>
+      )}
 
-        {/* Filter bar */}
+      {/* Filter bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             aria-label="Search certifications"
@@ -189,16 +220,15 @@ export function JourneyListPage() {
           />
         )}
 
-        {meta && meta.totalPages > 1 && (
-          <Pagination
-            page={meta.page}
-            totalPages={meta.totalPages}
-            totalItems={meta.totalItems}
-            onPageChange={page => setQuery({ ...query, page })}
-          />
-        )}
+      {meta && meta.totalPages > 1 && (
+        <Pagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          totalItems={meta.totalItems}
+          onPageChange={page => setQuery({ ...query, page })}
+        />
+      )}
 
-      </div>
     </div>
   )
 }

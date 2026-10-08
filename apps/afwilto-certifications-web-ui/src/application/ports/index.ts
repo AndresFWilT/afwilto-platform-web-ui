@@ -8,5 +8,10 @@ export type {
   ListQuery,
   CreateCertificationCommand,
   UpdateCertificationCommand,
-  CategoryInUse,
+  Category,
+  CreateCategoryCommand,
+  UpdateCategoryCommand,
+  AttachmentKind,
+  AttachmentMeta,
+  EvidenceUrlSource,
 } from './ICertificationJourneyService'

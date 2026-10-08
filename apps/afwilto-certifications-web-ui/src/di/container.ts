@@ -10,7 +10,7 @@ export interface ServiceContainer {
 function createCertificationService(): ICertificationJourneyService {
   const apiUrl = import.meta.env['VITE_CERTIFICATIONS_API_URL'] as string | undefined
   if (apiUrl) {
-    return new CertificationHttpAdapter(new FetchHttpClient(apiUrl))
+    return new CertificationHttpAdapter(new FetchHttpClient(apiUrl), apiUrl)
   }
   return new InMemoryCertificationAdapter()
 }
