@@ -1,0 +1,12 @@
+.dots {
+  color: var(--color-points);
+  font-size: var(--fs-18);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}

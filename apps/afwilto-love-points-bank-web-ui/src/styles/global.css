@@ -1,0 +1,55 @@
+/* Fuentes: se cargan localmente vía @font-face si están disponibles; si no, el
+   fallback del sistema mantiene la jerarquía. Import desde Google Fonts en dev. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Karla:wght@400;500;700&family=Martian+Mono:wght@400;500;600&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-read);
+  font-size: var(--fs-15);
+  line-height: var(--lh-read);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-label);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-read);
+  cursor: pointer;
+}
+
+/* Foco visible siempre; nunca outline:none (accesibilidad del plan). */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Movimiento solo como respuesta a una acción; respeta reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

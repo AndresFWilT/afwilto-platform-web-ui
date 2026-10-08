@@ -1,0 +1,241 @@
+.ledger {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--color-text);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.heading {
+  font-size: var(--fs-24);
+  color: var(--color-text);
+}
+
+.state {
+  color: var(--color-text-muted);
+  padding: var(--sp-6) 0;
+  text-align: center;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--fs-13);
+  text-align: left;
+  color: var(--color-text-muted);
+  padding: var(--sp-2) var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.thDate {
+  width: 5.5rem;
+}
+.thAmount {
+  width: 6rem;
+}
+.thReason {
+  width: auto;
+}
+
+/* Los movimientos son renglones separados por una línea de 1px, como impreso. */
+.row td {
+  padding: var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.cellDate {
+  font-family: var(--font-num);
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.cellAmount {
+  white-space: nowrap;
+}
+
+/* Canje: el gasto se muestra como −N en la cifra monoespaciada. */
+.spend {
+  font-family: var(--font-num);
+  font-size: var(--fs-18);
+  color: var(--color-danger);
+}
+.voided .spend {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.cellReason {
+  max-width: 62ch;
+}
+
+.reasonLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+}
+
+.recipient {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--fs-15);
+  color: var(--color-text);
+}
+
+.editedMark {
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+  cursor: help;
+}
+
+.voidedMark {
+  font-size: var(--fs-13);
+  color: var(--color-danger);
+}
+
+.reasonText {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-15);
+  line-height: var(--lh-read);
+  color: var(--color-text);
+  max-width: 62ch;
+}
+
+/* Anulado: tachado y en gris. El histórico no se esconde. */
+.voided .reasonText,
+.voided .recipient {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.confirmText {
+  font-size: var(--fs-13);
+  color: var(--color-text);
+}
+
+.ghostAction {
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+}
+.ghostAction:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.primaryAction {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+.primaryAction:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.dangerAction {
+  background: var(--color-danger);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+
+.editActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.hint {
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+}
+
+.rowError {
+  margin: var(--sp-1) 0 0;
+  color: var(--color-danger);
+  font-size: var(--fs-13);
+}
+
+.editReason {
+  width: 100%;
+  font-family: var(--font-read);
+  font-size: var(--fs-15);
+  padding: var(--sp-2);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.editAmount,
+.editDate {
+  font-family: var(--font-num);
+  font-size: var(--fs-13);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.more {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-4);
+  padding: var(--sp-3);
+  background: none;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: var(--fs-13);
+}
+
+.empty {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+}
+
+.emptyText {
+  max-width: 42ch;
+  margin: 0 auto;
+  color: var(--color-text-muted);
+  font-size: var(--fs-18);
+  line-height: var(--lh-read);
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Banco de Puntitos">
+  <defs>
+    <!-- Degradado de la marca: teal oscuro a teal base -->
+    <linearGradient id="heart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#008080"/>
+      <stop offset="1" stop-color="#005F6A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo redondeado en azul profundo para que el corazón resalte en pestañas claras u oscuras -->
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="#0B192C"/>
+
+  <!-- El corazón, relleno con el degradado teal -->
+  <path fill="url(#heart)" stroke="#00E5FF" stroke-width="0.75"
+        d="M16 25.5C16 25.5 5.5 19 5.5 11.8 5.5 8.6 8 6.2 11 6.2c2 0 3.7 1.1 4.6 2.8l0.4 0.7 0.4-0.7c0.9-1.7 2.6-2.8 4.6-2.8 3 0 5.5 2.4 5.5 5.6C26.5 19 16 25.5 16 25.5Z"/>
+
+  <!-- Brillo en cian, el acento vibrante de la paleta -->
+  <path fill="#00E5FF" opacity="0.85"
+        d="M11 8.6c-1.7 0-3 1.3-3.1 3 0 0.4 0.3 0.7 0.7 0.7s0.7-0.3 0.7-0.7c0-1 0.8-1.7 1.7-1.7 0.4 0 0.7-0.3 0.7-0.7S11.4 8.6 11 8.6Z"/>
+
+  <!-- El "puntito": un punto cian, guiño al corazón del juego -->
+  <circle cx="16" cy="15.5" r="1.6" fill="#00E5FF"/>
+</svg>

@@ -1,0 +1,47 @@
+.app {
+  min-height: 100%;
+  padding: var(--sp-4);
+}
+
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.pickFirst {
+  color: var(--color-text-muted);
+  font-size: var(--fs-15);
+  text-align: center;
+  padding: var(--sp-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.fatal {
+  max-width: 480px;
+  margin: 15vh auto;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* La libreta abierta: en escritorio, boleta a la izquierda y listado a la derecha. */
+@media (min-width: 900px) {
+  .panel {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    align-items: start;
+  }
+  .panel > :first-child {
+    position: sticky;
+    top: var(--sp-4);
+  }
+}

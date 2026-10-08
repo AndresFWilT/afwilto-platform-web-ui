@@ -1,0 +1,131 @@
+/*
+ * Sistema de diseño — Banco de Puntitos
+ * Paleta teal con tokens semánticos. Reemplaza la paleta "libreta" del plan original.
+ * Los colores de marca abajo son la fuente; el resto de la app usa SOLO los tokens
+ * semánticos (--color-*), nunca los hex crudos.
+ */
+:root {
+  /* --- Colores de marca (brand) --- */
+  --brand-primary:        #008080; /* Teal base */
+  --brand-primary-dark:   #005F6A; /* Teal oscuro: hover, mayor jerarquía */
+  --brand-primary-light:  #4DB8B8; /* fondos de componentes destacados */
+  --brand-primary-subtle: #E0F2F2; /* fondos muy suaves: tags, alertas */
+  --brand-secondary:      #0B192C; /* Azul profundo: cabeceras, dark surfaces */
+  --brand-secondary-light:#1C3A5E; /* hover de secundarios */
+  --brand-accent:         #00E5FF; /* Cyan: CTA vibrante, badges */
+  --brand-accent-glow:    #B3FAFF; /* focus alrededor de inputs */
+
+  /* --- Neutros --- */
+  --neutral-900: #0F1115; /* negro enriquecido: texto/títulos */
+  --neutral-700: #1F2733;
+  --neutral-500: #64748B; /* texto secundario */
+  --neutral-300: #CBD5E1;
+  --neutral-200: #E2E8F0; /* bordes, divisorias */
+  --neutral-100: #F1F5F9;
+  --neutral-050: #F8FAFC; /* fondo general de la app */
+  --white:       #FFFFFF;
+
+  /* --- Tokens semánticos (lo que consume la interfaz) --- */
+  --color-primary:         var(--brand-primary);
+  --color-primary-hover:   var(--brand-primary-dark);
+  --color-primary-subtle:  var(--brand-primary-subtle);
+  --color-accent:          var(--brand-accent);
+  --color-accent-glow:     var(--brand-accent-glow);
+
+  --color-bg:              var(--neutral-050); /* fondo de la aplicación */
+  --color-surface:         var(--white);       /* tarjetas, boleta, tapa */
+  --color-surface-strong:  var(--brand-secondary); /* cabecera/tapa profunda */
+  --color-border:          var(--neutral-200);
+  --color-border-strong:   var(--neutral-300);
+
+  --color-text:            var(--neutral-900);
+  --color-text-muted:      var(--neutral-500);
+  --color-text-on-primary: var(--white);
+  --color-text-on-accent:  var(--neutral-900); /* cyan es luminoso: texto negro */
+  --color-text-on-strong:  #E6F0F0;            /* texto sobre azul profundo */
+
+  /* El acento del juego: los puntitos y el estado "abonado". */
+  --color-points:          var(--brand-primary);
+  --color-points-strong:   var(--brand-primary-dark);
+
+  /* Estados */
+  --color-danger:          #B4234A;
+  --color-danger-subtle:   #FBE9EE;
+  --color-focus:           var(--brand-accent);
+
+  /* Niveles del catálogo (fase 2). El alto usa el oro; los otros, teal tenue. */
+  --oro:            #A9772F;
+  --tier-baratito:  var(--brand-primary-light);
+  --tier-medio:     var(--brand-primary);
+  --tier-alto:      var(--oro);
+
+  /* --- Tipografía --- */
+  --font-label: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-read:  "Karla", system-ui, sans-serif;
+  --font-num:   "Martian Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --fs-13: 0.8125rem;
+  --fs-15: 0.9375rem;
+  --fs-18: 1.125rem;
+  --fs-24: 1.5rem;
+  --fs-34: 2.125rem;
+  --fs-48: 3rem;
+
+  --lh-read: 1.55;
+
+  /* --- Espacio y forma --- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-8: 3rem;
+
+  --radius: 4px;
+  --radius-lg: 8px;
+  --shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.06);
+  --shadow-md: 0 4px 16px rgba(11, 25, 44, 0.10);
+}
+
+/* --- Modo oscuro: azul profundo como base, teal armoniza sobre él --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg:             var(--brand-secondary);
+    --color-surface:        #0F2136;
+    --color-surface-strong: #071120;
+    --color-border:         #1C3A5E;
+    --color-border-strong:  #244a76;
+
+    --color-text:           #E6EDF5;
+    --color-text-muted:     #93A4BD;
+    --color-primary:        var(--brand-primary-light);
+    --color-primary-hover:  #79cccc;
+    --color-primary-subtle: #103038;
+    --color-points:         var(--brand-primary-light);
+    --color-points-strong:  var(--brand-accent);
+    --color-danger-subtle:  #3a1420;
+    --color-text-on-primary: var(--neutral-900);
+    --oro:             #D9A441;
+    --tier-alto:       var(--oro);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg:             var(--brand-secondary);
+  --color-surface:        #0F2136;
+  --color-surface-strong: #071120;
+  --color-border:         #1C3A5E;
+  --color-border-strong:  #244a76;
+  --color-text:           #E6EDF5;
+  --color-text-muted:     #93A4BD;
+  --color-primary:        var(--brand-primary-light);
+  --color-primary-hover:  #79cccc;
+  --color-primary-subtle: #103038;
+  --color-points:         var(--brand-primary-light);
+  --color-points-strong:  var(--brand-accent);
+  --color-danger-subtle:  #3a1420;
+  --color-text-on-primary: var(--neutral-900);
+  --oro:             #D9A441;
+  --tier-alto:       var(--oro);
+}

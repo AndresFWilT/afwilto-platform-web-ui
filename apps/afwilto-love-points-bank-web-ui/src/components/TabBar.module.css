@@ -1,0 +1,28 @@
+.tablist {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--fs-15);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.chip:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}

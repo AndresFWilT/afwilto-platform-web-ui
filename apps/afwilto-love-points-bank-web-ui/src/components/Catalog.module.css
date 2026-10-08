@@ -1,0 +1,109 @@
+.group {
+  margin-top: var(--sp-4);
+}
+
+.groupTitle {
+  font-family: var(--font-label);
+  font-size: var(--fs-13);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inactive {
+  opacity: 0.55;
+}
+
+.name {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--fs-15);
+  color: var(--color-text);
+  flex: 1;
+  min-width: 8rem;
+}
+
+.cost {
+  font-family: var(--font-num);
+  font-size: var(--fs-18);
+  font-weight: 600;
+}
+
+.inactiveMark {
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.ghostAction {
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+}
+.ghostAction:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.primaryAction {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+.primaryAction:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.editName,
+.editCost {
+  font-family: var(--font-read);
+  font-size: var(--fs-15);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.editCost {
+  font-family: var(--font-num);
+  width: 5rem;
+}
+
+.tierHint {
+  font-size: var(--fs-13);
+  color: var(--color-text-muted);
+}
+
+.rowError {
+  width: 100%;
+  margin: var(--sp-1) 0 0;
+  color: var(--color-danger);
+  font-size: var(--fs-13);
+}
