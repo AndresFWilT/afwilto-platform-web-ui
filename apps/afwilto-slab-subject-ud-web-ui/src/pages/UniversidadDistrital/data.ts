@@ -187,15 +187,6 @@ export const UD_SUBJECTS: UDSubject[] = [
       '2-variable LP via the graphical method (vertex enumeration) and N-variable Mixed Integer Programming via Simplex + Branch & Bound.',
   },
   {
-    slug: 'database-1',
-    number: '16',
-    title: 'Database 1',
-    category: 'Databases',
-    icon: '🗄️',
-    description:
-      'Relational databases, SQL, schema normalization, and transaction management fundamentals.',
-  },
-  {
     slug: 'operative-systems',
     number: '20',
     title: 'Operative Systems',
@@ -206,12 +197,12 @@ export const UD_SUBJECTS: UDSubject[] = [
   },
   {
     slug: 'databases-ii',
-    number: '17',
-    title: 'Databases II',
+    number: '16',
+    title: 'Database I',
     category: 'Databases',
-    icon: '📊',
+    icon: '🗄️',
     description:
-      'Advanced queries, stored procedures, NoSQL paradigms, and distributed database concepts. Final project: TeatrosUD — a full theater management system.',
+      'Relational databases, SQL, schema normalization and transaction management. Final project: TeatrosUD — a full theater management system.',
   },
 ]
 

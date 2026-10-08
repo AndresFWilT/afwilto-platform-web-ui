@@ -50,7 +50,7 @@ export function TheaterApp() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Text variant="h3" color="default">TeatrosUD</Text>
-          <Badge variant="warning" size="sm">Databases II</Badge>
+          <Badge variant="warning" size="sm">Database I</Badge>
         </div>
         {auth && (
           <div className="flex items-center gap-3">
