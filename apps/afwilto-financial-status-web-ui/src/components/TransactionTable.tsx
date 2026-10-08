@@ -12,13 +12,13 @@ export default function TransactionTable({ transactions, onDelete, emptyMessage 
   const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date))
 
   if (!sorted.length)
-    return <p className="text-text-muted text-sm text-center py-10">{emptyMessage}</p>
+    return <p className="text-neutral-500 text-sm text-center py-10">{emptyMessage}</p>
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-surface-border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-dark-800 text-text-muted text-xs uppercase tracking-wider">
+          <tr className="bg-surface-raised text-neutral-500 text-xs uppercase tracking-wider">
             <th className="text-left px-4 py-3">Date</th>
             <th className="text-left px-4 py-3">Description</th>
             <th className="text-left px-4 py-3 hidden sm:table-cell">Category</th>
@@ -30,10 +30,10 @@ export default function TransactionTable({ transactions, onDelete, emptyMessage 
           {sorted.map((t, i) => (
             <tr
               key={t.id}
-              className={`border-t border-border hover:bg-dark-600/40 transition-colors ${i % 2 === 0 ? 'bg-dark-700' : 'bg-dark-800/60'}`}
+              className={`border-t border-surface-border hover:bg-surface-overlay/40 transition-colors ${i % 2 === 0 ? 'bg-surface-raised' : 'bg-surface-raised/60'}`}
             >
-              <td className="px-4 py-3 text-text-secondary whitespace-nowrap">{t.date}</td>
-              <td className="px-4 py-3 text-text-primary">{t.description}</td>
+              <td className="px-4 py-3 text-neutral-400 whitespace-nowrap">{t.date}</td>
+              <td className="px-4 py-3 text-neutral-100">{t.description}</td>
               <td className="px-4 py-3 hidden sm:table-cell">
                 <CategoryBadge category={t.category} />
               </td>
@@ -46,7 +46,7 @@ export default function TransactionTable({ transactions, onDelete, emptyMessage 
                 <td className="px-4 py-3">
                   <button
                     onClick={() => onDelete(t.id)}
-                    className="text-text-muted hover:text-expense-500 transition-colors"
+                    className="text-neutral-500 hover:text-expense-500 transition-colors"
                     aria-label="Delete"
                   >
                     <Trash2 size={15} />

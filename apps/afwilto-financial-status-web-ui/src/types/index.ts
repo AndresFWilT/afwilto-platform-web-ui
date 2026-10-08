@@ -47,7 +47,7 @@ export interface Credit {
   description?: string // "iPhone 15 Pro"
   principal: number    // Original amount
   monthlyRate: number  // Decimal (0.018 = 1.8% monthly)
-  installments: number // Total cuotas
+  installments: number // Total installments
   paidInstallments: number
   startDate: string    // YYYY-MM-DD — first payment date
   createdAt: string
@@ -63,7 +63,7 @@ export interface AmortizationRow {
   isPaid: boolean
 }
 
-// Monthly fixed payment (cuota fija — French amortization)
+// Monthly fixed payment (fixed installment — French amortization)
 export const creditMonthlyPayment = (c: Credit): number => {
   if (c.monthlyRate === 0 || c.installments === 0) return c.principal / c.installments
   const r = c.monthlyRate

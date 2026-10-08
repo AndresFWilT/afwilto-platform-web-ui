@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Button, Input } from '@afwilto/design-system'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -14,14 +15,13 @@ import { colors } from '../../tokens'
 
 const CAT_COLORS: Record<string, string> = {
   Salary:     colors.primary[400],
-  Bonus:      colors.purple[500],
-  'Cesantías': colors.warning[500],
+  Bonus:      colors.info[500],
   Other:      colors.income[500],
   Freelance:  colors.income[400],
   Investment: colors.warning[400],
 }
 
-const KNOWN_CATS = ['Salary', 'Bonus', 'Cesantías']
+const KNOWN_CATS = ['Salary', 'Bonus', 'Freelance']
 const STACK_CATS = [...KNOWN_CATS, 'Other'] as const
 
 function catColor(name: string) {
@@ -34,8 +34,8 @@ function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s: number, p: any) => s + (p.value ?? 0), 0)
   return (
-    <div className="bg-dark-700 border border-border rounded-xl p-3 text-sm shadow-lg min-w-[180px]">
-      <p className="text-text-secondary font-medium mb-2">{label}</p>
+    <div className="bg-surface-raised border border-surface-border rounded-xl p-3 text-sm shadow-lg min-w-[180px]">
+      <p className="text-neutral-400 font-medium mb-2">{label}</p>
       {payload.map((p: any) =>
         p.value > 0 && (
           <p key={p.name} className="flex justify-between gap-6" style={{ color: p.fill }}>
@@ -45,7 +45,7 @@ function ChartTooltip({ active, payload, label }: any) {
         )
       )}
       {payload.length > 1 && total > 0 && (
-        <p className="mt-2 pt-2 border-t border-border flex justify-between gap-6 text-text-primary font-semibold">
+        <p className="mt-2 pt-2 border-t border-surface-border flex justify-between gap-6 text-neutral-100 font-semibold">
           <span>Total</span>
           <span>{fmt(total)}</span>
         </p>
@@ -116,7 +116,7 @@ export default function IncomesPage() {
       month: i + 1,
       Salary:     byCat['Salary']     ?? 0,
       Bonus:      byCat['Bonus']      ?? 0,
-      'Cesantías': byCat['Cesantías'] ?? 0,
+      'Freelance': byCat['Freelance'] ?? 0,
       Other:      other,
       total:      txs.reduce((s, t) => s + t.amount, 0),
     }
@@ -155,62 +155,56 @@ export default function IncomesPage() {
         <div>
           {selectedMonth !== null ? (
             <div className="flex items-center gap-2">
-              <button onClick={() => setSelectedMonth(null)} className="text-text-muted hover:text-primary-400 transition-colors">
+              <button onClick={() => setSelectedMonth(null)} className="text-neutral-500 hover:text-primary-400 transition-colors">
                 <ChevronLeft size={20} />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-text-primary">{MONTHS[selectedMonth - 1]} {year}</h1>
-                <p className="text-text-muted text-sm mt-0.5">Income detail</p>
+                <h1 className="text-2xl font-bold text-neutral-100">{MONTHS[selectedMonth - 1]} {year}</h1>
+                <p className="text-neutral-500 text-sm mt-0.5">Income detail</p>
               </div>
             </div>
           ) : (
             <div>
-              <h1 className="text-2xl font-bold text-text-primary">Ingresos</h1>
-              <p className="text-text-muted text-sm mt-0.5">Historial anual de ingresos</p>
+              <h1 className="text-2xl font-bold text-neutral-100">Income</h1>
+              <p className="text-neutral-500 text-sm mt-0.5">Annual income history</p>
             </div>
           )}
         </div>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-2 bg-primary-400 hover:bg-primary-300 text-dark-900 font-semibold px-4 py-2 rounded-lg text-sm transition-colors w-fit"
-        >
+        <Button variant="success" size="sm" className="w-fit" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={16} /> : <PlusCircle size={16} />}
-          {showForm ? 'Cancelar' : 'Agregar ingreso'}
-        </button>
+          {showForm ? 'Cancel' : 'Add income'}
+        </Button>
       </div>
 
       {/* ── Add form ───────────────────────────────────────────────────────── */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-dark-700 border border-primary-400/20 rounded-xl p-5 glow-primary">
-          <h2 className="text-text-primary font-semibold mb-4">Nuevo ingreso</h2>
+        <form onSubmit={handleSubmit} className="bg-surface-raised border border-primary-400/20 rounded-xl p-5">
+          <h2 className="text-neutral-100 font-semibold mb-4">New income</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-text-muted text-xs uppercase tracking-wider">Fecha</label>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required
-                className="bg-dark-800 border border-border text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-400" />
+              <label className="text-neutral-500 text-xs uppercase tracking-wider">Date</label>
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-text-muted text-xs uppercase tracking-wider">Categoría</label>
+              <label className="text-neutral-500 text-xs uppercase tracking-wider">Category</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as typeof f.category }))}
-                className="bg-dark-800 border border-border text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-400">
+                className="w-full bg-brand-800 border border-surface-border text-neutral-100 rounded-md px-4 py-2 text-base transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
                 {INCOME_CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-text-muted text-xs uppercase tracking-wider">Descripción</label>
-              <input type="text" placeholder="ej. Salario mensual" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required
-                className="bg-dark-800 border border-border text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-400 placeholder:text-text-disabled" />
+              <label className="text-neutral-500 text-xs uppercase tracking-wider">Description</label>
+              <Input type="text" placeholder="e.g. Monthly salary" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-text-muted text-xs uppercase tracking-wider">Monto (COP)</label>
-              <input type="number" min="0.01" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} required
-                className="bg-dark-800 border border-border text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-400 placeholder:text-text-disabled" />
+              <label className="text-neutral-500 text-xs uppercase tracking-wider">Amount (COP)</label>
+              <Input type="number" min="0.01" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} required />
             </div>
           </div>
           <div className="mt-4 flex justify-end">
-            <button type="submit" className="bg-income-500 hover:bg-income-400 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
-              Guardar
-            </button>
+            <Button variant="success" type="submit">
+              Save
+              </Button>
           </div>
         </form>
       )}
@@ -224,7 +218,7 @@ export default function IncomesPage() {
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
               year === y
                 ? 'bg-primary-400/15 text-primary-400 border border-primary-400/30'
-                : 'bg-dark-700 text-text-secondary hover:text-text-primary border border-border'
+                : 'bg-surface-raised text-neutral-400 hover:text-neutral-100 border border-surface-border'
             }`}
           >
             {y}
@@ -237,27 +231,27 @@ export default function IncomesPage() {
         <>
           {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total del mes" value={fmt(selectedMonthTotal)} sub={`${MONTHS[selectedMonth - 1]} ${year}`} variant="income" glow />
-            <StatCard label="Transacciones" value={String(selectedMonthTxs.length)} sub="Ingresos registrados" variant="primary" />
-            <StatCard label="vs. Promedio anual" value={fmt(selectedMonthTotal - avgMonthly)}
-              sub={selectedMonthTotal >= avgMonthly ? 'Por encima del promedio' : 'Por debajo del promedio'}
+            <StatCard label="Month total" value={fmt(selectedMonthTotal)} sub={`${MONTHS[selectedMonth - 1]} ${year}`} variant="income" />
+            <StatCard label="Transactions" value={String(selectedMonthTxs.length)} sub="Recorded income" variant="primary" />
+            <StatCard label="vs. Annual average" value={fmt(selectedMonthTotal - avgMonthly)}
+              sub={selectedMonthTotal >= avgMonthly ? 'Above average' : 'Below average'}
               variant={selectedMonthTotal >= avgMonthly ? 'income' : 'expense'} />
           </div>
 
           {/* Category breakdown */}
           {monthCatBreakdown.length > 0 && (
-            <div className="bg-dark-700 rounded-xl border border-border p-5">
-              <h2 className="text-text-primary font-semibold text-sm uppercase tracking-wider mb-4">Composición del mes</h2>
+            <div className="bg-surface-raised rounded-xl border border-surface-border p-5">
+              <h2 className="text-neutral-100 font-semibold text-sm uppercase tracking-wider mb-4">Month composition</h2>
               <div className="space-y-3">
                 {monthCatBreakdown.map(([cat, amount]) => {
                   const pct = selectedMonthTotal > 0 ? (amount / selectedMonthTotal) * 100 : 0
                   return (
                     <div key={cat}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-text-secondary" style={{ color: catColor(cat) }}>{cat}</span>
-                        <span className="text-text-primary font-semibold">{fmt(amount)} <span className="text-text-muted font-normal text-xs">({pct.toFixed(0)}%)</span></span>
+                        <span className="text-neutral-400" style={{ color: catColor(cat) }}>{cat}</span>
+                        <span className="text-neutral-100 font-semibold">{fmt(amount)} <span className="text-neutral-500 font-normal text-xs">({pct.toFixed(0)}%)</span></span>
                       </div>
-                      <div className="h-1.5 bg-dark-500 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-brand-700 rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: catColor(cat) }} />
                       </div>
                     </div>
@@ -268,11 +262,11 @@ export default function IncomesPage() {
           )}
 
           {/* Transactions */}
-          <div className="bg-dark-700 rounded-xl border border-border p-5">
-            <h2 className="text-text-primary font-semibold mb-4 text-sm uppercase tracking-wider">
-              Transacciones — {MONTHS[selectedMonth - 1]} {year}
+          <div className="bg-surface-raised rounded-xl border border-surface-border p-5">
+            <h2 className="text-neutral-100 font-semibold mb-4 text-sm uppercase tracking-wider">
+              Transactions — {MONTHS[selectedMonth - 1]} {year}
             </h2>
-            <TransactionTable transactions={selectedMonthTxs} onDelete={deleteTransaction} emptyMessage="Sin ingresos este mes." />
+            <TransactionTable transactions={selectedMonthTxs} onDelete={deleteTransaction} emptyMessage="No income this month." />
           </div>
         </>
 
@@ -281,26 +275,26 @@ export default function IncomesPage() {
         <>
           {/* Annual stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total anual" value={fmt(yearTotal)} sub={String(year)} variant="income" glow icon={<TrendingUp size={16} />} />
-            <StatCard label="Promedio mensual" value={fmt(avgMonthly)} sub={`${monthsWithIncome.length} meses con ingresos`} variant="primary" />
-            <StatCard label="Mejor mes" value={bestMonth.name} sub={fmt(bestMonth.total)} variant="purple" />
+            <StatCard label="Annual total" value={fmt(yearTotal)} sub={String(year)} variant="income" icon={<TrendingUp size={16} />} />
+            <StatCard label="Monthly average" value={fmt(avgMonthly)} sub={`${monthsWithIncome.length} months with income`} variant="primary" />
+            <StatCard label="Best month" value={bestMonth.name} sub={fmt(bestMonth.total)} variant="accent" />
             {yoyPct !== null ? (
-              <StatCard label="vs. año anterior" value={`${yoyPct >= 0 ? '+' : ''}${yoyPct.toFixed(1)}%`}
+              <StatCard label="vs. previous year" value={`${yoyPct >= 0 ? '+' : ''}${yoyPct.toFixed(1)}%`}
                 sub={`${year - 1}: ${fmt(prevYearTotal)}`}
                 variant={yoyPct >= 0 ? 'income' : 'expense'} />
             ) : (
-              <StatCard label="Año anterior" value="—" sub="Sin datos previos" variant="primary" />
+              <StatCard label="Previous year" value="—" sub="No prior data" variant="primary" />
             )}
           </div>
 
           {/* Stacked bar chart by category */}
-          <div className="bg-dark-700 rounded-xl border border-border p-5">
-            <h2 className="text-text-primary font-semibold text-sm uppercase tracking-wider mb-5">
-              Ingresos mensuales {year} — por concepto
+          <div className="bg-surface-raised rounded-xl border border-surface-border p-5">
+            <h2 className="text-neutral-100 font-semibold text-sm uppercase tracking-wider mb-5">
+              Monthly income {year} — by source
             </h2>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={monthlyData} margin={{ top: 0, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
-                <CartesianGrid strokeDasharray="3 3" stroke={colors.dark[500]} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.border} vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: colors.text.secondary, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: colors.text.secondary, fontSize: 10 }} axisLine={false} tickLine={false}
                   tickFormatter={v => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(0)}M` : `$${(v / 1_000).toFixed(0)}k`}
@@ -316,21 +310,21 @@ export default function IncomesPage() {
           </div>
 
           {/* Monthly breakdown table */}
-          <div className="bg-dark-700 rounded-xl border border-border overflow-hidden">
-            <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-text-primary font-semibold text-sm uppercase tracking-wider">Resumen mensual</h2>
-              <p className="text-text-muted text-xs mt-0.5">Clic en un mes para ver el detalle de transacciones</p>
+          <div className="bg-surface-raised rounded-xl border border-surface-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-surface-border">
+              <h2 className="text-neutral-100 font-semibold text-sm uppercase tracking-wider">Monthly summary</h2>
+              <p className="text-neutral-500 text-xs mt-0.5">Click a month to see its transaction detail</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-dark-800 text-text-muted text-xs uppercase tracking-wider">
-                    <th className="text-left px-5 py-3">Mes</th>
-                    <th className="text-right px-4 py-3" style={{ color: catColor('Salary') }}>Salario</th>
-                    <th className="text-right px-4 py-3 hidden md:table-cell" style={{ color: catColor('Bonus') }}>Prestaciones</th>
-                    <th className="text-right px-4 py-3 hidden lg:table-cell" style={{ color: catColor('Cesantías') }}>Cesantías</th>
-                    <th className="text-right px-4 py-3 hidden lg:table-cell" style={{ color: catColor('Other') }}>Otros</th>
-                    <th className="text-right px-5 py-3 text-text-muted">Total</th>
+                  <tr className="bg-surface-raised text-neutral-500 text-xs uppercase tracking-wider">
+                    <th className="text-left px-5 py-3">Month</th>
+                    <th className="text-right px-4 py-3" style={{ color: catColor('Salary') }}>Salary</th>
+                    <th className="text-right px-4 py-3 hidden md:table-cell" style={{ color: catColor('Bonus') }}>Bonus</th>
+                    <th className="text-right px-4 py-3 hidden lg:table-cell" style={{ color: catColor('Freelance') }}>Freelance</th>
+                    <th className="text-right px-4 py-3 hidden lg:table-cell" style={{ color: catColor('Other') }}>Other</th>
+                    <th className="text-right px-5 py-3 text-neutral-500">Total</th>
                     <th className="px-3 py-3" />
                   </tr>
                 </thead>
@@ -342,17 +336,17 @@ export default function IncomesPage() {
                       <tr
                         key={m.name}
                         onClick={() => !isEmpty && setSelectedMonth(m.month)}
-                        className={`border-t border-border transition-colors ${
+                        className={`border-t border-surface-border transition-colors ${
                           isEmpty
                             ? 'opacity-40 cursor-default'
-                            : 'cursor-pointer hover:bg-dark-600/50 hover:border-primary-400/10'
-                        } ${i % 2 === 0 ? 'bg-dark-700' : 'bg-dark-800/40'}`}
+                            : 'cursor-pointer hover:bg-surface-overlay/50 hover:border-primary-400/10'
+                        } ${i % 2 === 0 ? 'bg-surface-raised' : 'bg-surface-raised/40'}`}
                       >
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-text-primary font-medium">{m.name}</span>
+                            <span className="text-neutral-100 font-medium">{m.name}</span>
                             {isCurrent && (
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-primary-400/15 text-primary-400 border border-primary-400/20">actual</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-primary-400/15 text-primary-400 border border-primary-400/20">current</span>
                             )}
                           </div>
                         </td>
@@ -362,35 +356,35 @@ export default function IncomesPage() {
                         <td className="px-4 py-3 text-right hidden md:table-cell" style={{ color: m.Bonus > 0 ? catColor('Bonus') : colors.text.muted }}>
                           {m.Bonus > 0 ? fmt(m.Bonus) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right hidden lg:table-cell" style={{ color: m['Cesantías'] > 0 ? catColor('Cesantías') : colors.text.muted }}>
-                          {m['Cesantías'] > 0 ? fmt(m['Cesantías']) : '—'}
+                        <td className="px-4 py-3 text-right hidden lg:table-cell" style={{ color: m['Freelance'] > 0 ? catColor('Freelance') : colors.text.muted }}>
+                          {m['Freelance'] > 0 ? fmt(m['Freelance']) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right hidden lg:table-cell text-text-secondary">
+                        <td className="px-4 py-3 text-right hidden lg:table-cell text-neutral-400">
                           {m.Other > 0 ? fmt(m.Other) : '—'}
                         </td>
-                        <td className={`px-5 py-3 text-right font-bold ${m.total > 0 ? 'text-income-500' : 'text-text-muted'}`}>
+                        <td className={`px-5 py-3 text-right font-bold ${m.total > 0 ? 'text-income-500' : 'text-neutral-500'}`}>
                           {m.total > 0 ? fmt(m.total) : '—'}
                         </td>
-                        <td className="px-3 py-3 text-text-muted text-xs">
-                          {!isEmpty && <ChevronLeft size={14} className="rotate-180 text-text-disabled" />}
+                        <td className="px-3 py-3 text-neutral-500 text-xs">
+                          {!isEmpty && <ChevronLeft size={14} className="rotate-180 text-neutral-600" />}
                         </td>
                       </tr>
                     )
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-primary-400/20 bg-dark-800">
-                    <td className="px-5 py-3 text-text-muted text-xs uppercase tracking-wider font-semibold">Total {year}</td>
+                  <tr className="border-t-2 border-primary-400/20 bg-surface-raised">
+                    <td className="px-5 py-3 text-neutral-500 text-xs uppercase tracking-wider font-semibold">Total {year}</td>
                     <td className="px-4 py-3 text-right font-bold" style={{ color: catColor('Salary') }}>
                       {fmt(monthlyData.reduce((s, m) => s + m.Salary, 0))}
                     </td>
                     <td className="px-4 py-3 text-right font-bold hidden md:table-cell" style={{ color: catColor('Bonus') }}>
                       {fmt(monthlyData.reduce((s, m) => s + m.Bonus, 0))}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold hidden lg:table-cell" style={{ color: catColor('Cesantías') }}>
-                      {fmt(monthlyData.reduce((s, m) => s + m['Cesantías'], 0))}
+                    <td className="px-4 py-3 text-right font-bold hidden lg:table-cell" style={{ color: catColor('Freelance') }}>
+                      {fmt(monthlyData.reduce((s, m) => s + m['Freelance'], 0))}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold hidden lg:table-cell text-text-secondary">
+                    <td className="px-4 py-3 text-right font-bold hidden lg:table-cell text-neutral-400">
                       {fmt(monthlyData.reduce((s, m) => s + m.Other, 0))}
                     </td>
                     <td className="px-5 py-3 text-right font-bold text-income-500 text-base">{fmt(yearTotal)}</td>

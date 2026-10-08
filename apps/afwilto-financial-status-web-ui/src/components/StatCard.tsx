@@ -1,31 +1,30 @@
 import { type ReactNode } from 'react'
+import { Card } from '@afwilto/design-system'
 
 interface StatCardProps {
   label: string
   value: string
   sub?: string
-  variant?: 'income' | 'expense' | 'primary' | 'purple'
+  variant?: 'income' | 'expense' | 'primary' | 'accent'
   icon?: ReactNode
-  glow?: boolean
 }
 
-const variantMap = {
-  income:  { value: 'text-income-500',  glow: '' },
-  expense: { value: 'text-expense-500', glow: '' },
-  primary: { value: 'text-primary-400 text-glow-primary', glow: 'glow-primary' },
-  purple:  { value: 'text-purple-400',  glow: 'glow-purple' },
+const valueColor = {
+  income:  'text-income-500',
+  expense: 'text-expense-500',
+  primary: 'text-primary-400',
+  accent:  'text-info-400',
 }
 
-export default function StatCard({ label, value, sub, variant = 'primary', icon, glow }: StatCardProps) {
-  const v = variantMap[variant]
+export default function StatCard({ label, value, sub, variant = 'primary', icon }: StatCardProps) {
   return (
-    <div className={`bg-dark-700 rounded-xl border border-border p-5 flex flex-col gap-1 ${glow ? v.glow : ''}`}>
+    <Card padding="none" className="p-5 flex flex-col gap-1">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-text-muted text-xs uppercase tracking-widest">{label}</p>
-        {icon && <span className="text-text-muted">{icon}</span>}
+        <p className="text-neutral-500 text-xs uppercase tracking-widest">{label}</p>
+        {icon && <span className="text-neutral-500">{icon}</span>}
       </div>
-      <p className={`text-2xl font-bold ${v.value}`}>{value}</p>
-      {sub && <p className="text-text-secondary text-xs">{sub}</p>}
-    </div>
+      <p className={`text-2xl font-bold ${valueColor[variant]}`}>{value}</p>
+      {sub && <p className="text-neutral-400 text-xs">{sub}</p>}
+    </Card>
   )
 }
