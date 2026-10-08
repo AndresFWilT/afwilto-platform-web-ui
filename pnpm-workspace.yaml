@@ -1,3 +1,14 @@
 packages:
   - packages/*
   - apps/*
+allowBuilds:
+  esbuild: true
+  msw: true
+# @hookform/resolvers imports zod at runtime (its /zod subpath) but only lists it as a
+# devDependency, not a peerDependency — an undeclared "phantom" dependency. Without this,
+# pnpm has no per-consumer resolution to anchor on, so Node's directory walk can land on
+# a different zod major hoisted elsewhere in the workspace instead of this app's own.
+packageExtensions:
+  '@hookform/resolvers':
+    peerDependencies:
+      zod: ^3.23.8
