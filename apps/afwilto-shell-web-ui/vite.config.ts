@@ -45,6 +45,11 @@ export default defineConfig(({ mode }) => {
             name: 'slab_home',
             entry: env.VITE_REMOTE_SLAB_HOME_URL ?? 'http://localhost:3002/remoteEntry.js',
           },
+          love_points_bank: {
+            type: 'module',
+            name: 'love_points_bank',
+            entry: env.VITE_REMOTE_LOVE_POINTS_BANK_URL ?? 'http://localhost:3007/remoteEntry.js',
+          },
         },
         shared: {
           react: { singleton: true },

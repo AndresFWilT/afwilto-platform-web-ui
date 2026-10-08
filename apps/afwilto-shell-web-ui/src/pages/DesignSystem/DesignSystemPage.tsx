@@ -50,7 +50,7 @@ function PageHeader() {
       <Badge variant="neutral" size="sm">v1.0.0</Badge>
       <Text variant="h1" color="default">Design System</Text>
       <Text variant="body" color="muted" className="max-w-2xl">
-        Component library and visual language for AFWILTO Software Lab.
+        Component library and visual language for AFWILTO Platform.
         Built with Atomic Design — from tokens to pages.
       </Text>
     </div>

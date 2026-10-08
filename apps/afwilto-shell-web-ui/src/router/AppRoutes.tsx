@@ -7,6 +7,7 @@ import {
   MatiApp,
   FinanceApp,
   CertificationsApp,
+  LovePointsBankApp,
 } from '@/remotes/remotes'
 import { DesignSystemPage } from '@/pages/DesignSystem'
 import { NotFoundPage } from '@/pages/NotFound'
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route path="/slab/mati/*" element={<RemoteSlot component={MatiApp} />} />
       <Route path="/finance/*" element={<RemoteSlot component={FinanceApp} />} />
       <Route path="/certifications/*" element={<RemoteSlot component={CertificationsApp} />} />
+      <Route path="/love-points-bank/*" element={<RemoteSlot component={LovePointsBankApp} />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

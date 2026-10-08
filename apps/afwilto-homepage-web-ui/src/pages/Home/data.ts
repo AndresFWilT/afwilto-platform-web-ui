@@ -37,4 +37,13 @@ export const PRODUCTS: Product[] = [
     icon: '🎓',
     status: 'live',
   },
+  {
+    slug: 'love-points-bank',
+    title: 'Love Points Bank',
+    description:
+      'A private points ledger between two people — every point earns a written reason.',
+    to: '/love-points-bank',
+    icon: '💖',
+    status: 'live',
+  },
 ]

@@ -35,7 +35,7 @@ function ProductsSection() {
   return (
     <section className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Text variant="h2" color="default">Products</Text>
+        <Text variant="h2" color="default">Features</Text>
         <Text variant="body" color="muted">Pick a destination.</Text>
         <div className="h-px w-16 bg-primary-500 mt-1" />
       </div>

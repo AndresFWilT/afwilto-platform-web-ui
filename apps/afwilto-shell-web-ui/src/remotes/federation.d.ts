@@ -33,3 +33,9 @@ declare module 'slab_home/App' {
   const App: ComponentType
   export default App
 }
+
+declare module 'love_points_bank/App' {
+  import type { ComponentType } from 'react'
+  const App: ComponentType
+  export default App
+}

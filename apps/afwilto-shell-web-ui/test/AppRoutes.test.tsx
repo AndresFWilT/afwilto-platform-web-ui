@@ -9,6 +9,7 @@ vi.mock('@/remotes/remotes', () => ({
   MatiApp: () => <div data-testid="mati-app" />,
   FinanceApp: () => <div data-testid="finance-app" />,
   CertificationsApp: () => <div data-testid="certifications-app" />,
+  LovePointsBankApp: () => <div data-testid="love-points-bank-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -25,7 +26,7 @@ describe('host URL gateway', () => {
   it('/design-system renders the host-local showcase (AC-1)', async () => {
     renderAt('/design-system')
     expect(
-      await screen.findByText('Component library and visual language for AFWILTO Software Lab.', { exact: false })
+      await screen.findByText('Component library and visual language for AFWILTO Platform.', { exact: false })
     ).toBeTruthy()
     expect(screen.queryByTestId('legacy-app')).toBeNull()
   })
@@ -74,6 +75,15 @@ describe('host URL gateway', () => {
     async (path) => {
       renderAt(path)
       expect(await screen.findByTestId('certifications-app')).toBeTruthy()
+      expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/love-points-bank', '/love-points-bank/whatever'])(
+    '%s mounts the love-points-bank remote (Spec 15 AC-5)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('love-points-bank-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
     }
   )
