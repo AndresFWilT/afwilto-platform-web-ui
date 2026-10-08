@@ -12,9 +12,9 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     const dialog = ref.current
     if (!dialog) return
     if (open && !dialog.open) {
-      if (typeof dialog.showModal === 'function') {
+      try {
         dialog.showModal()
-      } else {
+      } catch {
         dialog.setAttribute('open', '')
       }
     } else if (!open && dialog.open) {
