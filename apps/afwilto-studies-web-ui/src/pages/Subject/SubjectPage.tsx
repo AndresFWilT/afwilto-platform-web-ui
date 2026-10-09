@@ -4,6 +4,7 @@ import { Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import type { NoteSummary } from '@/application/ports'
 import { useServices } from '@/di'
 import { useCategories, useSubject, useSubjectNotes } from '@/hooks'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { CategoryBreadcrumb } from '../shared/CategoryBreadcrumb'
 import { DeleteDialog } from '../shared/DeleteDialog'
 import { SubjectFormDialog } from './SubjectFormDialog'
@@ -109,10 +110,12 @@ export function SubjectPage() {
 }
 
 function NoteList({ notes }: { notes: NoteSummary[] }) {
+  // Direction chosen in JS: `flex-col sm:flex-row` loses to the shell's Tailwind build.
+  const wide = useMediaQuery('(min-width: 640px)', true)
   return (
     <ul aria-label="Notes" className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
       {notes.map((n) => (
-        <li key={n.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <li key={n.id} className="flex gap-2 px-4 py-3 sm:items-center sm:justify-between" style={{ flexDirection: wide ? 'row' : 'column' }}>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <Link to={`/studies/notes/${n.id}`} className="font-medium text-neutral-100 hover:text-primary-300">

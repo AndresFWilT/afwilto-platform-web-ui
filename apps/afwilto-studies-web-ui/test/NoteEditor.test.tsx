@@ -28,6 +28,7 @@ beforeEach(() => {
 afterEach(() => {
   expect(confirmSpy).not.toHaveBeenCalled() // AC-F8: never a native dialog
   confirmSpy.mockRestore()
+  Reflect.deleteProperty(window, 'matchMedia') // jsdom has none: the editor then assumes a desktop
 })
 
 async function openNew(service = new InMemoryStudiesAdapter(librarySeed())) {
@@ -60,6 +61,7 @@ function chips(): string[] {
 
 describe('Editor layout (AC-F7, S09b-4)', () => {
   it('shows the fields, the first kind alphabetically, and a live preview', async () => {
+    viewport(true)
     await openNew()
     expect(optionTexts(page(), 'Kind')).toEqual(['Cheat sheet', 'Summary'])
     expect(selectedText(page(), 'Kind')).toBe('Cheat sheet')
@@ -77,18 +79,45 @@ describe('Editor layout (AC-F7, S09b-4)', () => {
     expect(optionTexts(page(), 'Kind')).not.toContain('Archived')
   })
 
-  it('Write/Preview tabs switch panes below lg; side by side from lg', async () => {
+  function viewport(desktop: boolean) {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        matches: desktop && query === '(min-width: 1024px)',
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }),
+    })
+  }
+
+  it('desktop: both panes side by side under visible headings, no tabs', async () => {
+    viewport(true)
     await openNew()
-    const write = screen.getByRole('tabpanel', { name: 'Write' })
-    const preview = screen.getByRole('tabpanel', { name: 'Preview' })
-    expect(write.parentElement!.className).toContain('lg:grid-cols-2')
-    expect(preview.className).toContain('hidden')
-    expect(preview.className).toContain('lg:block')
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Markdown' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Preview' })).toBeTruthy()
+    expect(screen.getByLabelText('Markdown source')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Preview' })).toBeTruthy()
+  })
+
+  it('narrow: Write/Preview tabs show one pane at a time', async () => {
+    viewport(false)
+    await openNew()
+    expect(screen.getByRole('tab', { name: 'Write' }).getAttribute('aria-selected')).toBe('true')
+    const source = screen.getByLabelText('Markdown source')
+    expect(source.closest('[role=tabpanel]')!.hasAttribute('hidden')).toBe(false)
+    expect(screen.queryByRole('region', { name: 'Preview' })).toBeNull() // hidden panes are not exposed
     fireEvent.click(screen.getByRole('tab', { name: 'Preview' }))
     expect(screen.getByRole('tab', { name: 'Preview' }).getAttribute('aria-selected')).toBe('true')
-    expect(write.className).toContain('hidden')
-    expect(write.className).toContain('lg:block')
-    expect(preview.className).not.toMatch(/(^|\s)hidden(\s|$)/)
+    expect(screen.getByRole('region', { name: 'Preview' })).toBeTruthy()
+    expect(source.closest('[role=tabpanel]')!.hasAttribute('hidden')).toBe(true)
+    fireEvent.click(screen.getByRole('tab', { name: 'Write' }))
+    // The editor was kept mounted, not rebuilt: undo history, cursor and focus survive.
+    expect(screen.getByLabelText('Markdown source')).toBe(source)
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(document.getElementById(tab.getAttribute('aria-controls')!)).toBeTruthy()
+    }
   })
 
   it.each([

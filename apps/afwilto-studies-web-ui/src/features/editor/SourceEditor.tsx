@@ -48,6 +48,8 @@ export function SourceEditor({ value, onChange, onSave }: SourceEditorProps) {
           markdown({ base: markdownLanguage, codeLanguages: languages }),
           oneDark,
           EditorView.lineWrapping,
+          // The editable area fills the box, so a click anywhere places the cursor (not only on line 1).
+          EditorView.theme({ '.cm-content': { minHeight: '24rem', cursor: 'text' }, '.cm-scroller': { minHeight: '24rem' } }),
           EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged && !update.transactions.some((t) => t.annotation(External))) {
@@ -80,5 +82,20 @@ export function SourceEditor({ value, onChange, onSave }: SourceEditorProps) {
     }
   }, [value])
 
-  return <div ref={host} className="min-h-[24rem] overflow-hidden rounded-lg border border-surface-border text-sm [&_.cm-editor]:min-h-[24rem]" />
+  // Any click in the box that misses the text focuses the editor at the end.
+  const focusFromBox = (e: React.MouseEvent) => {
+    const editor = view.current
+    if (!editor || editor.contentDOM.contains(e.target as Node)) return
+    e.preventDefault()
+    editor.focus()
+    editor.dispatch({ selection: { anchor: editor.state.doc.length } })
+  }
+
+  return (
+    <div
+      ref={host}
+      onMouseDown={focusFromBox}
+      className="min-h-[24rem] cursor-text overflow-hidden rounded-lg border border-surface-border text-sm"
+    />
+  )
 }

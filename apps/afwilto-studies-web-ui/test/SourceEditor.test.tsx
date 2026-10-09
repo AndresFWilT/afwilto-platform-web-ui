@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { EditorView } from '@codemirror/view'
 import { undo } from '@codemirror/commands'
 import { SourceEditor } from '../src/features/editor/SourceEditor'
@@ -17,6 +17,32 @@ describe('SourceEditor (S09b-11)', () => {
     const { container } = render(<SourceEditor value={'# Title\n\nbody'} onChange={() => {}} onSave={() => {}} />)
     expect(screen.getByRole('textbox', { name: 'Markdown source' })).toBeTruthy()
     expect(viewOf(container).state.doc.toString()).toBe('# Title\n\nbody')
+  })
+
+  it('a click in the box outside the text focuses it with the cursor at the end', () => {
+    const { container } = render(<SourceEditor value="abc" onChange={() => {}} onSave={() => {}} />)
+    const box = container.firstElementChild as HTMLElement
+    fireEvent.mouseDown(box)
+    expect(document.activeElement).toBe(container.querySelector('.cm-content'))
+    expect(viewOf(container).state.selection.main.head).toBe(3)
+  })
+
+  it('a click inside the text is left to CodeMirror (never forced to the end)', () => {
+    const { container } = render(<SourceEditor value="abcdef" onChange={() => {}} onSave={() => {}} />)
+    // CodeMirror places the cursor itself (in jsdom it lacks coordinates, so the
+    // position is not observable); what matters is that our box handler stays out:
+    // it is the only code path that calls view.focus().
+    const focus = vi.spyOn(viewOf(container), 'focus')
+    fireEvent.mouseDown(container.querySelector('.cm-line')!)
+    expect(focus).not.toHaveBeenCalled()
+    fireEvent.mouseDown(container.firstElementChild!)
+    expect(focus).toHaveBeenCalledTimes(1)
+  })
+
+  it('the editable area fills the box, so the empty box is clickable text area', () => {
+    const { container } = render(<SourceEditor value="" onChange={() => {}} onSave={() => {}} />)
+    const content = container.querySelector('.cm-content') as HTMLElement
+    expect(getComputedStyle(content).minHeight).toBe('24rem')
   })
 
   it('reports user edits through onChange', () => {

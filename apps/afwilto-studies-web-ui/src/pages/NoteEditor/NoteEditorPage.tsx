@@ -8,6 +8,7 @@ import { addTag } from '@/domain/tags'
 import { trimSpace } from '@/domain/validation'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { SourceEditor } from '@/features/editor/SourceEditor'
 import { useUnsavedGuard } from '@/features/editor/useUnsavedGuard'
 import { MarkdownView } from '@/features/markdown/MarkdownView'
@@ -253,6 +254,12 @@ function Editor({ loaded }: { loaded: Loaded }) {
   const tabsId = useId()
   const tabClass = (active: boolean) =>
     `rounded-md px-3 py-1.5 text-sm ${active ? 'bg-brand-700 text-primary-300' : 'text-neutral-400 hover:text-neutral-100'}`
+  // Chosen in JS, not with lg:/hidden utilities: two Tailwind builds share the page.
+  const wide = useMediaQuery('(min-width: 1024px)', true)
+  const twoColumnFields = useMediaQuery('(min-width: 768px)', true)
+  const paneTitle = (title: string) => (
+    <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">{title}</h2>
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -270,7 +277,7 @@ function Editor({ loaded }: { loaded: Loaded }) {
       {conflict && <ConflictBanner content={form.content} onReload={() => setConfirmReload(true)} />}
       {alert && <Alert variant="error">{alert}</Alert>}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid gap-4" style={{ gridTemplateColumns: twoColumnFields ? '1fr 1fr' : '1fr' }}>
         <Field label="Title" error={errors['title']}>
           {(props) => <Input {...props} value={form.title} onChange={(e) => set('title', e.target.value)} error={Boolean(errors['title'])} />}
         </Field>
@@ -294,31 +301,37 @@ function Editor({ loaded }: { loaded: Loaded }) {
             )}
           </Field>
         )}
-        <div className="md:col-span-2">
+        <div style={{ gridColumn: '1 / -1' }}>
           <TagsInput tags={form.tags} onChange={(tags) => set('tags', tags)} draft={tagDraft} onDraftChange={setTagDraft} error={errors['tags']} />
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <div role="tablist" aria-label="Editor panes" className="flex gap-1 lg:hidden">
-          <button id={`${tabsId}-write`} role="tab" type="button" aria-selected={tab === 'write'} aria-controls={`${tabsId}-write-panel`}
-            className={tabClass(tab === 'write')} onClick={() => setTab('write')}>
-            Write
-          </button>
-          <button id={`${tabsId}-preview`} role="tab" type="button" aria-selected={tab === 'preview'} aria-controls={`${tabsId}-preview-panel`}
-            className={tabClass(tab === 'preview')} onClick={() => setTab('preview')}>
-            Preview
-          </button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div id={`${tabsId}-write-panel`} role="tabpanel" aria-labelledby={`${tabsId}-write`}
-            className={tab === 'write' ? 'block' : 'hidden lg:block'}>
+        {!wide && (
+          <div role="tablist" aria-label="Editor panes" className="flex gap-1">
+            <button id={`${tabsId}-write`} role="tab" type="button" aria-selected={tab === 'write'} aria-controls={`${tabsId}-write-panel`}
+              className={tabClass(tab === 'write')} onClick={() => setTab('write')}>
+              Write
+            </button>
+            <button id={`${tabsId}-preview`} role="tab" type="button" aria-selected={tab === 'preview'} aria-controls={`${tabsId}-preview-panel`}
+              className={tabClass(tab === 'preview')} onClick={() => setTab('preview')}>
+              Preview
+            </button>
+          </div>
+        )}
+        <div className="grid gap-4" style={{ gridTemplateColumns: wide ? '1fr 1fr' : '1fr' }}>
+          {/* Both panes stay mounted; the inactive tab's pane is `hidden` (an attribute, not
+              a Tailwind class), so CodeMirror keeps its undo history and cursor. */}
+          <div id={`${tabsId}-write-panel`} role={wide ? undefined : 'tabpanel'} aria-labelledby={wide ? undefined : `${tabsId}-write`}
+            hidden={!wide && tab !== 'write'} className="min-w-0">
+            {wide && paneTitle('Markdown')}
             <SourceEditor value={form.content} onChange={(content) => set('content', content)} onSave={() => void save()} />
             {errors['content'] && <p className="mt-1 text-xs text-red-400">{errors['content']}</p>}
           </div>
-          <div id={`${tabsId}-preview-panel`} role="tabpanel" aria-labelledby={`${tabsId}-preview`}
-            className={tab === 'preview' ? 'block' : 'hidden lg:block'}>
-            <section aria-label="Preview" className="min-h-[24rem] rounded-lg border border-surface-border bg-surface-raised p-4">
+          <div id={`${tabsId}-preview-panel`} role={wide ? undefined : 'tabpanel'} aria-labelledby={wide ? undefined : `${tabsId}-preview`}
+            hidden={!wide && tab !== 'preview'} className="min-w-0">
+            {wide && paneTitle('Preview')}
+            <section aria-label="Preview" className="min-h-[24rem] rounded-lg border border-dashed border-primary-500/40 bg-surface-raised p-4">
               <MarkdownView content={preview} />
             </section>
           </div>

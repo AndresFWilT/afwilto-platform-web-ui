@@ -31,6 +31,24 @@
     **preview** that reuses `MarkdownView` (Slice 08).
     - At **≥ 1024px** the editor and preview sit side by side.
     - Below 1024px they show as two tabs, **Write** and **Preview** (AC-F7).
+  - **Layout and clicks** (amended 2026-10-09 after the owner's browser check):
+    - **Cause:** the shell and this remote ship separate Tailwind builds on the same
+      page. Responsive display utilities (`hidden lg:block`, `lg:hidden`) therefore
+      lose to the other build's `.hidden` / `.flex`, depending on stylesheet order.
+      As a result the preview stayed hidden on desktop and the tabs stayed visible.
+    - **Fix:** the layout is chosen in JS with `matchMedia('(min-width: 1024px)')`.
+      Desktop renders both panes and no tabs; narrow screens render the tabs and only
+      the active pane.
+    - **Pane headings:** each pane has a visible heading, **Markdown** or **Preview**,
+      so the two are never confused.
+    - **Rule for this remote:** never pair a base utility with a responsive override
+      of the same property (display, flex-direction, grid columns) in one
+      `className`. A static test enforces it (`test/twoTailwindBuilds.test.ts`).
+      Viewport-dependent layout uses `useMediaQuery` or inline styles instead. Three
+      more spots were fixed for this: the editor field grid, the subject page note
+      rows, and the slab-link rows.
+    - **Clicks:** the whole editor box takes focus on click. Before, only the first
+      line did, so clicking the empty box of a new note did nothing.
   - **Save** (button or **Ctrl/Cmd+S**) and **Cancel**.
 
 **Non-goals:**
@@ -192,8 +210,10 @@ Parent criteria covered: **AC-F7, AC-F8, AC-F9**, and the picker half of **AC-F1
   - title, kind (first alphabetical preselected on create), tags, slab links, a
     source editor labelled "Markdown source", and a preview showing the rendered
     content as it is typed;
-  - **Write/Preview tabs** switch the visible pane, and the side-by-side layout
-    classes are applied at the `lg` breakpoint;
+  - **≥ 1024px** (`matchMedia`): both panes side by side under "Markdown" /
+    "Preview" headings, with no tabs. **Below 1024px:** Write/Preview tabs, with
+    both panes kept mounted and the inactive one `hidden`, so the editor's undo
+    history and cursor survive a tab switch (amended after review);
   - **Ctrl+S and Cmd+S** both save.
 - **S09b-5** Create:
   - a valid form posts the trimmed title, the kind, the content, the normalized
@@ -303,4 +323,24 @@ Parent criteria covered: **AC-F7, AC-F8, AC-F9**, and the picker half of **AC-F1
   Each finding has a test that was red first, and all are fixed. Final count: 608
   tests green.
 - **Final mutation re-check.** All 19 mutations on the fixes are killed.
-- **S09b-13 manual check:** _pending, owner._
+- **Owner browser check (2026-10-09).** Two failures were reported: typing into the
+  editor did not work, and the editor and preview could not be told apart. Both were
+  reproduced in headless Chrome (`playwright-core` driving the system Chrome against
+  the running stack):
+  - CodeMirror's editable area was one line tall inside a 384px box;
+  - the preview had `display: none` on desktop because of the two-Tailwind-builds
+    conflict.
+
+  Both are fixed (§1 amendment).
+  - **Follow-up review.** It found that tab switches remounted the editor, that the
+    same CSS conflict hit three more layouts, and that several parts of the fix were
+    untested. All are fixed, and 7 mutations are killed.
+  - **Final suite.** 617 tests green, plus a static guard against new conflicts.
+  - **Headless Chrome confirmed:**
+    - **Desktop:** two-column fields, both panes under "Markdown"/"Preview", no
+      tabs. Clicking the empty box and typing works, and the preview renders KaTeX
+      live. Editing and saving the demo note with Cmd+S works (version 1 → 2).
+    - **Narrow:** tabs, with the preview visible on its tab. Undo history survives a
+      tab round trip.
+    - **Subject page:** note rows lay out as a row on wide screens.
+- **S09b-13 manual check:** _pending, owner (re-test after the fix)._
