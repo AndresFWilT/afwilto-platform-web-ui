@@ -364,4 +364,13 @@ libraries. The loaders are thin, so the module boundary is the seam. KaTeX and
   - category "Demo" (`01a11e74-3d87-7c3b-a0d2-f91ddccdf6d3`);
   - subject "Rich rendering demo" (`01a11e74-3d93-7638-905d-f5c0d4e72f04`);
   - note "Markdown showcase" (`01a11e74-3d97-71f0-874f-a4a4a213bfb9`).
-- **S08-14 browser check:** _pending, owner._ Browser automation was unavailable.
+- **S08-14 browser check (owner, 2026-10-08).** The demo note at `localhost:3000`
+  showed everything as expected:
+  - KaTeX, with the invalid formula in red;
+  - Go and Python highlighted, and `cobol` as plain text, each block with "Copy";
+  - the Mermaid diagram, plus the error box for the invalid one;
+  - "Round robin lab" navigating without a reload;
+  - fonts and the Shiki and Mermaid chunks served from :3008.
+
+  The owner confirmed "todo se ve bien".
+  **S08-14 closed.**
