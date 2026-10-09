@@ -118,7 +118,10 @@ describe.each(adapters)('%s behavioral contract (S07-11)', (_name, make) => {
         id: IDS.compute,
         title: 'Compute',
         content: '<script>alert(1)</script>\nEC2 **instances**',
-        slabLinks: [{ label: 'Round robin lab', path: '/slab/ud/operative-systems/round-robin' }],
+        slabLinks: [
+          { label: 'Round robin lab', path: '/slab/ud/operative-systems/round-robin' },
+          { label: 'MLFQ lab', path: '/slab/ud/operative-systems/mlfq-scheduler' },
+        ],
         tags: ['ec2', 'iam'],
       })
     })

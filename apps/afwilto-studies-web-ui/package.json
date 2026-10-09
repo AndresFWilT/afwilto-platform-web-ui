@@ -8,21 +8,32 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:check": "STUDIES_CHUNK_REPORT=1 pnpm build && node test/build/checkChunks.mjs"
   },
   "dependencies": {
     "@afwilto/design-system": "workspace:*",
     "@afwilto/http-client": "workspace:*",
     "clsx": "^2.1.1",
+    "katex": "0.16.47",
+    "mermaid": "11.17.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.16.0"
+    "react-markdown": "10.1.0",
+    "react-router-dom": "^7.16.0",
+    "rehype-katex": "7.0.1",
+    "rehype-sanitize": "6.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-math": "6.0.0",
+    "shiki": "4.4.3"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.7.0",
     "@tailwindcss/vite": "^4.3.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.3.0",
+    "@types/hast": "3.0.5",
+    "@types/mdast": "4.0.4",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

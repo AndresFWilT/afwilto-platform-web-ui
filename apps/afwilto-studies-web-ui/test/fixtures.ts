@@ -84,7 +84,10 @@ export function librarySeed(): StudiesSeed {
         kindId: IDS.summary,
         tags: ['ec2', 'iam'],
         content: '<script>alert(1)</script>\nEC2 **instances**',
-        slabLinks: [{ label: 'Round robin lab', path: '/slab/ud/operative-systems/round-robin' }],
+        slabLinks: [
+          { label: 'Round robin lab', path: '/slab/ud/operative-systems/round-robin' },
+          { label: 'MLFQ lab', path: '/slab/ud/operative-systems/mlfq-scheduler' },
+        ],
         createdAt: D1,
         updatedAt: D3,
         version: 3,

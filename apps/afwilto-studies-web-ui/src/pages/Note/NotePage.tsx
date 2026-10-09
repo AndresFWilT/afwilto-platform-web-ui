@@ -1,5 +1,8 @@
+import { useId } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState, Text } from '@afwilto/design-system'
+import type { SlabLink } from '@/application/ports'
+import { MarkdownView } from '@/features/markdown/MarkdownView'
 import { useNote } from '@/hooks'
 import { DateText, KindBadge, TagList } from '../shared/chips'
 import { LoadError, LoadingRows } from '../shared/states'
@@ -31,10 +34,31 @@ export function NotePage() {
           <span>Updated <DateText iso={note.updatedAt} /></span>
         </p>
       </header>
-      {/* D-1: raw Markdown source as text until Slice 08 brings the sanitized renderer. */}
-      <pre className="whitespace-pre-wrap break-words rounded-lg border border-surface-border bg-surface-raised p-4 font-mono text-sm text-neutral-200">
-        {note.content}
-      </pre>
+      <MarkdownView content={note.content} />
+      <RelatedInSlab links={note.slabLinks} />
     </article>
+  )
+}
+
+/** FR-6 / AC-F10: router links into slab, in stored order; absent when empty. */
+function RelatedInSlab({ links }: { links: SlabLink[] }) {
+  const headingId = useId()
+  if (links.length === 0) return null
+  return (
+    <section aria-labelledby={headingId} className="flex flex-col gap-3 border-t border-surface-border pt-6">
+      <h2 id={headingId} className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+        Related in slab
+      </h2>
+      <ul className="flex flex-col gap-2">
+        {links.map((link, i) => (
+          <li key={`${i}-${link.path}`}>
+            <Link to={link.path} className="inline-flex items-center gap-2 text-primary-300 hover:text-primary-200">
+              <span aria-hidden>🧪</span>
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

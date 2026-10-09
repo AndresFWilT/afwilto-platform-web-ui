@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { screen } from '@testing-library/react'
-import { failingService, renderAt } from './support/renderStudies'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { currentLocation, failingService, renderAt } from './support/renderStudies'
 import { InMemoryStudiesAdapter } from '../src/infrastructure/adapters/memory/InMemoryStudiesAdapter'
 import { IDS, librarySeed } from './fixtures'
 
-describe('NotePage (S07-8, D-1)', () => {
+describe('NotePage (S07-8, Slice 08)', () => {
   it('renders the header: title, kind, tags, subject link and dates', async () => {
     renderAt(`/studies/notes/${IDS.compute}`)
     expect(await screen.findByRole('heading', { level: 1, name: 'Compute' })).toBeTruthy()
@@ -18,13 +18,40 @@ describe('NotePage (S07-8, D-1)', () => {
     expect(screen.getByText(/Jan 3, 2026/)).toBeTruthy()
   })
 
-  it('shows the content verbatim as text, never as markup', async () => {
+  it('renders the content as sanitized Markdown (S08-13)', async () => {
     const { container } = renderAt(`/studies/notes/${IDS.compute}`)
     await screen.findByRole('heading', { level: 1, name: 'Compute' })
-    const pre = container.querySelector('pre')!
-    expect(pre.textContent).toBe('<script>alert(1)</script>\nEC2 **instances**')
+    expect(container.querySelector('strong')!.textContent).toBe('instances')
     expect(container.querySelector('script')).toBeNull()
-    expect(container.querySelector('strong')).toBeNull()
+  })
+
+  it('renders math in the note body (S08-13)', async () => {
+    const { container } = renderAt(`/studies/notes/${IDS.storage}`)
+    await screen.findByRole('heading', { level: 1, name: 'Storage' })
+    expect(container.querySelector('.katex-display')).toBeTruthy()
+  })
+
+  it('lists "Related in slab" links that navigate client-side (AC-F10, S08-9)', async () => {
+    renderAt(`/studies/notes/${IDS.compute}`)
+    const section = await screen.findByRole('region', { name: 'Related in slab' })
+    expect(within(section).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '/slab/ud/operative-systems/round-robin',
+      '/slab/ud/operative-systems/mlfq-scheduler',
+    ]) // stored order, not alphabetical
+    const link = within(section).getByRole('link', { name: 'Round robin lab' })
+    expect(link.getAttribute('href')).toBe('/slab/ud/operative-systems/round-robin')
+    expect(link.getAttribute('target')).toBeNull()
+    const probe = screen.getByTestId('location')
+    fireEvent.click(link)
+    await waitFor(() => expect(currentLocation()).toBe('/slab/ud/operative-systems/round-robin'))
+    expect(screen.getByTestId('navigation-type').textContent).toBe('PUSH')
+    expect(screen.getByTestId('location')).toBe(probe) // same document: no full reload
+  })
+
+  it('has no "Related in slab" section when the note has no links', async () => {
+    renderAt(`/studies/notes/${IDS.storage}`)
+    await screen.findByRole('heading', { level: 1, name: 'Storage' })
+    expect(screen.queryByRole('region', { name: 'Related in slab' })).toBeNull()
   })
 
   it('still shows the note when only the subject lookup fails (the back link is optional)', async () => {
@@ -33,7 +60,7 @@ describe('NotePage (S07-8, D-1)', () => {
     })
     const { container } = renderAt(`/studies/notes/${IDS.compute}`, service)
     expect(await screen.findByRole('heading', { level: 1, name: 'Compute' })).toBeTruthy()
-    expect(container.querySelector('pre')!.textContent).toContain('EC2 **instances**')
+    expect(container.querySelector('strong')!.textContent).toBe('instances')
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.queryByRole('link', { name: 'AWS Certified Cloud Practitioner' })).toBeNull()
   })
