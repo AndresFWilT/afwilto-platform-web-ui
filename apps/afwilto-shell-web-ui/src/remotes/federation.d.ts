@@ -39,3 +39,9 @@ declare module 'love_points_bank/App' {
   const App: ComponentType
   export default App
 }
+
+declare module 'studies/App' {
+  import type { ComponentType } from 'react'
+  const App: ComponentType
+  export default App
+}

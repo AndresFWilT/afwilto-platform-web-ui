@@ -18,7 +18,7 @@ describe('afwilto root HomePage via exposed App', () => {
     expect(heading.textContent?.toLowerCase()).toContain('afwilto')
   })
 
-  it('renders exactly the four product cards (AC-1, Spec 15)', () => {
+  it('renders exactly the five product cards (AC-1, Spec 15, Spec 16 S07-2)', () => {
     renderApp()
     // These labels now also appear as navbar links, so scope to the main content.
     const main = screen.getByRole('main')
@@ -26,15 +26,19 @@ describe('afwilto root HomePage via exposed App', () => {
     expect(within(main).getByText('Financial Status')).toBeTruthy()
     expect(within(main).getByText('Certifications')).toBeTruthy()
     expect(within(main).getByText('Love Points Bank')).toBeTruthy()
+    expect(within(main).getByText('Studies')).toBeTruthy()
+    const cardHrefs = within(main).getAllByRole('link').map((a) => a.getAttribute('href'))
+    expect(cardHrefs).toEqual(['/slab', '/finance', '/certifications', '/love-points-bank', '/studies'])
   })
 
-  it('links all live cards to their prefixes (AC-2, Specs 07-08, 15)', () => {
+  it('links all live cards to their prefixes (AC-2, Specs 07-08, 15, 16)', () => {
     renderApp()
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(links).toContain('/slab')
     expect(links).toContain('/finance')
     expect(links).toContain('/certifications')
     expect(links).toContain('/love-points-bank')
+    expect(links).toContain('/studies')
   })
 
   it('renders no Coming soon badges once every product is live (AC-2)', () => {
@@ -76,6 +80,7 @@ describe('afwilto root HomePage via exposed App', () => {
     expect(hrefs).toContain('/finance')
     expect(hrefs).toContain('/certifications')
     expect(hrefs).toContain('/love-points-bank')
+    expect(hrefs).toContain('/studies') // BaseLayout default nav (Spec 16 S07-2)
     expect(hrefs).not.toContain('/projects')
   })
 })

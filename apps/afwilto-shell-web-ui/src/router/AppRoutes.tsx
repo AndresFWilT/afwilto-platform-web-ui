@@ -8,6 +8,7 @@ import {
   FinanceApp,
   CertificationsApp,
   LovePointsBankApp,
+  StudiesApp,
 } from '@/remotes/remotes'
 import { DesignSystemPage } from '@/pages/DesignSystem'
 import { NotFoundPage } from '@/pages/NotFound'
@@ -23,6 +24,7 @@ export function AppRoutes() {
       <Route path="/finance/*" element={<RemoteSlot component={FinanceApp} />} />
       <Route path="/certifications/*" element={<RemoteSlot component={CertificationsApp} />} />
       <Route path="/love-points-bank/*" element={<RemoteSlot component={LovePointsBankApp} />} />
+      <Route path="/studies/*" element={<RemoteSlot component={StudiesApp} />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

@@ -50,6 +50,11 @@ export default defineConfig(({ mode }) => {
             name: 'love_points_bank',
             entry: env.VITE_REMOTE_LOVE_POINTS_BANK_URL ?? 'http://localhost:3007/remoteEntry.js',
           },
+          studies: {
+            type: 'module',
+            name: 'studies',
+            entry: env.VITE_REMOTE_STUDIES_URL ?? 'http://localhost:3008/remoteEntry.js',
+          },
         },
         shared: {
           react: { singleton: true },

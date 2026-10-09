@@ -8,6 +8,7 @@ const DEFAULT_NAV_LINKS = [
   { label: 'Financial Status', to: '/finance' },
   { label: 'Certifications', to: '/certifications' },
   { label: 'Love Points Bank', to: '/love-points-bank' },
+  { label: 'Studies', to: '/studies' },
 ]
 
 export function BaseLayout({ children, navLinks = DEFAULT_NAV_LINKS }: BaseLayoutProps) {

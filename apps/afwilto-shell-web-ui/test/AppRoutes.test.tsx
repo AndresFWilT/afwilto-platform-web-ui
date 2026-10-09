@@ -10,6 +10,7 @@ vi.mock('@/remotes/remotes', () => ({
   FinanceApp: () => <div data-testid="finance-app" />,
   CertificationsApp: () => <div data-testid="certifications-app" />,
   LovePointsBankApp: () => <div data-testid="love-points-bank-app" />,
+  StudiesApp: () => <div data-testid="studies-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -84,6 +85,15 @@ describe('host URL gateway', () => {
     async (path) => {
       renderAt(path)
       expect(await screen.findByTestId('love-points-bank-app')).toBeTruthy()
+      expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/studies', '/studies/subjects/0190a0b2-0000-7000-8000-000000000001', '/studies/tags/iam'])(
+    '%s mounts the studies remote (Spec 16 AC-F1, S07-1)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('studies-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
     }
   )

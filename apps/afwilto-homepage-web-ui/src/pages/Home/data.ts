@@ -46,4 +46,13 @@ export const PRODUCTS: Product[] = [
     icon: '💖',
     status: 'live',
   },
+  {
+    slug: 'studies',
+    title: 'Studies',
+    description:
+      'Personal knowledge base — categories, subjects and Markdown notes with math, code and diagrams.',
+    to: '/studies',
+    icon: '📚',
+    status: 'live',
+  },
 ]
