@@ -18,6 +18,7 @@ import { LoadError, LoadingRows } from '../shared/states'
 import { ConflictBanner } from './ConflictBanner'
 import { SlabLinksEditor } from './SlabLinksEditor'
 import { TagsInput } from './TagsInput'
+import { NewKindDialog } from '../Kinds/NewKindDialog'
 
 interface Form {
   title: string
@@ -102,6 +103,9 @@ function Editor({ loaded }: { loaded: Loaded }) {
   const [confirmReload, setConfirmReload] = useState(false)
   const [tab, setTab] = useState<'write' | 'preview'>('write')
   const [tagDraft, setTagDraft] = useState('')
+  // Kinds can be created from here (Slice 09b-2); kept in the API's order: lower(name), then id.
+  const [kinds, setKinds] = useState<NoteKind[]>(loaded.kinds)
+  const [creatingKind, setCreatingKind] = useState(false)
   // Latched while a save is in flight, and kept after a success until the
   // (transition-wrapped, lazy) navigation lands: no double create, no stale 409.
   const saving = useRef(false)
@@ -224,6 +228,11 @@ function Editor({ loaded }: { loaded: Loaded }) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 's') return
+      // Inside an open dialog (e.g. New kind) the shortcut must not save the note behind it.
+      if ((e.target as Element | null)?.closest?.('dialog')) {
+        e.preventDefault()
+        return
+      }
       e.preventDefault()
       void saveRef.current()
     }
@@ -281,15 +290,26 @@ function Editor({ loaded }: { loaded: Loaded }) {
         <Field label="Title" error={errors['title']}>
           {(props) => <Input {...props} value={form.title} onChange={(e) => set('title', e.target.value)} error={Boolean(errors['title'])} />}
         </Field>
-        <Field label="Kind" error={errors['kindId']}>
-          {(props) => (
-            <Select {...props} value={form.kindId} onChange={(e) => set('kindId', e.target.value)}>
-              {loaded.kinds.map((k) => (
-                <option key={k.id} value={k.id}>{k.name}</option>
-              ))}
-            </Select>
-          )}
-        </Field>
+        <div className="flex flex-col gap-1">
+          <Field label="Kind" error={errors['kindId']}>
+            {(props) => (
+              <div className="flex items-center gap-2">
+                <Select {...props} value={form.kindId} onChange={(e) => set('kindId', e.target.value)}>
+                  {kinds.map((k) => (
+                    <option key={k.id} value={k.id}>{k.name}</option>
+                  ))}
+                </Select>
+                <Button type="button" size="sm" variant="secondary" className="shrink-0" onClick={() => setCreatingKind(true)}>
+                  + New kind
+                </Button>
+              </div>
+            )}
+          </Field>
+          {/* A new tab, so an unsaved note is never left behind (and the guard does not fire). */}
+          <a href="/studies/kinds" target="_blank" rel="noopener noreferrer" className="self-end text-xs text-primary-300 hover:text-primary-200">
+            Manage kinds ↗
+          </a>
+        </div>
         {editing && (
           <Field label="Subject" error={errors['subjectId']}>
             {(props) => (
@@ -351,6 +371,21 @@ function Editor({ loaded }: { loaded: Loaded }) {
       />
 
       {guard.dialog}
+      {creatingKind && (
+        <NewKindDialog
+          onClose={() => setCreatingKind(false)}
+          onCreated={(kind, select) => {
+            setCreatingKind(false)
+            setKinds((ks) =>
+              [...ks, kind].sort((a, b) => {
+                const an = a.name.toLowerCase(), bn = b.name.toLowerCase()
+                return an < bn ? -1 : an > bn ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+              })
+            )
+            if (select) set('kindId', kind.id) // not if the user had already closed the dialog
+          }}
+        />
+      )}
       {confirmReload && (
         <Dialog
           open

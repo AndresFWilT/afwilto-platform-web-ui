@@ -134,6 +134,115 @@ describe('Editor layout (AC-F7, S09b-4)', () => {
   })
 })
 
+describe('Kinds from the editor (S09b2)', () => {
+  it('"+ New kind" creates a kind, selects it, and keeps the form (S09b2-1)', async () => {
+    const service = await openNew()
+    const createKind = vi.spyOn(service, 'createKind')
+    fill(page(), 'Title', 'Draft title')
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    fill(dialog, 'Name', 'Lab report')
+    click(dialog, 'Save')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(createKind).toHaveBeenCalledTimes(1)
+    expect(createKind).toHaveBeenCalledWith('Lab report')
+    expect(optionTexts(page(), 'Kind')).toEqual(['Cheat sheet', 'Lab report', 'Summary'])
+    expect(selectedText(page(), 'Kind')).toBe('Lab report')
+    expect(fieldValue(page(), 'Title')).toBe('Draft title')
+    expect(currentLocation()).toBe(NEW_URL)
+  })
+
+  it('the note is saved with the new kind (S09b2-2)', async () => {
+    const service = await openNew()
+    const create = vi.spyOn(service, 'createNote')
+    fill(page(), 'Title', 'With lab kind')
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    fill(dialog, 'Name', 'Lab report')
+    click(dialog, 'Save')
+    await waitFor(() => expect(selectedText(page(), 'Kind')).toBe('Lab report'))
+    const lab = (await service.listKinds()).find((k) => k.name === 'Lab report')!
+    click(page(), 'Save')
+    await waitFor(() => expect(create).toHaveBeenCalledWith(IDS.ccp, expect.objectContaining({ kindId: lab.id })))
+  })
+
+  it('validates on the client and shows a server duplicate under Name (S09b2-3)', async () => {
+    const service = await openNew()
+    const createKind = vi.spyOn(service, 'createKind')
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    click(dialog, 'Save')
+    expect(errorFor(dialog, 'Name')).toBe('Name is required')
+    expect(createKind).not.toHaveBeenCalled()
+    fill(dialog, 'Name', 'summary')
+    click(dialog, 'Save')
+    await waitFor(() => expect(errorFor(dialog, 'Name')).toBe('a note kind with this name already exists'))
+    expect(screen.getByRole('dialog', { name: 'New kind' })).toBeTruthy()
+    expect(selectedText(page(), 'Kind')).toBe('Cheat sheet')
+  })
+
+  it('Ctrl/Cmd+S inside the New kind dialog does not save the note', async () => {
+    const service = await openNew()
+    const create = vi.spyOn(service, 'createNote')
+    fill(page(), 'Title', 'Not yet')
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    fill(dialog, 'Name', 'Lab report')
+    fireEvent.keyDown(within(dialog).getByLabelText('Name'), { key: 's', ctrlKey: true })
+    fireEvent.keyDown(within(dialog).getByLabelText('Name'), { key: 's', metaKey: true })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(create).not.toHaveBeenCalled()
+    expect(currentLocation()).toBe(NEW_URL)
+    expect(screen.getByRole('dialog', { name: 'New kind' })).toBeTruthy()
+  })
+
+  it('a kind created after the dialog was closed is listed but not selected', async () => {
+    const base = new InMemoryStudiesAdapter(librarySeed())
+    let release!: () => void
+    const gate = new Promise<void>((r) => (release = r))
+    const service = Object.assign(base, {
+      createKind: async (name: string) => {
+        await gate
+        return InMemoryStudiesAdapter.prototype.createKind.call(base, name)
+      },
+    })
+    await openNew(service)
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    fill(dialog, 'Name', 'Lab report')
+    click(dialog, 'Save')
+    click(dialog, 'Cancel')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    release()
+    await waitFor(() => expect(optionTexts(page(), 'Kind')).toContain('Lab report'))
+    expect(selectedText(page(), 'Kind')).toBe('Cheat sheet')
+  })
+
+  it('in edit mode the new kind goes into the patch (S09b2-2)', async () => {
+    const service = await openEdit()
+    const update = vi.spyOn(service, 'updateNote')
+    click(page(), '+ New kind')
+    const dialog = await findDialog('New kind')
+    fill(dialog, 'Name', 'Lab report')
+    click(dialog, 'Save')
+    await waitFor(() => expect(selectedText(page(), 'Kind')).toBe('Lab report'))
+    const lab = (await service.listKinds()).find((k) => k.name === 'Lab report')!
+    click(page(), 'Save')
+    await waitFor(() => expect(update).toHaveBeenCalledWith(IDS.compute, { version: 3, kindId: lab.id }))
+  })
+
+  it('"Manage kinds" opens the kinds page in a new tab, without the guard (S09b2-4)', async () => {
+    await openNew()
+    fill(page(), 'Title', 'Dirty')
+    const link = screen.getByRole('link', { name: /Manage kinds/ })
+    expect(link.getAttribute('href')).toBe('/studies/kinds')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+    fireEvent.click(link)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
 describe('Create (S09b-5)', () => {
   it('posts trimmed title, kind, content, normalized tags and links, then lands on the note', async () => {
     const service = await openNew()
