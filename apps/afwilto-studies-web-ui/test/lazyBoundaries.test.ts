@@ -34,7 +34,7 @@ describe('lazy boundaries (AC-F14, S08-11)', () => {
 
   it('library, subject, tag and shared page modules never reach the markdown feature', () => {
     const offenders = sources
-      .filter((s) => /^pages\/(Library|Subject|Tag|shared)\//.test(s.rel))
+      .filter((s) => /^pages\/(Library|Subject|Tag|Category|Categories|Kinds|shared)\//.test(s.rel))
       .filter((s) => /features\/markdown/.test(s.text))
       .map((s) => s.rel)
     expect(offenders).toEqual([])

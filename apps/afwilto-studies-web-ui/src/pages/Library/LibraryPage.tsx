@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, EmptyState, Text } from '@afwilto/design-system'
-import type { Subject } from '@/application/ports'
+import type { Category, Subject } from '@/application/ports'
 import { buildCategoryTree, compareByName, type CategoryTreeNode } from '@/domain/categoryTree'
 import { useLibrary } from '@/hooks'
 import { ColorChip } from '../shared/chips'
 import { LoadError, LoadingRows } from '../shared/states'
 import { SubjectFormDialog } from '../Subject/SubjectFormDialog'
+import { CategoryActionButtons, useCategoryActions, type CategoryActions } from '../Categories/useCategoryActions'
 
 export function LibraryPage() {
-  const state = useLibrary()
+  const { state, data, reload } = useLibrary()
   const navigate = useNavigate()
-  const [creating, setCreating] = useState(false)
-  const hasCategories = state.status === 'success' && state.data.categories.length > 0
+  const [creatingSubject, setCreatingSubject] = useState(false)
+  const actions = useCategoryActions({ categories: data?.categories ?? [], onChanged: reload })
+  const hasCategories = (data?.categories.length ?? 0) > 0
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -20,25 +23,28 @@ export function LibraryPage() {
           <Text variant="h1" color="default">Studies</Text>
           <Text variant="body" color="muted">Categories, subjects and notes.</Text>
         </div>
-        {hasCategories && <Button onClick={() => setCreating(true)}>New subject</Button>}
+        <span className="flex gap-2">
+          <Button variant="secondary" onClick={() => actions.create(null)}>New category</Button>
+          {hasCategories && <Button onClick={() => setCreatingSubject(true)}>New subject</Button>}
+        </span>
       </div>
-      {creating && (
+      {creatingSubject && (
         <SubjectFormDialog
-          onClose={() => setCreating(false)}
+          onClose={() => setCreatingSubject(false)}
           onSaved={(subject) => {
-            setCreating(false)
+            setCreatingSubject(false)
             if (subject) navigate(`/studies/subjects/${subject.id}`)
           }}
         />
       )}
-      {state.status === 'loading' && <LoadingRows />}
       {state.status === 'error' && <LoadError error={state.error} />}
-      {state.status === 'success' && <Library categories={state.data.categories} subjects={state.data.subjects} />}
+      {state.status !== 'error' && (data ? <Library categories={data.categories} subjects={data.subjects} actions={actions} /> : <LoadingRows />)}
+      {actions.dialogs}
     </div>
   )
 }
 
-function Library({ categories, subjects }: { categories: Parameters<typeof buildCategoryTree>[0]; subjects: Subject[] }) {
+function Library({ categories, subjects, actions }: { categories: Category[]; subjects: Subject[]; actions: CategoryActions }) {
   const tree = useMemo(() => buildCategoryTree(categories), [categories])
   const subjectsByCategory = useMemo(() => {
     const groups = new Map<string, Subject[]>()
@@ -53,31 +59,36 @@ function Library({ categories, subjects }: { categories: Parameters<typeof build
         icon="📚"
         title="No categories yet"
         description="Categories you create will appear here as a tree."
-        action={
-          <Link to="/studies/categories" className="text-sm font-medium text-primary-300 hover:text-primary-200">
-            Create a category
-          </Link>
-        }
+        action={<Button onClick={() => actions.create(null)}>Create a category</Button>}
       />
     )
   }
   return (
     <ul role="tree" aria-label="Library" className="flex flex-col gap-1">
       {tree.map((node) => (
-        <CategoryNode key={node.id} node={node} subjectsByCategory={subjectsByCategory} />
+        <CategoryNode key={node.id} node={node} subjectsByCategory={subjectsByCategory} actions={actions} />
       ))}
     </ul>
   )
 }
 
-function CategoryNode({ node, subjectsByCategory }: { node: CategoryTreeNode; subjectsByCategory: Map<string, Subject[]> }) {
+function CategoryNode({
+  node,
+  subjectsByCategory,
+  actions,
+}: {
+  node: CategoryTreeNode
+  subjectsByCategory: Map<string, Subject[]>
+  actions: CategoryActions
+}) {
   const [expanded, setExpanded] = useState(true) // D-3: every node starts expanded
   const subjects = subjectsByCategory.get(node.id) ?? []
   const hasContent = node.children.length > 0 || subjects.length > 0
+  const { children, ...category } = node
 
   return (
     <li role="treeitem" aria-expanded={hasContent ? expanded : undefined} className="flex flex-col gap-1">
-      <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-raised">
+      <div className="flex flex-wrap items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-raised">
         {hasContent ? (
           <button
             type="button"
@@ -92,10 +103,13 @@ function CategoryNode({ node, subjectsByCategory }: { node: CategoryTreeNode; su
           <span aria-hidden className="h-5 w-5" />
         )}
         <ColorChip id={node.id} color={node.color} />
-        <span className="font-medium text-neutral-100">{node.name}</span>
+        <Link to={`/studies/categories/${node.id}`} className="font-medium text-neutral-100 hover:text-primary-300">
+          {node.name}
+        </Link>
         <span className="text-xs text-neutral-500">
           {node.subjectCount} {node.subjectCount === 1 ? 'subject' : 'subjects'}
         </span>
+        <CategoryActionButtons category={category} actions={actions} />
       </div>
       {hasContent && expanded && (
         <ul role="group" className="ml-5 flex flex-col gap-1 border-l border-surface-border pl-3">
@@ -113,8 +127,8 @@ function CategoryNode({ node, subjectsByCategory }: { node: CategoryTreeNode; su
               </Link>
             </li>
           ))}
-          {node.children.map((child) => (
-            <CategoryNode key={child.id} node={child} subjectsByCategory={subjectsByCategory} />
+          {children.map((child) => (
+            <CategoryNode key={child.id} node={child} subjectsByCategory={subjectsByCategory} actions={actions} />
           ))}
         </ul>
       )}

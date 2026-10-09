@@ -9,6 +9,7 @@ const NotePage = lazy(() => import('@/pages/Note/NotePage').then((m) => ({ defau
 const CategoriesPage = lazy(() =>
   import('@/pages/Categories/CategoriesPage').then((m) => ({ default: m.CategoriesPage }))
 )
+const CategoryPage = lazy(() => import('@/pages/Category/CategoryPage').then((m) => ({ default: m.CategoryPage })))
 const KindsPage = lazy(() => import('@/pages/Kinds/KindsPage').then((m) => ({ default: m.KindsPage })))
 const TagPage = lazy(() => import('@/pages/Tag/TagPage').then((m) => ({ default: m.TagPage })))
 
@@ -43,6 +44,7 @@ function NotFound() {
 export const childRoutes: RouteObject[] = [
   { path: '', element: withSuspense(LibraryPage) },
   { path: 'categories', element: withSuspense(CategoriesPage) },
+  { path: 'categories/:categoryId', element: withSuspense(CategoryPage) },
   { path: 'kinds', element: withSuspense(KindsPage) },
   { path: 'subjects/:subjectId', element: withSuspense(SubjectPage) },
   { path: 'notes/:noteId', element: withSuspense(NotePage) },

@@ -122,6 +122,26 @@ describe('Edit subject (S09a-9)', () => {
     expect((within(dialog).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('moving into a category created after the page loaded still shows its full breadcrumb (F4)', async () => {
+    const service = new InMemoryStudiesAdapter(librarySeed())
+    const { dialog } = await openEdit(service)
+    const physics = await service.createCategory({ name: 'Physics', color: '#22D3EE', parentId: IDS.math })
+    click(dialog, 'Cancel')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    click(page(), 'Edit subject')
+    const again = await findDialog('Edit subject')
+    choose(again, 'Category', 'Math / Physics')
+    click(again, 'Save')
+    await waitFor(() => {
+      const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
+      expect(within(crumbs).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+        '/studies',
+        `/studies/categories/${IDS.math}`,
+        `/studies/categories/${physics.id}`,
+      ])
+    })
+  })
+
   it('changing the category moves the subject and the path follows', async () => {
     const service = new InMemoryStudiesAdapter(librarySeed())
     const update = vi.spyOn(service, 'updateSubject')
@@ -129,7 +149,10 @@ describe('Edit subject (S09a-9)', () => {
     choose(dialog, 'Category', 'Math')
     click(dialog, 'Save')
     await waitFor(() => expect(update).toHaveBeenCalledWith(IDS.ccp, { categoryId: IDS.math }))
-    expect(await screen.findByText('Math')).toBeTruthy()
+    await waitFor(() => {
+      const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
+      expect(within(crumbs).getAllByRole('link').map((a) => a.textContent)).toEqual(['Studies', 'Math'])
+    })
   })
 })
 

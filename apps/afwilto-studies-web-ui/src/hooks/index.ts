@@ -1,15 +1,23 @@
 import type { NoteSort } from '@/application/ports'
 import { useServices } from '@/di'
 import { useAsync } from './useAsync'
+import { useReloadable } from './useReloadable'
 
 export type { AsyncState } from './useAsync'
 
+/** Categories + subjects; reload() keeps the previous data on screen meanwhile. */
 export function useLibrary() {
   const { studiesService } = useServices()
-  return useAsync(async () => {
+  return useReloadable(async () => {
     const [categories, subjects] = await Promise.all([studiesService.listCategories(), studiesService.listSubjects()])
     return { categories, subjects }
   }, [studiesService])
+}
+
+/** Every alive category, refetched whenever `key` changes (e.g. the subject's category id). */
+export function useCategories(key = '') {
+  const { studiesService } = useServices()
+  return useAsync(() => studiesService.listCategories(), [studiesService, key])
 }
 
 export function useSubject(subjectId: string, reload = 0) {

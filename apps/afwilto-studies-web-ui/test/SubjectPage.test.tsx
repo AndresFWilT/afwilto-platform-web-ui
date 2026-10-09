@@ -17,11 +17,25 @@ function chooseSort(label: string) {
 }
 
 describe('SubjectPage (AC-F4)', () => {
-  it('shows the category path, name and description (S07-6)', async () => {
+  it('shows the category breadcrumb, name and description (S07-6, S09a2-8)', async () => {
     renderAt(SUBJECT_URL)
     expect(await screen.findByRole('heading', { level: 1, name: 'AWS Certified Cloud Practitioner' })).toBeTruthy()
-    expect(screen.getByText('TI / Cloud / AWS')).toBeTruthy()
+    const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(crumbs).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+      ['Studies', '/studies'],
+      ['TI', `/studies/categories/${IDS.ti}`],
+      ['Cloud', `/studies/categories/${IDS.cloud}`],
+      ['AWS', `/studies/categories/${IDS.aws}`],
+    ])
     expect(screen.getByText('Foundational AWS certification.')).toBeTruthy()
+  })
+
+  it('a breadcrumb segment navigates to that category view (S09a2-8)', async () => {
+    renderAt(SUBJECT_URL)
+    const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' })
+    fireEvent.click(within(crumbs).getByRole('link', { name: 'Cloud' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cloud' })).toBeTruthy()
+    expect(currentLocation()).toBe(`/studies/categories/${IDS.cloud}`)
   })
 
   it('renders one row per note with title link, kind badge, tags and updated date (S07-6)', async () => {

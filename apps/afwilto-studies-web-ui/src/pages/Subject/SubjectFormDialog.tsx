@@ -10,17 +10,19 @@ import { GONE_MESSAGE, toFormFailure } from '../shared/serverErrors'
 interface Props {
   /** Absent: create. Present: edit with a minimal patch. */
   subject?: Subject
+  /** Create mode: the category to preselect (e.g. from a category view). */
+  defaultCategoryId?: string
   onSaved: (subject: Subject | null) => void
   onClose: () => void
 }
 
 /** Create or edit a subject: category (by path), name, description (FR-2, BR-SUB1). */
-export function SubjectFormDialog({ subject, onSaved, onClose }: Props) {
+export function SubjectFormDialog({ subject, defaultCategoryId, onSaved, onClose }: Props) {
   const { studiesService } = useServices()
   const { showToast } = useToast()
   const categories = useAsync(() => studiesService.listCategories(), [studiesService])
 
-  const [categoryId, setCategoryId] = useState(subject?.categoryId ?? '')
+  const [categoryId, setCategoryId] = useState(subject?.categoryId ?? defaultCategoryId ?? '')
   const [name, setName] = useState(subject?.name ?? '')
   const [description, setDescription] = useState(subject?.description ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})

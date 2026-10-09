@@ -15,7 +15,7 @@ describe('route table (parent §9.1, Slice 07 scope)', () => {
 
   it('declares exactly the read-path routes, all relative', () => {
     const paths = childRoutes.map((r) => r.path)
-    expect(paths).toEqual(['', 'categories', 'kinds', 'subjects/:subjectId', 'notes/:noteId', 'tags/:tag', '*'])
+    expect(paths).toEqual(['', 'categories', 'categories/:categoryId', 'kinds', 'subjects/:subjectId', 'notes/:noteId', 'tags/:tag', '*'])
   })
 })
 

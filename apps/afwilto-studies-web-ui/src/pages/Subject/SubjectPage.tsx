@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import type { NoteSummary } from '@/application/ports'
 import { useServices } from '@/di'
-import { useSubject, useSubjectNotes } from '@/hooks'
+import { useCategories, useSubject, useSubjectNotes } from '@/hooks'
+import { CategoryBreadcrumb } from '../shared/CategoryBreadcrumb'
 import { DeleteDialog } from '../shared/DeleteDialog'
 import { SubjectFormDialog } from './SubjectFormDialog'
 import { SortSelect, useSortParam } from '../shared/SortSelect'
@@ -23,6 +24,9 @@ export function SubjectPage() {
   // which would unmount it); closing then leaves for the library.
   const [subjectGone, setSubjectGone] = useState(false)
   const notes = useSubjectNotes(subjectId, sort)
+  // Ancestors for the breadcrumb, refetched whenever the subject's category changes,
+  // so a move into a category created after this page loaded still resolves (F4).
+  const categories = useCategories(subject.status === 'success' && subject.data ? subject.data.category.id : '')
 
   if (subject.status === 'loading') return <LoadingRows />
   if (subject.status === 'error') return <LoadError error={subject.error} />
@@ -34,7 +38,11 @@ export function SubjectPage() {
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-sm text-neutral-400">
           <ColorChip id={s.category.id} color={s.category.color} />
-          <span>{s.category.path}</span>
+          {categories.status === 'success' ? (
+            <CategoryBreadcrumb categories={categories.data} categoryId={s.category.id} fallbackPath={s.category.path} />
+          ) : (
+            <span>{s.category.path}</span>
+          )}
         </div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <Text variant="h1" color="default">{s.name}</Text>
