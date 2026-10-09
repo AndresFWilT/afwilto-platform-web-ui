@@ -93,4 +93,5 @@ The note editor's **Kind** field gains two actions next to its `Select`:
 
   All are fixed with tests that were red first. Final count: 624 tests green, and 3
   mutations killed.
-- **S09b2-6 manual check:** _pending, owner._
+- **S09b2-6 manual check (owner, 2026-10-09).** "Funciona": the owner created a kind
+  from the editor and saved a note with it.
