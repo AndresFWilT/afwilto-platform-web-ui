@@ -351,4 +351,7 @@ module.
 - **Color picker amendment (2026-10-09).** Five tests were red first. The suite is
   green at 423, and 3 mutations are killed: the picker not writing uppercase, the
   picker ignoring a typed hex, and no default color.
-- **S09a-12 manual check:** _pending, owner._
+- **S09a-12 manual check (owner, 2026-10-09).** Confirmed "Si funciona" for the
+  category tree and subject flows. Renaming a note kind on `/studies/kinds` was not
+  explicitly exercised: the owner asked whether "kinds" meant categories, and the answer
+  was that they are note kinds. The kinds page stays covered by `KindsPage.test.tsx`.

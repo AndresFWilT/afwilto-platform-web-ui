@@ -140,4 +140,5 @@ The owner reported two gaps:
 
   All are fixed, with tests that were red first. Final count: 449 tests green, and 13
   mutations (the review findings plus the author's set) are all killed.
-- **S09a2-10 manual check:** _pending, owner_ (together with S09a-12).
+- **S09a2-10 manual check (owner, 2026-10-09).** Confirmed working ("Si funciona"):
+  creating the tree from the library, and climbing the breadcrumb.
