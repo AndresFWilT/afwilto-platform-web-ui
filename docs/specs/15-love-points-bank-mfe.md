@@ -3,6 +3,17 @@
 > Status: **Approved** (owner chat approval — implementation authorized)
 > Depends on: `00-system-architecture.md`, `02-shell-host.md`
 > Precedent: `07-finance-mfe.md` (port an existing standalone app, no internal rewrite)
+> **Amendment 2026-10-09 (owner decision): the backend has its own repository.**
+> - **New repo:** the Go service, its migrations and `api/openapi.yaml` were extracted, with
+>   history, into `backend/afwilto-love-points-bank-mngr`
+>   (`git@github.com:AndresFWilT/afwilto-love-points-bank-mngr.git`). `backend/` moved to the
+>   repo root and `data-base/migrations` to `migrations/`.
+> - **Platform compose:** the `afwilto-platform-iac` compose builds `love-points-mngr` and mounts
+>   `love-points-migrate`'s migrations from that repo.
+> - **Frontend:** it lives only as the MFE in this monorepo.
+> - **Old checkout:** the sibling `../love-points-bank` is no longer used by the platform and
+>   is kept locally as an archive. Where this spec says that repo is the source of truth for
+>   the backend, read the new manager repo instead.
 
 ---
 
