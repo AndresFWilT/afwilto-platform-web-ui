@@ -343,4 +343,5 @@ Parent criteria covered: **AC-F7, AC-F8, AC-F9**, and the picker half of **AC-F1
     - **Narrow:** tabs, with the preview visible on its tab. Undo history survives a
       tab round trip.
     - **Subject page:** note rows lay out as a row on wide screens.
-- **S09b-13 manual check:** _pending, owner (re-test after the fix)._
+- **S09b-13 manual check (owner, 2026-10-09).** "Funcionó": create, edit, the
+  conflict flow and delete were confirmed in the browser after the fix.

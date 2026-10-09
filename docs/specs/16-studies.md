@@ -1,7 +1,7 @@
 # Spec 16 — Studies (full-stack module: `afwilto-studies-web-ui` + `afwilto-studies-mngr`)
 
-> Status: **Approved 2026-10-07** (owner chat — all open questions OQ-1..OQ-8 resolved, no
-> further changes requested; implementation authorized slice by slice)
+> Status: **MVP implemented 2026-10-09** (slices 01–09b, all reviewed and owner-checked; see
+> §14). Approved 2026-10-07 (owner chat — all open questions OQ-1..OQ-8 resolved).
 > Owner: afwilto · Created: 2026-10-07
 > Revision 4 (2026-10-08): Slice 09 split into 09a / 09b. The order is unchanged
 > (owner chat).
@@ -786,3 +786,36 @@ one starts.
 | OQ-6 | Maximum category depth | 5 levels (owner confirmed) |
 | OQ-7 | May subjects attach to non-leaf categories? | Yes (owner confirmed) |
 | OQ-8 | When deleting a parent with alive children, block or cascade the logical delete? | Block with `in_use` (owner confirmed). Cascading would hide whole subtrees with one click, and there is no restore UI. |
+
+---
+
+## 14. MVP completion record (2026-10-09)
+
+| MVP item (§1.2) | Slice(s) | State |
+|---|---|---|
+| 1. Hierarchical categories | 02, 07, 09a, 09a-2 | Done |
+| 2. Note kinds | 03, 09a | Done |
+| 3. Subjects | 04, 07, 09a | Done |
+| 4. Notes CRUD and sorting | 05, 07, 09b | Done |
+| 5. Markdown rendering (GFM, KaTeX, Shiki, Mermaid) | 08 | Done |
+| 6. Tags and the per-tag view | 06, 07 | Done |
+| 7. Links to slab | 06, 08 | Done |
+| 8. Logical deletion everywhere | 01–06, 09a, 09b | Done |
+
+**Acceptance criteria.** AC-B1..B26 and AC-F1..F14 are each covered by tests. Each
+slice passed an independent review and a mutation re-check. Known, owner-accepted
+deviations:
+- **AC-F8:** the unsaved-changes guard covers in-app links, Cancel and tab
+  close/reload, but not the browser Back button (09b D-1). The shell uses a
+  declarative router.
+- **GFM footnotes:** references render as plain text, because react-markdown 10 +
+  remark-gfm 4 emit no definitions section (08 §2.2). They are outside FR-4.
+- **Chunk errors after a redeploy:** a tab opened before a redeploy needs a reload
+  (09a). This is cache behavior, and the owner declined a handler.
+
+**Open beyond the MVP:**
+- **§12 future features:** version history, draw.io, full-text search, a trash UI,
+  image uploads, export, slugs and backlinks, autosave.
+- **Cross-MFE issue found here:** the shell and every remote load separate Tailwind
+  builds, so base + responsive utility pairs can lose by stylesheet order. Studies
+  guards against it with a static test; the other MFEs were not audited.
