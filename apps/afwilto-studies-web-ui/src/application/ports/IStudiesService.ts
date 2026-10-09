@@ -71,6 +71,44 @@ export interface NoteSort {
 
 export const DEFAULT_NOTE_SORT: NoteSort = { field: 'title', order: 'asc' }
 
+export interface NoteKind {
+  id: string
+  name: string
+  noteCount: number
+}
+
+export interface CreateCategoryInput {
+  name: string
+  color: string
+  /** null creates a root category. */
+  parentId: string | null
+}
+
+/** Absent keys are unchanged; `parentId: null` moves the category to the root. */
+export interface CategoryPatch {
+  name?: string
+  color?: string
+  parentId?: string | null
+}
+
+export interface CreateSubjectInput {
+  categoryId: string
+  name: string
+  description: string | null
+}
+
+/** Absent keys are unchanged; `description: null` clears it. */
+export interface SubjectPatch {
+  categoryId?: string
+  name?: string
+  description?: string | null
+}
+
+/**
+ * Writes reject with the typed errors of `@/application/errors`:
+ * StudiesValidationError (422), StudiesConflictError (409) and
+ * StudiesNotFoundError (the target is gone).
+ */
 export interface IStudiesService {
   listCategories(): Promise<Category[]>
   /** Every alive subject; the library groups them by categoryId. */
@@ -83,4 +121,18 @@ export interface IStudiesService {
   getNote(id: string): Promise<Note | null>
   /** The tag is sent raw; it is normalized like the backend does. */
   listNotesByTag(tag: string, sort?: NoteSort): Promise<TaggedNoteSummary[]>
+
+  createCategory(input: CreateCategoryInput): Promise<Category>
+  updateCategory(id: string, patch: CategoryPatch): Promise<Category>
+  deleteCategory(id: string): Promise<void>
+
+  /** Alive kinds, alphabetical, each with its alive note count. */
+  listKinds(): Promise<NoteKind[]>
+  createKind(name: string): Promise<NoteKind>
+  renameKind(id: string, name: string): Promise<NoteKind>
+  deleteKind(id: string): Promise<void>
+
+  createSubject(input: CreateSubjectInput): Promise<Subject>
+  updateSubject(id: string, patch: SubjectPatch): Promise<Subject>
+  deleteSubject(id: string): Promise<void>
 }

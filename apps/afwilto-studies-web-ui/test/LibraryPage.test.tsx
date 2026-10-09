@@ -80,6 +80,7 @@ describe('LibraryPage (AC-F3)', () => {
   it('shows "No categories yet" for an empty library (S07-5)', async () => {
     renderAt('/studies', new InMemoryStudiesAdapter({ categories: [], kinds: [], subjects: [], notes: [] }))
     expect(await screen.findByText('No categories yet')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Create a category' }).getAttribute('href')).toBe('/studies/categories')
   })
 
   it('shows an Alert with the service message on failure; the navbar stays (S07-5)', async () => {

@@ -31,3 +31,31 @@ export function buildCategoryTree(flat: Category[]): CategoryTreeNode[] {
   }
   return sortLevel(roots)
 }
+
+function findNode(tree: CategoryTreeNode[], id: string): CategoryTreeNode | undefined {
+  for (const node of tree) {
+    if (node.id === id) return node
+    const found = findNode(node.children, id)
+    if (found) return found
+  }
+  return undefined
+}
+
+/** The category and every descendant (AC-F13): never valid parents for it. Empty if unknown. */
+export function descendantsOf(tree: CategoryTreeNode[], id: string): Set<string> {
+  const ids = new Set<string>()
+  const collect = (node: CategoryTreeNode) => {
+    ids.add(node.id)
+    node.children.forEach(collect)
+  }
+  const root = findNode(tree, id)
+  if (root) collect(root)
+  return ids
+}
+
+/** Levels in the subtree rooted at `id`: 1 for a leaf, 0 if unknown (BR-CAT3). */
+export function subtreeHeight(tree: CategoryTreeNode[], id: string): number {
+  const height = (node: CategoryTreeNode): number => 1 + Math.max(0, ...node.children.map(height))
+  const root = findNode(tree, id)
+  return root ? height(root) : 0
+}

@@ -50,5 +50,15 @@ export function failingService(message: string): IStudiesService {
     listSubjectNotes: fail,
     getNote: fail,
     listNotesByTag: fail,
+    createCategory: fail,
+    updateCategory: fail,
+    deleteCategory: fail,
+    listKinds: fail,
+    createKind: fail,
+    renameKind: fail,
+    deleteKind: fail,
+    createSubject: fail,
+    updateSubject: fail,
+    deleteSubject: fail,
   }
 }

@@ -1,7 +1,11 @@
-import { Link, useParams } from 'react-router-dom'
-import { EmptyState, Text } from '@afwilto/design-system'
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import type { NoteSummary } from '@/application/ports'
+import { useServices } from '@/di'
 import { useSubject, useSubjectNotes } from '@/hooks'
+import { DeleteDialog } from '../shared/DeleteDialog'
+import { SubjectFormDialog } from './SubjectFormDialog'
 import { SortSelect, useSortParam } from '../shared/SortSelect'
 import { ColorChip, DateText, KindBadge, TagList } from '../shared/chips'
 import { LoadError, LoadingRows } from '../shared/states'
@@ -9,7 +13,15 @@ import { LoadError, LoadingRows } from '../shared/states'
 export function SubjectPage() {
   const { subjectId = '' } = useParams()
   const [sort, setSort] = useSortParam()
-  const subject = useSubject(subjectId)
+  const [reload, setReload] = useState(0)
+  const subject = useSubject(subjectId, reload)
+  const { studiesService } = useServices()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
+  const [modal, setModal] = useState<'edit' | 'delete' | null>(null)
+  // A delete that finds the subject already gone keeps its dialog (no refetch,
+  // which would unmount it); closing then leaves for the library.
+  const [subjectGone, setSubjectGone] = useState(false)
   const notes = useSubjectNotes(subjectId, sort)
 
   if (subject.status === 'loading') return <LoadingRows />
@@ -24,9 +36,43 @@ export function SubjectPage() {
           <ColorChip id={s.category.id} color={s.category.color} />
           <span>{s.category.path}</span>
         </div>
-        <Text variant="h1" color="default">{s.name}</Text>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <Text variant="h1" color="default">{s.name}</Text>
+          <span className="flex gap-1">
+            <Button size="sm" variant="ghost" onClick={() => setModal('edit')}>Edit subject</Button>
+            <Button size="sm" variant="ghost" onClick={() => setModal('delete')}>Delete subject</Button>
+          </span>
+        </div>
         {s.description !== null && <Text variant="body" color="muted">{s.description}</Text>}
       </header>
+
+      {modal === 'edit' && (
+        <SubjectFormDialog
+          subject={s}
+          onClose={() => setModal(null)}
+          onSaved={(updated) => {
+            setModal(null)
+            if (!updated) return
+            showToast('Subject updated', 'success')
+            setReload((n) => n + 1)
+          }}
+        />
+      )}
+      {modal === 'delete' && (
+        <DeleteDialog
+          entity="subject"
+          name={s.name}
+          inUseText="Move or delete its notes first."
+          onConfirm={() => studiesService.deleteSubject(s.id)}
+          onDeleted={() => {
+            setModal(null)
+            showToast('Subject deleted', 'success')
+            navigate('/studies')
+          }}
+          onGone={() => setSubjectGone(true)}
+          onClose={() => (subjectGone ? navigate('/studies') : setModal(null))}
+        />
+      )}
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">

@@ -2,13 +2,25 @@ import { HttpError, type IHttpClient } from '@afwilto/http-client'
 import {
   DEFAULT_NOTE_SORT,
   type Category,
+  type CategoryPatch,
+  type CreateCategoryInput,
+  type CreateSubjectInput,
   type IStudiesService,
+  type NoteKind,
+  type SubjectPatch,
   type Note,
   type NoteSort,
   type NoteSummary,
   type Subject,
   type TaggedNoteSummary,
 } from '@/application/ports'
+import {
+  StudiesConflictError,
+  StudiesNotFoundError,
+  StudiesValidationError,
+  type ConflictRule,
+  type Violation,
+} from '@/application/errors'
 
 // The read port mirrors the OpenAPI schemas field for field (api/openapi.yaml),
 // so the wire bodies need no mapping beyond unwrapping the envelope.
@@ -18,15 +30,21 @@ interface ApiEnvelope<T> {
 }
 
 interface WireError {
-  error?: { code?: string; message?: string; details?: Array<{ field: string; rule: string; message: string }> }
+  error?: { code?: string; message?: string; details?: Violation[] }
 }
 
+/** HTTP failures → the port's domain errors; status codes never leave the adapter. */
 function translateError(e: unknown): Error {
   if (e instanceof HttpError) {
     const err = (e.body as WireError | null)?.error
-    if (err && Array.isArray(err.details) && err.details.length) {
-      return new Error(err.details.map((d) => d.message).join('; '))
+    const details = Array.isArray(err?.details) ? err!.details : []
+    if (e.status === 422 && details.length) return new StudiesValidationError(details)
+    if (e.status === 409 && details.length) {
+      const [first] = details
+      return new StudiesConflictError(first.field, first.rule as ConflictRule, first.message || err?.message || 'conflict')
     }
+    if (e.status === 404) return new StudiesNotFoundError(err?.message)
+    if (details.length) return new Error(details.map((d) => d.message).join('; '))
     if (err?.message) return new Error(err.message)
     return new Error(`Request failed (${e.status})`)
   }
@@ -81,6 +99,63 @@ export class StudiesHttpAdapter implements IStudiesService {
 
   listNotesByTag(tag: string, sort: NoteSort = DEFAULT_NOTE_SORT): Promise<TaggedNoteSummary[]> {
     return this.data<TaggedNoteSummary[]>(withQuery('/notes', sortParams(new URLSearchParams({ tag }), sort)))
+  }
+
+  listKinds(): Promise<NoteKind[]> {
+    return this.data<NoteKind[]>('/note-kinds')
+  }
+
+  createCategory(input: CreateCategoryInput): Promise<Category> {
+    return this.send<Category>('post', '/categories', input)
+  }
+
+  updateCategory(id: string, patch: CategoryPatch): Promise<Category> {
+    return this.send<Category>('patch', `/categories/${encodeURIComponent(id)}`, patch)
+  }
+
+  deleteCategory(id: string): Promise<void> {
+    return this.remove(`/categories/${encodeURIComponent(id)}`)
+  }
+
+  createKind(name: string): Promise<NoteKind> {
+    return this.send<NoteKind>('post', '/note-kinds', { name })
+  }
+
+  renameKind(id: string, name: string): Promise<NoteKind> {
+    return this.send<NoteKind>('patch', `/note-kinds/${encodeURIComponent(id)}`, { name })
+  }
+
+  deleteKind(id: string): Promise<void> {
+    return this.remove(`/note-kinds/${encodeURIComponent(id)}`)
+  }
+
+  createSubject(input: CreateSubjectInput): Promise<Subject> {
+    return this.send<Subject>('post', '/subjects', input)
+  }
+
+  updateSubject(id: string, patch: SubjectPatch): Promise<Subject> {
+    return this.send<Subject>('patch', `/subjects/${encodeURIComponent(id)}`, patch)
+  }
+
+  deleteSubject(id: string): Promise<void> {
+    return this.remove(`/subjects/${encodeURIComponent(id)}`)
+  }
+
+  /** POST/PATCH with the body as given: absent keys stay absent, null stays null. */
+  private async send<T>(method: 'post' | 'patch', path: string, body: object): Promise<T> {
+    try {
+      return (await this.http[method]<ApiEnvelope<T>>(path, body)).data
+    } catch (e) {
+      throw translateError(e)
+    }
+  }
+
+  private async remove(path: string): Promise<void> {
+    try {
+      await this.http.delete<void>(path)
+    } catch (e) {
+      throw translateError(e)
+    }
   }
 
   private async data<T>(path: string): Promise<T> {

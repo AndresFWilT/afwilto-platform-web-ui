@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCategoryTree, type CategoryTreeNode } from '../src/domain/categoryTree'
+import { buildCategoryTree, descendantsOf, subtreeHeight, type CategoryTreeNode } from '../src/domain/categoryTree'
 import type { Category } from '../src/application/ports'
 
 function cat(id: string, name: string, parentId: string | null = null): Category {
@@ -70,5 +70,33 @@ describe('buildCategoryTree (AC-F2, S07-3)', () => {
     const copy = structuredClone(flat)
     buildCategoryTree(flat)
     expect(flat).toEqual(copy)
+  })
+})
+
+describe('descendantsOf / subtreeHeight (AC-F13, S09a-3)', () => {
+  const tree = buildCategoryTree([
+    cat('ti', 'TI'),
+    cat('cloud', 'Cloud', 'ti'),
+    cat('aws', 'AWS', 'cloud'),
+    cat('azure', 'Azure', 'cloud'),
+    cat('math', 'Math'),
+  ])
+
+  it('returns the category itself plus every descendant', () => {
+    expect([...descendantsOf(tree, 'cloud')].sort()).toEqual(['aws', 'azure', 'cloud'])
+    expect([...descendantsOf(tree, 'ti')].sort()).toEqual(['aws', 'azure', 'cloud', 'ti'])
+  })
+
+  it('a leaf has only itself; an unknown id gives an empty set', () => {
+    expect([...descendantsOf(tree, 'aws')]).toEqual(['aws'])
+    expect(descendantsOf(tree, 'nope').size).toBe(0)
+  })
+
+  it('height counts levels: leaf 1, Cloud 2, TI 3; unknown 0', () => {
+    expect(subtreeHeight(tree, 'aws')).toBe(1)
+    expect(subtreeHeight(tree, 'cloud')).toBe(2)
+    expect(subtreeHeight(tree, 'ti')).toBe(3)
+    expect(subtreeHeight(tree, 'math')).toBe(1)
+    expect(subtreeHeight(tree, 'nope')).toBe(0)
   })
 })

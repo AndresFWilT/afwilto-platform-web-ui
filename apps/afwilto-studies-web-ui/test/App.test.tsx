@@ -15,22 +15,21 @@ describe('route table (parent §9.1, Slice 07 scope)', () => {
 
   it('declares exactly the read-path routes, all relative', () => {
     const paths = childRoutes.map((r) => r.path)
-    expect(paths).toEqual(['', 'subjects/:subjectId', 'notes/:noteId', 'tags/:tag', '*'])
+    expect(paths).toEqual(['', 'categories', 'kinds', 'subjects/:subjectId', 'notes/:noteId', 'tags/:tag', '*'])
   })
 })
 
 describe('App chrome and isolation', () => {
-  it('renders the studies navbar with Home and Studies', async () => {
+  it('renders the studies navbar: Home, Studies, Categories, Kinds (S09a-10)', async () => {
     renderAt('/studies')
     const nav = screen.getByRole('navigation')
     const hrefs = Array.from(nav.querySelectorAll('a')).map((a) => a.getAttribute('href'))
-    expect(hrefs).toContain('/')
-    expect(hrefs).toContain('/studies')
+    for (const href of ['/', '/studies', '/studies/categories', '/studies/kinds']) expect(hrefs).toContain(href)
     await screen.findByText('TI')
   })
 
   it('an unknown in-app path renders "Not found" inside the layout (S07-9)', async () => {
-    renderAt('/studies/kinds')
+    renderAt('/studies/nope')
     expect(await screen.findByText('Not found')).toBeTruthy()
     expect(screen.getByRole('navigation')).toBeTruthy()
   })

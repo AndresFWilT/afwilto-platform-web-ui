@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { HttpError, type IHttpClient } from '@afwilto/http-client'
 import { StudiesHttpAdapter } from '../src/infrastructure/adapters/http/StudiesHttpAdapter'
+import { StudiesConflictError, StudiesNotFoundError, StudiesValidationError } from '../src/application/errors'
 
 function makeHttpClient(): IHttpClient {
   return {
@@ -138,5 +139,95 @@ describe('StudiesHttpAdapter (S07-12)', () => {
       vi.mocked(http.get).mockRejectedValue(new TypeError('Failed to fetch'))
       await expect(adapter.listCategories()).rejects.toThrow('Failed to fetch')
     })
+  })
+})
+
+describe('StudiesHttpAdapter writes (S09a-2)', () => {
+  let http: IHttpClient
+  let adapter: StudiesHttpAdapter
+
+  beforeEach(() => {
+    http = makeHttpClient()
+    adapter = new StudiesHttpAdapter(http)
+    vi.mocked(http.post).mockResolvedValue({ data: { id: 'new' } })
+    vi.mocked(http.patch).mockResolvedValue({ data: { id: 'x' } })
+    vi.mocked(http.delete).mockResolvedValue(undefined)
+  })
+
+  it.each([
+    ['createCategory', (a: StudiesHttpAdapter) => a.createCategory({ name: 'TI', color: '#22D3EE', parentId: null }), 'post', '/categories', { name: 'TI', color: '#22D3EE', parentId: null }],
+    ['updateCategory to root', (a: StudiesHttpAdapter) => a.updateCategory('c-1', { parentId: null }), 'patch', '/categories/c-1', { parentId: null }],
+    ['updateCategory rename only', (a: StudiesHttpAdapter) => a.updateCategory('c-1', { name: 'X' }), 'patch', '/categories/c-1', { name: 'X' }],
+    ['createKind', (a: StudiesHttpAdapter) => a.createKind('Lab'), 'post', '/note-kinds', { name: 'Lab' }],
+    ['renameKind', (a: StudiesHttpAdapter) => a.renameKind('k-1', 'Lab'), 'patch', '/note-kinds/k-1', { name: 'Lab' }],
+    ['createSubject', (a: StudiesHttpAdapter) => a.createSubject({ categoryId: 'c-1', name: 'S', description: null }), 'post', '/subjects', { categoryId: 'c-1', name: 'S', description: null }],
+    ['updateSubject clears description', (a: StudiesHttpAdapter) => a.updateSubject('s-1', { description: null }), 'patch', '/subjects/s-1', { description: null }],
+  ] as const)('%s sends %s %s with the exact body', async (_name, call, method, path, body) => {
+    await call(adapter)
+    expect(http[method]).toHaveBeenCalledWith(path, body)
+    const sent = vi.mocked(http[method]).mock.calls[0][1] as Record<string, unknown>
+    expect(Object.keys(sent).sort()).toEqual(Object.keys(body).sort()) // absent keys stay absent
+  })
+
+  it('unwraps the created entity', async () => {
+    vi.mocked(http.post).mockResolvedValue({ data: { id: 'k-9', name: 'Lab', noteCount: 0 } })
+    expect(await adapter.createKind('Lab')).toEqual({ id: 'k-9', name: 'Lab', noteCount: 0 })
+  })
+
+  it('lists kinds from GET /note-kinds', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: [{ id: 'k', name: 'Summary', noteCount: 2 }], meta: { totalItems: 1 } })
+    expect(await adapter.listKinds()).toEqual([{ id: 'k', name: 'Summary', noteCount: 2 }])
+    expect(http.get).toHaveBeenCalledWith('/note-kinds')
+  })
+
+  it.each([
+    ['deleteCategory', (a: StudiesHttpAdapter) => a.deleteCategory('c-1'), '/categories/c-1'],
+    ['deleteKind', (a: StudiesHttpAdapter) => a.deleteKind('k-1'), '/note-kinds/k-1'],
+    ['deleteSubject', (a: StudiesHttpAdapter) => a.deleteSubject('s-1'), '/subjects/s-1'],
+  ])('%s sends DELETE %s and resolves undefined on 204', async (_name, call, path) => {
+    await expect(call(adapter)).resolves.toBeUndefined()
+    expect(http.delete).toHaveBeenCalledWith(path)
+  })
+
+  it('maps a 422 to StudiesValidationError with every violation', async () => {
+    const details = [
+      { field: 'name', rule: 'required', message: 'name must not be empty' },
+      { field: 'color', rule: 'format', message: 'color must be a 6-digit hex value like #22D3EE' },
+    ]
+    vi.mocked(http.post).mockRejectedValue(
+      new HttpError(422, 'Unprocessable Entity', { error: { code: 'validation_failed', message: 'validation failed', details } })
+    )
+    const e = await adapter.createCategory({ name: '', color: 'x', parentId: null }).catch((err: unknown) => err)
+    expect(e).toBeInstanceOf(StudiesValidationError)
+    expect((e as StudiesValidationError).violations).toEqual(details)
+    expect((e as Error).message).toBe('name must not be empty; color must be a 6-digit hex value like #22D3EE')
+  })
+
+  it.each(['duplicate_name', 'in_use', 'stale_version'] as const)('maps a 409 %s to StudiesConflictError', async (rule) => {
+    vi.mocked(http.delete).mockRejectedValue(
+      new HttpError(409, 'Conflict', { error: { code: 'conflict', message: 'busy', details: [{ field: 'id', rule, message: 'busy' }] } })
+    )
+    const e = await adapter.deleteCategory('c-1').catch((err: unknown) => err)
+    expect(e).toBeInstanceOf(StudiesConflictError)
+    expect(e).toMatchObject({ field: 'id', rule, message: 'busy' })
+  })
+
+  it.each([
+    ['updateCategory', (a: StudiesHttpAdapter) => a.updateCategory('c', { name: 'X' }), 'patch'],
+    ['deleteSubject', (a: StudiesHttpAdapter) => a.deleteSubject('s'), 'delete'],
+  ] as const)('maps a 404 on %s to StudiesNotFoundError', async (_name, call, method) => {
+    vi.mocked(http[method]).mockRejectedValue(
+      new HttpError(404, 'Not Found', { error: { code: 'not_found', message: 'resource not found' } })
+    )
+    expect(await call(adapter).catch((err: unknown) => err)).toBeInstanceOf(StudiesNotFoundError)
+  })
+
+  it('other failures stay plain errors with the API message', async () => {
+    vi.mocked(http.post).mockRejectedValue(new HttpError(500, 'Internal', { error: { code: 'internal', message: 'internal server error' } }))
+    const e = await adapter.createKind('X').catch((err: unknown) => err)
+    expect(e).toBeInstanceOf(Error)
+    expect(e).not.toBeInstanceOf(StudiesConflictError)
+    expect(e).not.toBeInstanceOf(HttpError)
+    expect((e as Error).message).toBe('internal server error')
   })
 })

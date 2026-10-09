@@ -3,6 +3,8 @@
 > Status: **Approved 2026-10-07** (owner chat — all open questions OQ-1..OQ-8 resolved, no
 > further changes requested; implementation authorized slice by slice)
 > Owner: afwilto · Created: 2026-10-07
+> Revision 4 (2026-10-08): Slice 09 split into 09a / 09b. The order is unchanged
+> (owner chat).
 > Revision 3 (2026-10-07, Slice 01 review): added `GET /categories/{id}` and
 > `GET /note-kinds/{id}` (FR-0 / AC-B6 require a by-id read that returns 404 after a
 > delete) and the `method_not_allowed` (405) error code, so router fallbacks also use
@@ -749,7 +751,8 @@ Exact commands are recorded per repo once scaffolded (`go test ./...`,
 | 06 | Tags + slab links | AC-B20..B23, AC-B24 (all tables) |
 | 07 | MFE skeleton + shell/homepage integration + read path (tree, subject list with sort, plain Markdown view) | AC-F1..F4 |
 | 08 | Rich rendering: KaTeX, Shiki, Mermaid, sanitization, internal links | AC-F5, F6, F10, F14 |
-| 09 | Write path: category/kind/subject forms, note editor, unsaved guard, conflict UX, delete dialogs | AC-F7..F9, F11..F13 |
+| 09a | Write path I: category/kind/subject forms and delete dialogs | AC-F11, F12 (kinds page), F13 |
+| 09b | Write path II: note editor, unsaved guard, conflict UX, kind picker | AC-F7..F9, F12 (editor picker) |
 
 Each slice must end green and pass review by an independent instance before the next
 one starts.

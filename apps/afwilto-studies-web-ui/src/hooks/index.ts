@@ -12,9 +12,9 @@ export function useLibrary() {
   }, [studiesService])
 }
 
-export function useSubject(subjectId: string) {
+export function useSubject(subjectId: string, reload = 0) {
   const { studiesService } = useServices()
-  return useAsync(() => studiesService.getSubject(subjectId), [studiesService, subjectId])
+  return useAsync(() => studiesService.getSubject(subjectId), [studiesService, subjectId, reload])
 }
 
 export function useSubjectNotes(subjectId: string, sort: NoteSort) {

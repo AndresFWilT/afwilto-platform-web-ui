@@ -1,20 +1,36 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { EmptyState, Text } from '@afwilto/design-system'
+import { Link, useNavigate } from 'react-router-dom'
+import { Button, EmptyState, Text } from '@afwilto/design-system'
 import type { Subject } from '@/application/ports'
 import { buildCategoryTree, compareByName, type CategoryTreeNode } from '@/domain/categoryTree'
 import { useLibrary } from '@/hooks'
 import { ColorChip } from '../shared/chips'
 import { LoadError, LoadingRows } from '../shared/states'
+import { SubjectFormDialog } from '../Subject/SubjectFormDialog'
 
 export function LibraryPage() {
   const state = useLibrary()
+  const navigate = useNavigate()
+  const [creating, setCreating] = useState(false)
+  const hasCategories = state.status === 'success' && state.data.categories.length > 0
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <Text variant="h1" color="default">Studies</Text>
-        <Text variant="body" color="muted">Categories, subjects and notes.</Text>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <Text variant="h1" color="default">Studies</Text>
+          <Text variant="body" color="muted">Categories, subjects and notes.</Text>
+        </div>
+        {hasCategories && <Button onClick={() => setCreating(true)}>New subject</Button>}
       </div>
+      {creating && (
+        <SubjectFormDialog
+          onClose={() => setCreating(false)}
+          onSaved={(subject) => {
+            setCreating(false)
+            if (subject) navigate(`/studies/subjects/${subject.id}`)
+          }}
+        />
+      )}
       {state.status === 'loading' && <LoadingRows />}
       {state.status === 'error' && <LoadError error={state.error} />}
       {state.status === 'success' && <Library categories={state.data.categories} subjects={state.data.subjects} />}
@@ -32,7 +48,18 @@ function Library({ categories, subjects }: { categories: Parameters<typeof build
   }, [subjects])
 
   if (tree.length === 0) {
-    return <EmptyState icon="📚" title="No categories yet" description="Categories you create will appear here as a tree." />
+    return (
+      <EmptyState
+        icon="📚"
+        title="No categories yet"
+        description="Categories you create will appear here as a tree."
+        action={
+          <Link to="/studies/categories" className="text-sm font-medium text-primary-300 hover:text-primary-200">
+            Create a category
+          </Link>
+        }
+      />
+    )
   }
   return (
     <ul role="tree" aria-label="Library" className="flex flex-col gap-1">
