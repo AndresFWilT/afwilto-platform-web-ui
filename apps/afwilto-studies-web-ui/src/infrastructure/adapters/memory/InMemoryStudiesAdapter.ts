@@ -4,11 +4,13 @@ import {
   type CategoryPatch,
   type CategoryRef,
   type CreateCategoryInput,
+  type CreateNoteInput,
   type CreateSubjectInput,
   type IStudiesService,
   type Note,
   type NoteKind,
   type NoteKindRef,
+  type NotePatch,
   type NoteSort,
   type NoteSummary,
   type SlabLink,
@@ -18,6 +20,7 @@ import {
 } from '@/application/ports'
 import { StudiesConflictError, StudiesNotFoundError, StudiesValidationError, type Violation } from '@/application/errors'
 import { trimSpace } from '@/domain/validation'
+import { normalizeTag as normalizeTagRule } from '@/domain/tags'
 
 /** Rows as studies-mngr stores them; `deletedAt` marks a logical delete (FR-0). */
 export interface StudiesSeed {
@@ -57,21 +60,62 @@ type SeedSubject = StudiesSeed['subjects'][number]
 type SeedNote = StudiesSeed['notes'][number]
 
 const MAX_DEPTH = 5
-const TAG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-const MAX_TAG_LENGTH = 40
 const TAG_MESSAGE = 'tag must be lowercase kebab-case, 1–40 characters'
+const SLAB_PATH = /^\/slab(\/[a-z0-9-]+)+$/
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001F\u007F-\u009F]/
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
-/** The backend's tag normalization (trim, lowercase, whitespace runs → '-'). */
+/** A tag query (`?tag=`) normalized like the backend; invalid → the API's message. */
 function normalizeTag(raw: string): string {
-  const tag = raw.trim().split(/\s+/).filter(Boolean).join('-').toLowerCase()
-  if (tag === '' || [...tag].length > MAX_TAG_LENGTH || !TAG_PATTERN.test(tag)) {
-    throw new Error(TAG_MESSAGE)
-  }
+  const { tag, rule } = normalizeTagRule(raw)
+  if (rule) throw new Error(TAG_MESSAGE)
   return tag
+}
+
+/** domain.NewTagSet: per-entry rules on tags[i], duplicates merged, then at most 10 (reads sort them). */
+function checkTagSet(raw: string[]): string[] {
+  const names: string[] = []
+  raw.forEach((r, i) => {
+    const { tag, rule } = normalizeTagRule(r)
+    if (rule) throw violation(`tags[${i}]`, rule, TAG_MESSAGE)
+    if (!names.includes(tag)) names.push(tag)
+  })
+  if (names.length > 10) throw violation('tags', 'max_items', 'a note has at most 10 distinct tags')
+  return names
+}
+
+/** domain.NewSlabLinks: the count first, then each label (required → control → length) and path. */
+function checkSlabLinks(raw: SlabLink[]): SlabLink[] {
+  if (raw.length > 10) throw violation('slabLinks', 'max_items', 'a note has at most 10 slab links')
+  return raw.map((r, i) => {
+    const field = `slabLinks[${i}]`
+    const label = trimSpace(r.label)
+    if (label === '') throw violation(`${field}.label`, 'required', 'label must not be empty')
+    if (CONTROL.test(label)) throw violation(`${field}.label`, 'format', 'label must not contain control characters')
+    if ([...label].length > 80) throw violation(`${field}.label`, 'max_length', 'label must be at most 80 characters')
+    if (!SLAB_PATH.test(r.path)) {
+      throw violation(`${field}.path`, 'format', 'path must look like /slab/<segment>[/<segment>…] in lowercase kebab-case')
+    }
+    return { label, path: r.path }
+  })
+}
+
+/** domain.NewNoteTitle. */
+function checkTitle(raw: string): string {
+  const title = trimSpace(raw)
+  if (title === '') throw violation('title', 'required', 'title must not be empty')
+  if (CONTROL.test(title)) throw violation('title', 'format', 'title must not contain control characters')
+  if ([...title].length > 200) throw violation('title', 'max_length', 'title must be at most 200 characters')
+  return title
+}
+
+/** domain.NewMarkdownContent. */
+function checkContent(raw: string): string {
+  if (raw.includes('\u0000')) throw violation('content', 'format', 'content must not contain NUL characters')
+  if ([...raw].length > 200_000) throw violation('content', 'max_length', 'content must be at most 200000 characters')
+  return raw
 }
 
 /** Byte-order comparison, like Postgres COLLATE "C". */
@@ -352,6 +396,61 @@ export class InMemoryStudiesAdapter implements IStudiesService {
     row.deletedAt = this.now()
   }
 
+  // ── notes ──────────────────────────────────────────────────────────────────
+
+  async createNote(subjectId: string, input: CreateNoteInput): Promise<Note> {
+    // Handler first (kindId format), then the use case: fields → subject (404) → kind → title uniqueness.
+    const kindRef = checkUuid('kindId', input.kindId)
+    const title = checkTitle(input.title)
+    const content = checkContent(input.content)
+    const tags = checkTagSet(input.tags)
+    const slabLinks = checkSlabLinks(input.slabLinks)
+    const subject = this.findSubject(subjectId)
+    if (!subject) throw new StudiesNotFoundError()
+    const kind = this.requireKind(kindRef)
+    this.assertUniqueTitle(subject.id, title)
+    const now = this.now()
+    const row: SeedNote = {
+      id: this.newId(), subjectId: subject.id, title, kindId: kind.id, tags, content, slabLinks,
+      createdAt: now, updatedAt: now, version: 1,
+    }
+    this.seed.notes.push(row)
+    return (await this.getNote(row.id))!
+  }
+
+  async updateNote(id: string, patch: NotePatch): Promise<Note> {
+    const { version, ...fields } = patch
+    if (version < 1) throw violation('version', 'min', 'version must be at least 1')
+    if (fields.kindId !== undefined) checkUuid('kindId', fields.kindId)
+    if (fields.subjectId !== undefined) checkUuid('subjectId', fields.subjectId)
+    checkNotEmpty(fields, 'at least one of title, kindId, subjectId, content, tags or slabLinks must be provided')
+    const row = this.notes().find((n) => sameId(n.id, id))
+    if (!row) throw new StudiesNotFoundError()
+    if (row.version !== version) {
+      throw new StudiesConflictError('version', 'stale_version', 'the note was changed since you read it; reload and re-apply your edit')
+    }
+    const title = fields.title === undefined ? row.title : checkTitle(fields.title)
+    const content = fields.content === undefined ? row.content : checkContent(fields.content)
+    const tags = fields.tags === undefined ? row.tags : checkTagSet(fields.tags)
+    const slabLinks = fields.slabLinks === undefined ? row.slabLinks : checkSlabLinks(fields.slabLinks)
+    const kindId = fields.kindId === undefined ? row.kindId : this.requireKind(fields.kindId).id
+    let subjectId = row.subjectId
+    if (fields.subjectId !== undefined) {
+      const subject = this.findSubject(fields.subjectId)
+      if (!subject) throw violation('subjectId', 'not_found', 'subject does not exist')
+      subjectId = subject.id
+    }
+    this.assertUniqueTitle(subjectId, title, row.id)
+    Object.assign(row, { title, content, tags, slabLinks, kindId, subjectId, version: row.version + 1, updatedAt: this.now() })
+    return (await this.getNote(row.id))!
+  }
+
+  async deleteNote(id: string): Promise<void> {
+    const row = this.notes().find((n) => sameId(n.id, id))
+    if (!row) throw new StudiesNotFoundError()
+    row.deletedAt = this.now()
+  }
+
   // ── alive rows and lookups ─────────────────────────────────────────────────
 
   private categories() {
@@ -387,6 +486,17 @@ export class InMemoryStudiesAdapter implements IStudiesService {
   private assertUniqueSibling(parentId: string | null, name: string, selfId?: string) {
     const clash = this.categories().some((c) => c.parentId === parentId && c.id !== selfId && sameName(c.name, name))
     if (clash) throw new StudiesConflictError('name', 'duplicate_name', 'a sibling category with this name already exists')
+  }
+
+  private requireKind(id: string): NoteKindRef {
+    const kind = this.kinds().find((k) => sameId(k.id, id))
+    if (!kind) throw violation('kindId', 'not_found', 'note kind does not exist')
+    return kind
+  }
+
+  private assertUniqueTitle(subjectId: string, title: string, selfId?: string) {
+    const clash = this.notes().some((n) => n.subjectId === subjectId && n.id !== selfId && sameName(n.title, title))
+    if (clash) throw new StudiesConflictError('title', 'duplicate_name', 'a note with this title already exists in the subject')
   }
 
   private assertUniqueKind(name: string, selfId?: string) {

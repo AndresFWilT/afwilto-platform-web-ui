@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from 'react'
+import { Children, isValidElement, memo, type ReactElement, type ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -63,8 +63,12 @@ const components: Components = {
   hr: () => <hr className="my-6 border-surface-border" />,
 }
 
-/** Renders a note's Markdown (FR-4); reused by the Slice 09 editor preview. */
-export function MarkdownView({ content }: { content: string }) {
+/**
+ * Renders a note's Markdown (FR-4); reused by the Slice 09b editor preview.
+ * Memoized: the editor re-renders on every keystroke, but the pipeline
+ * (parse → sanitize → KaTeX) only runs again when the content changes.
+ */
+export const MarkdownView = memo(function MarkdownView({ content }: { content: string }) {
   return (
     <div className="text-neutral-200">
       <ReactMarkdown
@@ -79,4 +83,4 @@ export function MarkdownView({ content }: { content: string }) {
       </ReactMarkdown>
     </div>
   )
-}
+})

@@ -47,6 +47,12 @@ export function SubjectPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <Text variant="h1" color="default">{s.name}</Text>
           <span className="flex gap-1">
+            <Link
+              to={`/studies/subjects/${s.id}/notes/new`}
+              className="rounded-md bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-400"
+            >
+              New note
+            </Link>
             <Button size="sm" variant="ghost" onClick={() => setModal('edit')}>Edit subject</Button>
             <Button size="sm" variant="ghost" onClick={() => setModal('delete')}>Delete subject</Button>
           </span>

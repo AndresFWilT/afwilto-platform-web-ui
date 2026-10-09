@@ -15,6 +15,15 @@ const sources = files(SRC).map((f) => ({ rel: path.relative(SRC, f).split(path.s
 const matching = (re: RegExp) => sources.filter((s) => re.test(s.text)).map((s) => s.rel).sort()
 
 describe('lazy boundaries (AC-F14, S08-11)', () => {
+  it('only the editor feature imports CodeMirror, and only the editor page imports the editor (S09b, §2.7)', () => {
+    expect(matching(/from\s+['"]@codemirror\//)).toEqual(['features/editor/SourceEditor.tsx'])
+    const offenders = sources
+      .filter((s) => !/^pages\/NoteEditor\//.test(s.rel) && !/^features\/editor\//.test(s.rel))
+      .filter((s) => /features\/editor/.test(s.text))
+      .map((s) => s.rel)
+    expect(offenders).toEqual([])
+  })
+
   it('never imports shiki or mermaid statically (type-only imports are erased)', () => {
     expect(matching(/^\s*import\s+(?!type\b)[^;]*?from\s+['"](shiki|mermaid|@shikijs)[/'"]/m)).toEqual([])
     expect(matching(/^\s*import\s+['"](shiki|mermaid|@shikijs)[/'"]/m)).toEqual([])

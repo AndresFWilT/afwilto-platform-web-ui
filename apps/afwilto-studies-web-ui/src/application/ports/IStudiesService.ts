@@ -104,6 +104,25 @@ export interface SubjectPatch {
   description?: string | null
 }
 
+export interface CreateNoteInput {
+  title: string
+  kindId: string
+  content: string
+  tags: string[]
+  slabLinks: SlabLink[]
+}
+
+/** `version` is the one the client loaded; every other key is optional and absent means unchanged. */
+export interface NotePatch {
+  version: number
+  title?: string
+  kindId?: string
+  subjectId?: string
+  content?: string
+  tags?: string[]
+  slabLinks?: SlabLink[]
+}
+
 /**
  * Writes reject with the typed errors of `@/application/errors`:
  * StudiesValidationError (422), StudiesConflictError (409) and
@@ -135,4 +154,10 @@ export interface IStudiesService {
   createSubject(input: CreateSubjectInput): Promise<Subject>
   updateSubject(id: string, patch: SubjectPatch): Promise<Subject>
   deleteSubject(id: string): Promise<void>
+
+  /** Unknown subject → StudiesNotFoundError (the API answers 404 for the addressed subject). */
+  createNote(subjectId: string, input: CreateNoteInput): Promise<Note>
+  /** A stale `version` → StudiesConflictError with rule stale_version (BR-NOTE3). */
+  updateNote(id: string, patch: NotePatch): Promise<Note>
+  deleteNote(id: string): Promise<void>
 }

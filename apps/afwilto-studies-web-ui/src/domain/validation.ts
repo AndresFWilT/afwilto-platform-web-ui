@@ -13,6 +13,21 @@ const GO_TRIM = new RegExp(`^${GO_SPACE}+|${GO_SPACE}+$`, 'g')
 export function trimSpace(value: string): string {
   return value.replace(GO_TRIM, '')
 }
+
+/** strings.Fields: the runs of non-space text, split on Go's unicode.IsSpace set. */
+export function splitFields(value: string): string[] {
+  return value.split(new RegExp(`${GO_SPACE}+`)).filter(Boolean)
+}
+
+/** unicode.IsControl, used for single-line text (names, titles, labels). */
+export function hasControl(value: string): boolean {
+  return CONTROL.test(value)
+}
+
+/** Characters as Go counts runes (code points, not UTF-16 units). */
+export function runeLength(value: string): number {
+  return [...value].length
+}
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/
 
 /** Characters as the backend counts them (Unicode code points, not UTF-16 units). */

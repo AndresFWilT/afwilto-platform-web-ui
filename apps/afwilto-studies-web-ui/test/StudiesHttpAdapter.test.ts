@@ -231,3 +231,48 @@ describe('StudiesHttpAdapter writes (S09a-2)', () => {
     expect((e as Error).message).toBe('internal server error')
   })
 })
+
+describe('StudiesHttpAdapter note writes (S09b-2)', () => {
+  let http: IHttpClient
+  let adapter: StudiesHttpAdapter
+  const input = { title: 'T', kindId: 'k-1', content: '', tags: ['iam'], slabLinks: [] }
+
+  beforeEach(() => {
+    http = makeHttpClient()
+    adapter = new StudiesHttpAdapter(http)
+    vi.mocked(http.post).mockResolvedValue({ data: { id: 'n-1' } })
+    vi.mocked(http.patch).mockResolvedValue({ data: { id: 'n-1', version: 2 } })
+    vi.mocked(http.delete).mockResolvedValue(undefined)
+  })
+
+  it('createNote posts to the subject', async () => {
+    await adapter.createNote('s-1', input)
+    expect(http.post).toHaveBeenCalledWith('/subjects/s-1/notes', input)
+  })
+
+  it('updateNote patches with the version and only the given fields', async () => {
+    expect(await adapter.updateNote('n-1', { version: 1, title: 'New' })).toEqual({ id: 'n-1', version: 2 })
+    expect(http.patch).toHaveBeenCalledWith('/notes/n-1', { version: 1, title: 'New' })
+    expect(Object.keys(vi.mocked(http.patch).mock.calls[0][1] as object).sort()).toEqual(['title', 'version'])
+  })
+
+  it('deleteNote sends DELETE and resolves on 204', async () => {
+    await expect(adapter.deleteNote('n-1')).resolves.toBeUndefined()
+    expect(http.delete).toHaveBeenCalledWith('/notes/n-1')
+  })
+
+  it('a 404 on create (unknown subject) is StudiesNotFoundError', async () => {
+    vi.mocked(http.post).mockRejectedValue(new HttpError(404, 'Not Found', { error: { code: 'not_found', message: 'resource not found' } }))
+    expect(await adapter.createNote('s-x', input).catch((e: unknown) => e)).toBeInstanceOf(StudiesNotFoundError)
+  })
+
+  it('a 409 stale_version is a StudiesConflictError on version', async () => {
+    const message = 'the note was changed since you read it; reload and re-apply your edit'
+    vi.mocked(http.patch).mockRejectedValue(
+      new HttpError(409, 'Conflict', { error: { code: 'conflict', message, details: [{ field: 'version', rule: 'stale_version', message }] } })
+    )
+    const e = await adapter.updateNote('n-1', { version: 1, content: 'x' }).catch((err: unknown) => err)
+    expect(e).toBeInstanceOf(StudiesConflictError)
+    expect(e).toMatchObject({ field: 'version', rule: 'stale_version', message })
+  })
+})

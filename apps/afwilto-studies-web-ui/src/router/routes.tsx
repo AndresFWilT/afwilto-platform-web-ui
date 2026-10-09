@@ -11,6 +11,9 @@ const CategoriesPage = lazy(() =>
 )
 const CategoryPage = lazy(() => import('@/pages/Category/CategoryPage').then((m) => ({ default: m.CategoryPage })))
 const KindsPage = lazy(() => import('@/pages/Kinds/KindsPage').then((m) => ({ default: m.KindsPage })))
+const NoteEditorPage = lazy(() =>
+  import('@/pages/NoteEditor/NoteEditorPage').then((m) => ({ default: m.NoteEditorPage }))
+)
 const TagPage = lazy(() => import('@/pages/Tag/TagPage').then((m) => ({ default: m.TagPage })))
 
 function Fallback() {
@@ -40,14 +43,16 @@ function NotFound() {
 }
 
 // Child routes rendered inside StudiesLayout's <Outlet/> (Spec 16 §9.1; the
-// note editor routes arrive in Slice 09b).
+// note editor routes are Slice 09b's).
 export const childRoutes: RouteObject[] = [
   { path: '', element: withSuspense(LibraryPage) },
   { path: 'categories', element: withSuspense(CategoriesPage) },
   { path: 'categories/:categoryId', element: withSuspense(CategoryPage) },
   { path: 'kinds', element: withSuspense(KindsPage) },
   { path: 'subjects/:subjectId', element: withSuspense(SubjectPage) },
+  { path: 'subjects/:subjectId/notes/new', element: withSuspense(NoteEditorPage) },
   { path: 'notes/:noteId', element: withSuspense(NotePage) },
+  { path: 'notes/:noteId/edit', element: withSuspense(NoteEditorPage) },
   { path: 'tags/:tag', element: withSuspense(TagPage) },
   { path: '*', element: <NotFound /> },
 ]

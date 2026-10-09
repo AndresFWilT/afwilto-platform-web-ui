@@ -89,6 +89,8 @@ export function contractApi(seed: StudiesSeed): IHttpClient & { calls: string[] 
   async function post(url: string, body: unknown): Promise<unknown> {
     calls.push(`POST ${url}`)
     const b = structuredClone(body) as never
+    const notesOf = url.match(/^\/subjects\/([^/]+)\/notes$/)
+    if (notesOf) return { data: await asHttp(() => store.createNote(notesOf[1], b)) }
     switch (url) {
       case '/categories':
         return { data: await asHttp(() => store.createCategory(b)) }
@@ -107,6 +109,7 @@ export function contractApi(seed: StudiesSeed): IHttpClient & { calls: string[] 
     if (resource === 'categories') return { data: await asHttp(() => store.updateCategory(id, b)) }
     if (resource === 'note-kinds') return { data: await asHttp(() => store.renameKind(id, (b as { name: string }).name)) }
     if (resource === 'subjects') return { data: await asHttp(() => store.updateSubject(id, b)) }
+    if (resource === 'notes') return { data: await asHttp(() => store.updateNote(id, b)) }
     notFound()
   }
 
@@ -116,6 +119,7 @@ export function contractApi(seed: StudiesSeed): IHttpClient & { calls: string[] 
     if (resource === 'categories') await asHttp(() => store.deleteCategory(id))
     else if (resource === 'note-kinds') await asHttp(() => store.deleteKind(id))
     else if (resource === 'subjects') await asHttp(() => store.deleteSubject(id))
+    else if (resource === 'notes') await asHttp(() => store.deleteNote(id))
     else notFound()
     return undefined // 204 No Content
   }

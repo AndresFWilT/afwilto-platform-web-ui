@@ -4,9 +4,11 @@ import {
   type Category,
   type CategoryPatch,
   type CreateCategoryInput,
+  type CreateNoteInput,
   type CreateSubjectInput,
   type IStudiesService,
   type NoteKind,
+  type NotePatch,
   type SubjectPatch,
   type Note,
   type NoteSort,
@@ -139,6 +141,18 @@ export class StudiesHttpAdapter implements IStudiesService {
 
   deleteSubject(id: string): Promise<void> {
     return this.remove(`/subjects/${encodeURIComponent(id)}`)
+  }
+
+  createNote(subjectId: string, input: CreateNoteInput): Promise<Note> {
+    return this.send<Note>('post', `/subjects/${encodeURIComponent(subjectId)}/notes`, input)
+  }
+
+  updateNote(id: string, patch: NotePatch): Promise<Note> {
+    return this.send<Note>('patch', `/notes/${encodeURIComponent(id)}`, patch)
+  }
+
+  deleteNote(id: string): Promise<void> {
+    return this.remove(`/notes/${encodeURIComponent(id)}`)
   }
 
   /** POST/PATCH with the body as given: absent keys stay absent, null stays null. */

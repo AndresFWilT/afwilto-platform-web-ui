@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { currentLocation, failingService, renderAt } from './support/renderStudies'
 import { InMemoryStudiesAdapter } from '../src/infrastructure/adapters/memory/InMemoryStudiesAdapter'
+import { StudiesNotFoundError } from '../src/application/errors'
+import { click, findDialog } from './support/forms'
 import { IDS, librarySeed } from './fixtures'
 
 describe('NotePage (S07-8, Slice 08)', () => {
@@ -73,5 +75,39 @@ describe('NotePage (S07-8, Slice 08)', () => {
   it('shows an Alert on a service failure', async () => {
     renderAt(`/studies/notes/${IDS.compute}`, failingService('boom'))
     expect((await screen.findByRole('alert')).textContent).toContain('boom')
+  })
+})
+
+describe('NotePage — edit and delete (S09b-9)', () => {
+  it('links to the editor', async () => {
+    renderAt(`/studies/notes/${IDS.compute}`)
+    const edit = await screen.findByRole('link', { name: 'Edit note' })
+    expect(edit.getAttribute('href')).toBe(`/studies/notes/${IDS.compute}/edit`)
+  })
+
+  it('deletes and returns to the subject, where the note is gone', async () => {
+    renderAt(`/studies/notes/${IDS.compute}`)
+    await screen.findByRole('heading', { level: 1, name: 'Compute' })
+    click(document.body, 'Delete note')
+    click(await findDialog('Delete note “Compute”?'), 'Delete')
+    expect(await screen.findByText('Note deleted')).toBeTruthy()
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/subjects/${IDS.ccp}`))
+    await screen.findByRole('heading', { level: 1, name: 'AWS Certified Cloud Practitioner' })
+    await waitFor(() => expect(screen.queryByRole('link', { name: 'Compute' })).toBeNull())
+    expect(screen.getByRole('link', { name: 'Storage' })).toBeTruthy()
+  })
+
+  it('already deleted: says so, and closing returns to the subject', async () => {
+    const service = Object.assign(new InMemoryStudiesAdapter(librarySeed()), {
+      deleteNote: () => Promise.reject(new StudiesNotFoundError()),
+    })
+    renderAt(`/studies/notes/${IDS.compute}`, service)
+    await screen.findByRole('heading', { level: 1, name: 'Compute' })
+    click(document.body, 'Delete note')
+    const dialog = await findDialog('Delete note “Compute”?')
+    click(dialog, 'Delete')
+    expect(await within(dialog).findByText('It was already deleted.')).toBeTruthy()
+    click(dialog, 'Cancel')
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/subjects/${IDS.ccp}`))
   })
 })

@@ -14,6 +14,7 @@ const byFile = new Map(chunks.map((c) => [c.fileName, c]))
 const LIBS = {
   shiki: /[\\/]node_modules[\\/].*[\\/](shiki|@shikijs[\\/][^\\/]+)[\\/]/,
   mermaid: /[\\/]node_modules[\\/].*[\\/]mermaid[\\/]/,
+  codemirror: /[\\/]node_modules[\\/].*[\\/]@codemirror[\\/][^\\/]+[\\/]/, // Slice 09b §2.7
 }
 const holds = (chunk, lib) => chunk.moduleIds.some((id) => LIBS[lib].test(id))
 const heavy = (chunk) => Object.keys(LIBS).some((lib) => holds(chunk, lib))
@@ -33,6 +34,8 @@ const ROOTS = {
   LibraryPage: (c) => Boolean(c.facadeModuleId?.endsWith('/src/pages/Library/LibraryPage.tsx')),
   SubjectPage: (c) => Boolean(c.facadeModuleId?.endsWith('/src/pages/Subject/SubjectPage.tsx')),
   TagPage: (c) => Boolean(c.facadeModuleId?.endsWith('/src/pages/Tag/TagPage.tsx')),
+  CategoryPage: (c) => Boolean(c.facadeModuleId?.endsWith('/src/pages/Category/CategoryPage.tsx')),
+  NotePage: (c) => Boolean(c.facadeModuleId?.endsWith('/src/pages/Note/NotePage.tsx')),
 }
 
 function staticClosure(fileName, seen = new Set()) {
@@ -50,7 +53,7 @@ for (const [label, match] of Object.entries(ROOTS)) {
     continue
   }
   const leaked = [...staticClosure(rootChunk.fileName)].filter((f) => heavy(byFile.get(f)))
-  if (leaked.length) failures.push(`${label} statically reaches shiki/mermaid code in ${leaked.join(', ')}`)
+  if (leaked.length) failures.push(`${label} statically reaches shiki/mermaid/codemirror code in ${leaked.join(', ')}`)
 }
 
 if (failures.length) {
@@ -58,4 +61,4 @@ if (failures.length) {
   process.exit(1)
 }
 const heavyCount = chunks.filter(heavy).length
-console.log(`checkChunks OK: ${heavyCount} of ${chunks.length} chunks hold shiki/mermaid; none in the static closure of ${Object.keys(ROOTS).length} roots`)
+console.log(`checkChunks OK: ${heavyCount} of ${chunks.length} chunks hold shiki/mermaid/codemirror; none in the static closure of ${Object.keys(ROOTS).length} roots`)

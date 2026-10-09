@@ -60,5 +60,8 @@ export function failingService(message: string): IStudiesService {
     createSubject: fail,
     updateSubject: fail,
     deleteSubject: fail,
+    createNote: fail,
+    updateNote: fail,
+    deleteNote: fail,
   }
 }

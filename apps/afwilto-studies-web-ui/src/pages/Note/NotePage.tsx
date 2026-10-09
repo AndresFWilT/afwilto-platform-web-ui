@@ -1,15 +1,23 @@
-import { useId } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { EmptyState, Text } from '@afwilto/design-system'
+import { useId, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import type { SlabLink } from '@/application/ports'
 import { MarkdownView } from '@/features/markdown/MarkdownView'
 import { useNote } from '@/hooks'
+import { useServices } from '@/di'
+import { DeleteDialog } from '../shared/DeleteDialog'
 import { DateText, KindBadge, TagList } from '../shared/chips'
 import { LoadError, LoadingRows } from '../shared/states'
 
 export function NotePage() {
   const { noteId = '' } = useParams()
   const state = useNote(noteId)
+  const { studiesService } = useServices()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
+  const [deleting, setDeleting] = useState(false)
+  // A delete that finds the note already gone keeps its dialog; closing leaves for the subject.
+  const [gone, setGone] = useState(false)
 
   if (state.status === 'loading') return <LoadingRows />
   if (state.status === 'error') return <LoadError error={state.error} />
@@ -27,6 +35,15 @@ export function NotePage() {
         <div className="flex flex-wrap items-center gap-3">
           <Text variant="h1" color="default">{note.title}</Text>
           <KindBadge name={note.kind.name} />
+          <span className="ml-auto flex gap-1">
+            <Link
+              to={`/studies/notes/${note.id}/edit`}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-primary-300 hover:bg-surface-raised"
+            >
+              Edit note
+            </Link>
+            <Button size="sm" variant="ghost" onClick={() => setDeleting(true)}>Delete note</Button>
+          </span>
         </div>
         <TagList tags={note.tags} />
         <p className="flex gap-4 text-xs text-neutral-500">
@@ -36,6 +53,21 @@ export function NotePage() {
       </header>
       <MarkdownView content={note.content} />
       <RelatedInSlab links={note.slabLinks} />
+      {deleting && (
+        <DeleteDialog
+          entity="note"
+          name={note.title}
+          inUseText=""
+          onConfirm={() => studiesService.deleteNote(note.id)}
+          onDeleted={() => {
+            setDeleting(false)
+            showToast('Note deleted', 'success')
+            navigate(`/studies/subjects/${note.subjectId}`)
+          }}
+          onGone={() => setGone(true)}
+          onClose={() => (gone ? navigate(`/studies/subjects/${note.subjectId}`) : setDeleting(false))}
+        />
+      )}
     </article>
   )
 }

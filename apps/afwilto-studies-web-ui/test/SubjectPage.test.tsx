@@ -155,6 +155,12 @@ describe('SubjectPage (AC-F4)', () => {
     expect(await screen.findByText('Subject not found')).toBeTruthy()
   })
 
+  it('"New note" links to the editor for this subject (S09b)', async () => {
+    renderAt(SUBJECT_URL)
+    const link = await screen.findByRole('link', { name: 'New note' })
+    expect(link.getAttribute('href')).toBe(`/studies/subjects/${IDS.ccp}/notes/new`)
+  })
+
   it('shows "No notes yet" for a subject without notes', async () => {
     renderAt(`/studies/subjects/${IDS.emptySubject}`)
     expect(await screen.findByText('No notes yet')).toBeTruthy()
