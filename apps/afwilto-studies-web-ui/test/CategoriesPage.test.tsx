@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { InMemoryStudiesAdapter, type StudiesSeed } from '../src/infrastructure/adapters/memory/InMemoryStudiesAdapter'
 import { StudiesNotFoundError, StudiesValidationError } from '../src/application/errors'
 import { renderAt } from './support/renderStudies'
@@ -148,6 +148,58 @@ describe('CategoriesPage — create (S09a-5)', () => {
     expect(await within(dialog).findByText('a sibling category with this name already exists')).toBeTruthy()
     expect(errorFor(dialog, 'Name')).toBe('a sibling category with this name already exists')
     expect(fieldValue(dialog, 'Name')).toBe('cloud')
+  })
+})
+
+describe('CategoriesPage — color picker (S09a-5, amended)', () => {
+  const picker = (dialog: HTMLElement) => within(dialog).getByLabelText('Pick color') as HTMLInputElement
+
+  it('offers a native color picker, and a new category starts at #22D3EE', async () => {
+    await openPage()
+    click(document.body, 'New root category')
+    const dialog = await findDialog('New category')
+    expect(picker(dialog).type).toBe('color')
+    expect(picker(dialog).value).toBe('#22d3ee')
+    expect(fieldValue(dialog, 'Color')).toBe('#22D3EE')
+  })
+
+  it('a picked color fills the hex field in uppercase and is what gets saved', async () => {
+    const service = await openPage()
+    const create = vi.spyOn(service, 'createCategory')
+    click(document.body, 'New root category')
+    const dialog = await findDialog('New category')
+    fireEvent.change(picker(dialog), { target: { value: '#ff9900' } })
+    expect(fieldValue(dialog, 'Color')).toBe('#FF9900')
+    fill(dialog, 'Name', 'Physics')
+    click(dialog, 'Save')
+    await waitFor(() => expect(create).toHaveBeenCalledWith({ name: 'Physics', color: '#FF9900', parentId: null }))
+  })
+
+  it('a valid typed hex moves the picker; an invalid one leaves it at black', async () => {
+    await openPage()
+    click(document.body, 'New root category')
+    const dialog = await findDialog('New category')
+    fill(dialog, 'Color', '#A3E635')
+    expect(picker(dialog).value).toBe('#a3e635')
+    fill(dialog, 'Color', '#A3E6')
+    expect(picker(dialog).value).toBe('#000000')
+  })
+
+  it('a new category saves with the default color without touching it', async () => {
+    const service = await openPage()
+    const create = vi.spyOn(service, 'createCategory')
+    click(document.body, 'New root category')
+    const dialog = await findDialog('New category')
+    fill(dialog, 'Name', 'Physics')
+    click(dialog, 'Save')
+    await waitFor(() => expect(create).toHaveBeenCalledWith({ name: 'Physics', color: '#22D3EE', parentId: null }))
+  })
+
+  it('editing starts the picker at the stored color', async () => {
+    await openPage()
+    click(document.body, 'Edit AWS')
+    const dialog = await findDialog('Edit category')
+    expect(picker(dialog).value).toBe('#ff9900')
   })
 })
 

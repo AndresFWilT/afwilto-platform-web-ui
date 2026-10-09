@@ -10,6 +10,8 @@ import { ColorField } from './ColorField'
 
 const MAX_DEPTH = 5
 const ROOT = ''
+/** A new category starts with a valid color, so it can be saved as is. */
+const DEFAULT_COLOR = '#22D3EE'
 
 export type CategoryFormMode = { type: 'create'; parentId: string | null } | { type: 'edit'; category: Category }
 
@@ -34,7 +36,7 @@ export function CategoryFormDialog({ mode, categories, onSaved, onGone, onClose 
   const editing = mode.type === 'edit' ? mode.category : null
 
   const [name, setName] = useState(editing?.name ?? '')
-  const [color, setColor] = useState(editing?.color ?? '')
+  const [color, setColor] = useState(editing?.color ?? DEFAULT_COLOR)
   const [parentId, setParentId] = useState<string>(
     (editing ? editing.parentId : mode.type === 'create' ? mode.parentId : null) ?? ROOT
   )

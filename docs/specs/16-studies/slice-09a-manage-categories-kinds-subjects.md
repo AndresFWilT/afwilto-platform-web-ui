@@ -115,8 +115,18 @@ The owner can build the knowledge base from the UI:
 - **Hidden "Add child":** for a depth-5 node, because the server would answer
   `max_depth`.
 - **"New root category"** opens the same form with no parent.
-- **Form dialog:** name, color (text field plus swatch preview, as the certifications
-  `ColorField`, copied, not shared), and **parent picker**.
+- **Form dialog:** name, color, and **parent picker**.
+- **Color field** (amended 2026-10-09 at the owner's request; the first version had no
+  real picker). As in the certifications `ColorField`, copied and not shared, it
+  pairs:
+  - a native color picker (`<input type="color">`, labelled "Pick color"). Choosing a
+    color writes it to the text field in uppercase.
+  - the `#RRGGBB` text field ("Color"). A valid value typed there moves the picker; an
+    invalid one leaves the picker on `#000000` and shows the validation message on
+    Save.
+
+  A new category starts with `#22D3EE`, so it can be saved without touching the
+  color. Editing starts from the stored color.
 - **Parent picker:** a `Select` whose options are "— Root —" plus every category,
   labelled by `path` and ordered by path.
   - When editing, it **excludes the category itself and all its descendants** (pure
@@ -336,6 +346,9 @@ module.
   and 6 parity probes. All are killed.
 - **Deployment note.** A tab opened before a redeploy fails lazy routes with "Failed to
   fetch dynamically imported module", because the old chunk hashes are gone; a reload
-  fixes it. The owner has been offered a "new version available — reload" handler, and
-  the decision is pending (not in this slice).
+  fixes it. The owner declined a dedicated handler (2026-10-09): it is expected cache
+  behavior, and no change was made.
+- **Color picker amendment (2026-10-09).** Five tests were red first. The suite is
+  green at 423, and 3 mutations are killed: the picker not writing uppercase, the
+  picker ignoring a typed hex, and no default color.
 - **S09a-12 manual check:** _pending, owner._
