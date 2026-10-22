@@ -38,3 +38,21 @@ describe('SlabPage via exposed App', () => {
     expect(() => renderApp()).not.toThrow()
   })
 })
+
+describe('Software Engineering section (Spec 17 FR-8 / AC-F1)', () => {
+  it('comes before the academic institutions', () => {
+    renderApp()
+    const se = screen.getByRole('heading', { name: 'Software Engineering' })
+    const academic = screen.getByRole('heading', { name: 'Academic Institutions' })
+    expect(se.compareDocumentPosition(academic) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows a CIDR Calculator card linking to /slab/cidr', () => {
+    renderApp()
+    const card = screen.getByRole('article', { name: 'CIDR Calculator' })
+    expect(card.querySelector('a')?.getAttribute('href')).toBe('/slab/cidr')
+    for (const tag of ['IPv4', 'IPv6', 'Ruby', 'Sinatra', 'Hexagonal']) {
+      expect(card.textContent).toContain(tag)
+    }
+  })
+})

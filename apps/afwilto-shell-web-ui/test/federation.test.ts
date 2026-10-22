@@ -21,3 +21,16 @@ describe('studies remote registration (Spec 16 AC-F1, S07-1)', () => {
     expect(read('src/remotes/remotes.ts')).toContain("export const StudiesApp = lazy(() => import('studies/App'))")
   })
 })
+
+describe('cidr remote registration (Spec 17 AC-F2)', () => {
+  it('vite.config.ts registers the cidr remote with its env override and :3009 default', () => {
+    const config = read('vite.config.ts')
+    expect(config).toMatch(/cidr:\s*\{\s*type: 'module',\s*name: 'cidr',/)
+    expect(config).toContain("entry: env.VITE_REMOTE_CIDR_URL ?? 'http://localhost:3009/remoteEntry.js'")
+  })
+
+  it('declares the cidr/App module type and exports CidrApp', () => {
+    expect(read('src/remotes/federation.d.ts')).toContain("declare module 'cidr/App'")
+    expect(read('src/remotes/remotes.ts')).toContain("export const CidrApp = lazy(() => import('cidr/App'))")
+  })
+})

@@ -11,6 +11,7 @@ vi.mock('@/remotes/remotes', () => ({
   CertificationsApp: () => <div data-testid="certifications-app" />,
   LovePointsBankApp: () => <div data-testid="love-points-bank-app" />,
   StudiesApp: () => <div data-testid="studies-app" />,
+  CidrApp: () => <div data-testid="cidr-app" />,
 }))
 
 import { AppRoutes } from '@/router/AppRoutes'
@@ -95,6 +96,15 @@ describe('host URL gateway', () => {
       renderAt(path)
       expect(await screen.findByTestId('studies-app')).toBeTruthy()
       expect(screen.queryByTestId('legacy-app')).toBeNull()
+    }
+  )
+
+  it.each(['/slab/cidr', '/slab/cidr/range', '/slab/cidr/tables'])(
+    '%s mounts the CIDR calculator remote (Spec 17 AC-F2)',
+    async (path) => {
+      renderAt(path)
+      expect(await screen.findByTestId('cidr-app')).toBeTruthy()
+      expect(screen.queryByTestId('slab-home-app')).toBeNull()
     }
   )
 
