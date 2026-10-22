@@ -15,6 +15,9 @@ shared workspace packages. Architecture and per-app specs live in
 | `apps/afwilto-slab-subject-mati-web-ui` | `mati` | `/slab/mati/**` | 3004 |
 | `apps/afwilto-financial-status-web-ui` | `finance` | `/finance/**` | 3005 |
 | `apps/afwilto-certifications-web-ui` | `certifications` | `/certifications/**` | 3006 |
+| `apps/afwilto-love-points-bank-web-ui` | `love_points_bank` | `/love-points-bank/**` | 3007 |
+| `apps/afwilto-studies-web-ui` | `studies` | `/studies/**` | 3008 |
+| `apps/afwilto-cidr-web-ui` | `cidr` | `/slab/cidr/**` | 3009 |
 
 Packages: `@afwilto/design-system`, `@afwilto/shared-types`,
 `@afwilto/http-client` (consumed as TypeScript source via `workspace:*`).
@@ -45,7 +48,10 @@ pnpm -r typecheck   # packages
 ```
 
 Remote URLs are overridable per environment via host env vars:
-`VITE_REMOTE_{AFWILTO_HOME,SLAB_HOME,UD,MATI,FINANCE,CERTIFICATIONS}_URL`.
+`VITE_REMOTE_{AFWILTO_HOME,SLAB_HOME,UD,MATI,FINANCE,CERTIFICATIONS,LOVE_POINTS_BANK,STUDIES,CIDR}_URL`.
+
+New MFEs follow the atomic design + screaming architecture standard in
+[`CLAUDE.md`](CLAUDE.md); `apps/afwilto-cidr-web-ui` is the reference.
 
 The legacy monolith (`afwilto-slab-homepage-web-ui/` at this directory's
 root) is archived — see its README.

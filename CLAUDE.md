@@ -40,7 +40,7 @@ src/
   shared/
     di/                # React context exposing the ports (no concrete adapter imports)
     lib/               # pure helpers and hooks
-    ui/{atoms,molecules,organisms,templates}
+    ui/{atoms,molecules,organisms,templates,pages}   # shared pages are generic only (e.g. NotFoundPage)
 ```
 
 Feature folders are named after behaviour (`cidr-to-range`, `address-aggregation`),
