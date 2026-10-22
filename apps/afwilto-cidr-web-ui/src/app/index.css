@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@afwilto/design-system/styles.css";
+
+@source "../../../../packages/design-system/src";

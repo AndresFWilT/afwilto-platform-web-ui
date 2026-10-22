@@ -55,6 +55,11 @@ export default defineConfig(({ mode }) => {
             name: 'studies',
             entry: env.VITE_REMOTE_STUDIES_URL ?? 'http://localhost:3008/remoteEntry.js',
           },
+          cidr: {
+            type: 'module',
+            name: 'cidr',
+            entry: env.VITE_REMOTE_CIDR_URL ?? 'http://localhost:3009/remoteEntry.js',
+          },
         },
         shared: {
           react: { singleton: true },

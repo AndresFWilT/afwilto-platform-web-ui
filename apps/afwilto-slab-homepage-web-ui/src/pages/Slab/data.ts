@@ -21,3 +21,23 @@ export const UNIANDES_INFO = {
   goldColor: '#D4A017',
   logoUrl: 'https://donaciones.uniandes.edu.co/sites/default/files/logo-uniandes.png',
 } as const
+
+export interface SoftwareEngineeringProject {
+  title: string
+  to: string
+  description: string
+  tags: string[]
+  accentColor: string
+}
+
+// Spec 17 FR-8 — one card per project in the "Software Engineering" section.
+export const SE_PROJECTS: SoftwareEngineeringProject[] = [
+  {
+    title: 'CIDR Calculator',
+    to: '/slab/cidr',
+    description:
+      'IPv4 and IPv6 subnet math: CIDR to range, range to minimal CIDR list, address aggregation and prefix tables — every calculation done by a hexagonal Ruby service.',
+    tags: ['IPv4', 'IPv6', 'Ruby', 'Sinatra', 'Hexagonal'],
+    accentColor: '#0EA5E9',
+  },
+]

@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import { BaseLayout, Text, Card, Button, Badge } from '@afwilto/design-system'
 import { UD_INFO, UNIANDES_INFO } from './data'
+import { SoftwareEngineeringSection } from './SoftwareEngineeringSection'
 
 export function SlabPage() {
   return (
     <BaseLayout>
       <div className="flex flex-col gap-16">
         <Hero />
+        <SoftwareEngineeringSection />
         <UniversitiesSection />
       </div>
     </BaseLayout>

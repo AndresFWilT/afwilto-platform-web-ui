@@ -9,6 +9,7 @@ import {
   CertificationsApp,
   LovePointsBankApp,
   StudiesApp,
+  CidrApp,
 } from '@/remotes/remotes'
 import { DesignSystemPage } from '@/pages/DesignSystem'
 import { NotFoundPage } from '@/pages/NotFound'
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route path="/slab" element={<RemoteSlot component={SlabHomeApp} />} />
       <Route path="/slab/ud/*" element={<RemoteSlot component={UDApp} />} />
       <Route path="/slab/mati/*" element={<RemoteSlot component={MatiApp} />} />
+      <Route path="/slab/cidr/*" element={<RemoteSlot component={CidrApp} />} />
       <Route path="/finance/*" element={<RemoteSlot component={FinanceApp} />} />
       <Route path="/certifications/*" element={<RemoteSlot component={CertificationsApp} />} />
       <Route path="/love-points-bank/*" element={<RemoteSlot component={LovePointsBankApp} />} />

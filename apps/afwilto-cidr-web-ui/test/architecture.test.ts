@@ -55,7 +55,8 @@ export function edgeViolations(fromRel: string, toRel: string): string[] {
   const to = zoneOf(toRel)
   const found: string[] = []
   if (from.top === 'features' && to.top === 'features' && from.feature !== to.feature) found.push('feature imports another feature')
-  if (from.top !== 'app' && to.top === 'app') found.push('imports app/ (wiring is imported by nothing)')
+  const fromWiring = from.top === 'app' || TOP_LEVEL_FILES.includes(fromRel)
+  if (!fromWiring && to.top === 'app') found.push('imports app/ (wiring is imported by nothing)')
   if ((from.top === 'shared' || CONTEXTS.includes(from.top)) && to.top === 'features') found.push('shared/context imports a feature')
   if (to.infrastructure && from.top !== 'app' && !from.infrastructure) found.push('infrastructure imported outside app/')
   if (from.level !== undefined && to.level !== undefined && to.level > from.level) {
@@ -90,6 +91,7 @@ describe('architecture checker (self-test)', () => {
     expect(edgeViolations('features/a/ui/organisms/O.tsx', 'cidr/domain/types.ts')).toEqual([])
     expect(edgeViolations('app/di/container.ts', 'cidr/infrastructure/http/X.ts')).toEqual([])
     expect(edgeViolations('app/routes.tsx', 'features/a/ui/pages/P.tsx')).toEqual([])
+    expect(edgeViolations('main.tsx', 'app/App')).toEqual([])
   })
 
   it('flags fetch and misplaced hook calls', () => {

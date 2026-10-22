@@ -25,7 +25,7 @@ describe('CIDR calculator routes', () => {
   it('links back to the lab and to the CIDR theory in Studies', async () => {
     renderAt('/slab/cidr/range')
     await screen.findByRole('heading', { name: 'CIDR Calculator' })
-    expect(screen.getByRole('link', { name: /Software Lab/ }).getAttribute('href')).toBe('/slab')
+    expect(screen.getByRole('link', { name: /All lab projects/ }).getAttribute('href')).toBe('/slab')
     expect(screen.getByRole('link', { name: /Learn the theory/ }).getAttribute('href')).toBe('/studies/tags/cidr')
   })
 })

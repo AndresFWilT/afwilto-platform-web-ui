@@ -79,6 +79,9 @@ importers:
       '@afwilto/http-client':
         specifier: workspace:*
         version: link:../../packages/http-client
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^19.2.6
         version: 19.2.7
