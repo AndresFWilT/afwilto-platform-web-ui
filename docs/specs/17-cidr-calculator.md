@@ -380,7 +380,8 @@ This is the first MFE under the §9 standard:
 
 ```
 src/
-  app/                       # wiring only: App.tsx, routes.tsx, di/{container,ServiceProvider}
+  main.tsx                   # standalone entry (BrowserRouter → /slab/cidr/*)
+  app/                       # wiring only: App.tsx (exposed as ./App), routes.tsx, index.css, di/container.ts
   cidr/                      # bounded context (no UI)
     domain/                  # types only: CidrRange, RangeSummary, Aggregation, PrefixRow, IpFamily
     application/ports/       # ICidrCalculator (+ errors.ts: CidrValidationError)
@@ -391,13 +392,18 @@ src/
     address-aggregation/ui/{organisms,pages}
     prefix-tables/ui/{organisms,pages}
   shared/
-    lib/                     # groupDigits, splitAddressList, useAsyncAction
+    di/                      # ServiceProvider + useServices() over the port (no adapter imports)
+    lib/                     # groupDigits, splitAddressList, useCalculation
     ui/{atoms,molecules,organisms,templates}   # MonoValue, ResultRow, ResultTable, BlockList, CalculatorTemplate (header + tabs)
 ```
 
 There is **no in-memory calculator adapter**, because it would duplicate backend math.
-Tests and dev without the API use a canned-response fake defined in `test/`. A dev
-server without `VITE_API_URL` shows an "API not configured" `Alert`.
+Tests use a canned-response fake defined in `test/`. Without `VITE_API_URL`, the
+container wires an `UnconfiguredCalculator` adapter whose every call rejects with "The
+CIDR API is not configured (VITE_API_URL)". The pages show that message in an `Alert`.
+
+*Amendment 2026-10-21 (slice 06):* `useServices()` lives in `shared/di`. `app/di`
+holds only the composition root. This avoids a `features → app → features` cycle.
 
 ---
 
@@ -414,7 +420,8 @@ from now on.
    - `shared/`.
 2. **Atomic levels** inside any `ui/`: `atoms → molecules → organisms → templates →
    pages`.
-   - A level imports only from levels below it, or from `@afwilto/design-system`.
+   - A level imports only from its own level or below, across folders, or from
+     `@afwilto/design-system`.
    - Pages are the only level that calls `useServices()`. Templates are layout only
      and receive slots.
 3. **Dependency direction:**
