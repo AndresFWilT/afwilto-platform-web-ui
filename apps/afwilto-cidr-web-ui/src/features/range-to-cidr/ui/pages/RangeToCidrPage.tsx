@@ -10,6 +10,9 @@ export function RangeToCidrPage() {
   const { calculator } = useServices()
   const { state, run } = useCalculation((first: string, last: string) => calculator.summarizeRange(first, last))
   const invalid = state.status === 'invalid' ? state.error : undefined
+  const fieldErrors = { firstIp: invalid?.messageFor('firstIp'), lastIp: invalid?.messageFor('lastIp') }
+  // A rejection that names neither field still has to be shown somewhere.
+  const unplacedError = invalid && !fieldErrors.firstIp && !fieldErrors.lastIp ? invalid.message : undefined
 
   return (
     <CalculatorTemplate>
@@ -18,9 +21,14 @@ export function RangeToCidrPage() {
       </Text>
       <RangeToCidrForm
         pending={state.status === 'pending'}
-        serverErrors={{ firstIp: invalid?.messageFor('firstIp'), lastIp: invalid?.messageFor('lastIp') }}
+        serverErrors={fieldErrors}
         onSubmit={run}
       />
+      {unplacedError && (
+        <Alert variant="error" title="Invalid range">
+          {unplacedError}
+        </Alert>
+      )}
       {state.status === 'failed' && (
         <Alert variant="error" title="Calculation failed">
           {state.message}
