@@ -48,4 +48,14 @@ describe('Range → CIDR page', () => {
     expect(await screen.findByText(message)).toBeTruthy()
     expect((screen.getByLabelText(/^Last IP/) as HTMLInputElement).value).toBe('10.0.0.1')
   })
+
+  it('falls back to the API message when no field matches (review finding 8)', async () => {
+    const message = 'request could not be processed'
+    renderAt('/slab/cidr/summarize', fakeCalculator({
+      summarizeRange: () => Promise.reject(new CidrValidationError([{ field: 'body', rule: 'format', message }])),
+    }))
+    submit('10.0.0.1', '10.0.0.2')
+
+    expect(await screen.findByText(message)).toBeTruthy()
+  })
 })
