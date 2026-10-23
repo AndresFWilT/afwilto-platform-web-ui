@@ -3,7 +3,7 @@ import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMe
 import { ExamsAttemptInProgressError, ExamsConflictError, ExamsNotFoundError, ExamsValidationError } from '../../src/exams/application/ports'
 import type { Attempt, SessionConfig } from '../../src/exams/domain'
 import { EXAM_ID } from './examFixtures'
-import { DOM, SERVICE, TestClock, bigSeed, simpleQuestion } from './attemptFixtures'
+import { DOM, SERVICE, TestClock, bigExam, bigSeed, simpleQuestion } from './attemptFixtures'
 
 // The same draw, deadline and scoring rules as the backend (AC-14/16/19/20, slices 06a/06b), so the
 // offline `pnpm dev` behaves like production.
@@ -81,6 +81,15 @@ describe('previewSession (FR-7, FR-8; S06a-1, S06a-2)', () => {
     const config = (set: string): SessionConfig => ({ selection: { kind: 'origin-set', set }, timing: { kind: 'untimed' }, feedback: 'end' })
     expect(await service.previewSession(EXAM_ID, config('TD Timed Set 3'))).toMatchObject({ poolSize: 2, drawCount: 2, suggestedMinutes: 4 })
     expect(await service.previewSession(EXAM_ID, config('Nope'))).toMatchObject({ poolSize: 0, drawCount: 0, suggestedMinutes: 0 })
+  })
+
+  it('a simulation of an exam with no weighted categories draws nothing, and cannot start (insufficient_questions)', async () => {
+    const { service } = setup({ exams: [{ ...bigExam(), classifications: [] }] })
+    expect(await service.previewSession(EXAM_ID, SIMULATION)).toMatchObject({ poolSize: 0, drawCount: 0, shortages: [] })
+    const error = (await failure(service.startAttempt(EXAM_ID, SIMULATION, 1))) as ExamsValidationError
+    expect(error).toBeInstanceOf(ExamsValidationError)
+    expect(error.details[0].rule).toBe('insufficient_questions')
+    expect((await service.listAttempts(EXAM_ID)).attempts).toEqual([])
   })
 
   it('lists the categories whose questions are fewer than their simulation quota (S09-2)', async () => {

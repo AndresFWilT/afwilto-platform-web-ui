@@ -139,7 +139,8 @@ export class MemoryAttempts {
     const { questions, paceClassification } = this.pool(exam, config.selection)
     const shortages = config.selection.kind === 'simulation' ? this.quotas(exam, questions).shortages : []
     if (config.selection.kind === 'simulation') {
-      return { poolSize: questions.length, drawCount: exam.questionCount, suggestedMinutes: exam.timeLimitMin, shortages }
+      const drawCount = this.quotas(exam, questions).quotas.reduce((total, q) => total + q.quota, 0)
+      return { poolSize: questions.length, drawCount, suggestedMinutes: drawCount === 0 ? 0 : exam.timeLimitMin, shortages }
     }
     const drawCount = this.drawCount(config.selection, questions.length)
     const sum = questions.reduce((total, q) => total + questionPace(exam, paceClassification, q), 0)
@@ -163,6 +164,7 @@ export class MemoryAttempts {
     if (selection.kind === 'simulation') {
       const { quotas, shortages } = this.quotas(exam, questions)
       if (shortages.length) throw this.insufficient(shortages)
+      if (quotas.length === 0) throw this.insufficient([{ category: 'categorías con peso', needed: 1, available: 0 }])
       drawn = shuffled(
         quotas.flatMap(({ name, quota }) => {
           const mine = this.byId(questions.filter((q) => q.categories.some((r) => r.classification === primaryClassification(exam)!.name && r.name === name)))

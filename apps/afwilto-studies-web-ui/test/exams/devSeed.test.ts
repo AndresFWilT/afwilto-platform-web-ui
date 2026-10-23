@@ -8,6 +8,7 @@ describe('examsDevSeed: offline `pnpm dev` can take an exam', () => {
   it('carries enough questions for a real simulation: no shortages', async () => {
     const preview = await new InMemoryExamsAdapter(examsDevSeed).previewSession(EXAM_ID, { selection: { kind: 'simulation' } })
     expect(preview.shortages).toEqual([])
+    expect(preview.poolSize).toBeGreaterThanOrEqual(65)
     expect(preview.drawCount).toBe(65)
     expect(preview.suggestedMinutes).toBe(130)
   })

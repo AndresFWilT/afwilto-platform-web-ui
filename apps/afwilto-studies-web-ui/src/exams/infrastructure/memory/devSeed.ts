@@ -1,4 +1,5 @@
 import type { ExamsSeed } from './InMemoryExamsAdapter'
+import { devClassifications, devQuestions } from './devQuestions'
 
 // Offline dev data (no VITE_API_URL). The subject id is the studies devSeed's AWS subject.
 const T = '2026-10-22T12:00:00.000Z'
@@ -9,17 +10,19 @@ const PIXEL_RED = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 export const MEDIA_ENTRADA_PROHIBIDA = 'a1'.repeat(32)
 export const MEDIA_CEDA_EL_PASO = 'b2'.repeat(32)
 
+const EXAM_ID = 'f0000000-0000-7000-8000-000000000001'
+
 export const examsDevSeed: ExamsSeed = {
   exams: [
     {
-      id: 'f0000000-0000-7000-8000-000000000001',
+      id: EXAM_ID,
       subjectId: 'd0000000-0000-7000-8000-000000000001',
       name: 'SAA-C03',
       questionCount: 65,
       timeLimitMin: 130,
       passPercent: 72,
       questionTotal: 0,
-      classifications: [],
+      classifications: devClassifications(),
       version: 1,
       createdAt: T,
       updatedAt: T,
@@ -29,4 +32,5 @@ export const examsDevSeed: ExamsSeed = {
     [MEDIA_ENTRADA_PROHIBIDA]: PIXEL_RED,
     [MEDIA_CEDA_EL_PASO]: PIXEL_RED,
   },
+  questions: devQuestions(EXAM_ID),
 }
