@@ -45,8 +45,8 @@ src/features/<use-case>/ui/…      # slices 08 and 09
   pass no resolver, so their behaviour does not change.
 - `sanitizeSchema.ts` adds `media` to `protocols.src`, and react-markdown gets a `urlTransform`
   that keeps `media:` values and delegates everything else to the default transform.
-- `ExamsHttpAdapter.mediaUrl(sha)` returns `${VITE_API_URL}/api/v1/media/${sha}`. The InMemory
-  adapter returns data URLs from its seed.
+- `ExamsHttpAdapter.mediaUrl(sha)` returns `${VITE_API_URL}/media/${sha}` (`VITE_API_URL` already
+  ends in `/api/v1`, see `.env.development`). The InMemory adapter returns data URLs from its seed.
 
 ### 1.3 `QuestionView` (shared organism)
 
@@ -117,3 +117,7 @@ The parent's AC-22 to AC-25 apply, plus these:
 | `test/exams/QuestionView.test.tsx` | AC-22–AC-25, S07-4, S07-5 |
 | `test/exams.architecture.test.ts`, `test/exams.twoTailwindBuilds.test.ts` | S07-6, layout rule |
 | `test/exams/ExamsHttpAdapter.test.ts` | S07-7 |
+
+## 4. Amendments
+
+- 2026-10-22: `mediaUrl` no longer repeats `/api/v1` — `VITE_API_URL` already ends in `/api/v1`, so the original `${VITE_API_URL}/api/v1/media/${sha}` would request `/api/v1/api/v1/media/…`.
