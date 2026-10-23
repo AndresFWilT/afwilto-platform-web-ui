@@ -80,3 +80,9 @@ The parent's AC-10 to AC-13 apply, plus these:
 | `exams/adapter/in/http/media_api_test.go` | `httptest` + contract | AC-10, S05-4 |
 | `exams/adapter/out/postgres/media_repo_test.go` | integration | AC-11, S05-1, S05-3 |
 | `scripts/smoke.sh` (lab root) | platform | the volume is mounted, `/readyz` |
+
+## 5. Amendments
+
+Fixes from the phase-2 independent review.
+
+- 2026-10-23, entry count cannot be bypassed (phase-2 fix 6). The end record's count field is 16 bits, and `archive/zip` accepts a directory whose real count differs from it by a multiple of 65,536 (or whose 64-bit zip64 values replace it), then parses every entry. Before `archive/zip` runs, the guard (a) rejects a central directory larger than 1 MiB (`zip_entries`), (b) walks the directory headers (signature `0x02014b50`, a 46-byte fixed part plus the name, extra and comment lengths) and rejects more than 1,000 of them (`zip_entries`). When the end record carries a marker (count `0xFFFF`, offset `0xFFFFFFFF`, or size `0xFFFF`/`0xFFFFFFFF`) and a zip64 locator, the 64-bit directory size and offset are the ones checked. Input the guard cannot locate a directory in (damage, no end record) is left to `archive/zip`, which reports it as `file_type`. Example: 65,536 + 500 empty entries with an end record that says 500 → 422 `zip_entries` without any entry list being built.
