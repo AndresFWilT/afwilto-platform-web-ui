@@ -248,7 +248,7 @@ Inference runs on every import, in the dry run and in the apply.
 - **Rendering.**
   - The renderer allows the `media:` scheme in `src`, through the sanitize schema and
     react-markdown's `urlTransform`.
-  - It resolves `media:<sha>` to `${API_URL}/api/v1/media/<sha>` in one place, the `img`
+  - It resolves `media:<sha>` to `${VITE_API_URL}/media/<sha>` (`VITE_API_URL` already ends in `/api/v1`) in one place, the `img`
     component.
   - Stored content never holds a host, so it survives changes of port or domain.
 
