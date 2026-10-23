@@ -1,0 +1,529 @@
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMemoryExamsAdapter'
+import { ExamsConflictError } from '../../src/exams/application/ports'
+import type { SessionConfig } from '../../src/exams/domain'
+import { currentLocation, renderAt } from '../support/renderStudies'
+import { findDialog } from '../support/forms'
+import { EXAM_ID } from './examFixtures'
+import { TestClock, bigSeed, simpleQuestion } from './attemptFixtures'
+
+const random = (count: number, extra: Partial<SessionConfig> = {}): SessionConfig => ({ selection: { kind: 'random', count }, timing: { kind: 'untimed' }, feedback: 'end', ...extra })
+const timed = (minutes: number, extra: Partial<SessionConfig> = {}): SessionConfig => random(5, { timing: { kind: 'timed', minutes }, ...extra })
+
+function setup(seedOverrides = {}) {
+  const clock = new TestClock()
+  const exams = new InMemoryExamsAdapter(bigSeed(seedOverrides), { now: clock.now })
+  return { clock, exams }
+}
+
+async function open(exams: InMemoryExamsAdapter, config: SessionConfig, { query = '', seed = 1 } = {}) {
+  const attempt = await exams.startAttempt(EXAM_ID, config, seed)
+  renderAt(`/studies/attempts/${attempt.id}${query}`, undefined, exams)
+  await screen.findByText(/^Pregunta \d+ de \d+$/)
+  return attempt
+}
+
+const options = () => [...document.querySelectorAll<HTMLElement>('[role=radio], [role=checkbox]')]
+const checked = () => options().filter((o) => o.getAttribute('aria-checked') === 'true')
+const cell = (n: number) => screen.getByRole('button', { name: new RegExp(`^Pregunta ${n},`) })
+const header = () => screen.getByText(/^Pregunta \d+ de \d+$/).textContent
+const press = (key: string) => fireEvent.keyDown(document.body, { key })
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
+
+describe('RunnerPage: layout', () => {
+  it('shows the exam name, "Pregunta 1 de 15", the question and its options; no countdown when untimed', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    expect(screen.getByText('SAA-C03')).toBeTruthy()
+    expect(header()).toBe('Pregunta 1 de 15')
+    expect(options()).toHaveLength(4)
+    expect(screen.queryByRole('timer')).toBeNull()
+  })
+
+  it('shows the countdown when timed', async () => {
+    const { exams } = setup()
+    await open(exams, timed(5))
+    expect(screen.getByRole('timer').textContent).toBe('5:00')
+  })
+
+  it('has a footer with Anterior / Siguiente, "Marcar para revisión" and Entregar, and no pause control (D-12)', async () => {
+    const { exams } = setup()
+    await open(exams, timed(5))
+    for (const name of ['Anterior', 'Siguiente', 'Marcar para revisión', 'Entregar']) expect(screen.getByRole('button', { name })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /paus/i })).toBeNull()
+  })
+
+  it('has a navigator with one numbered cell per question, in a wrapping grid', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    const cells = screen.getAllByRole('button', { name: /^Pregunta \d+, / })
+    expect(cells).toHaveLength(15)
+    expect(cells[0].getAttribute('aria-label')).toBe('Pregunta 1, sin responder')
+    expect(cells[0].getAttribute('aria-current')).toBe('step')
+    expect(cells[14].textContent).toContain('15')
+  })
+
+  it('an unknown attempt says it was not found', async () => {
+    renderAt('/studies/attempts/nope', undefined, setup().exams)
+    expect(await screen.findByText('Simulacro no encontrado')).toBeTruthy()
+  })
+
+  it('an attempt that is already closed goes to its result', async () => {
+    const { exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, random(3), 1)
+    await exams.submitAttempt(attempt.id)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+  })
+})
+
+describe('RunnerPage: answering and the navigator (S09-6)', () => {
+  it('choosing an option saves it with a PUT and the cell becomes "respondida"', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem')
+    const attempt = await open(exams, random(15))
+    fireEvent.click(options()[1])
+    expect(checked()).toEqual([options()[1]])
+    await waitFor(() => expect(put).toHaveBeenCalledWith(attempt.id, 0, { selected: ['B'], flagged: false }))
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, respondida')
+  })
+
+  it('the navigator cell of an answered, flagged item says "Pregunta 3, respondida, marcada" (S09-6)', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    fireEvent.click(cell(3))
+    fireEvent.click(options()[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar para revisión' }))
+    await waitFor(() => expect(cell(3).getAttribute('aria-label')).toBe('Pregunta 3, respondida, marcada'))
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, sin responder')
+  })
+
+  it('flagging alone sends the flag with the current (empty) selection', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem')
+    const attempt = await open(exams, random(15))
+    const flag = screen.getByRole('button', { name: 'Marcar para revisión' })
+    expect(flag.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(flag)
+    expect(flag.getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => expect(put).toHaveBeenCalledWith(attempt.id, 0, { selected: [], flagged: true }))
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, sin responder, marcada')
+  })
+
+  it('while a save is in flight the cell is busy (a spinner), and it settles after', async () => {
+    const { exams } = setup()
+    let release: () => void = () => {}
+    const original = exams.answerItem.bind(exams)
+    vi.spyOn(exams, 'answerItem').mockImplementation(async (...args) => {
+      await new Promise<void>((resolve) => (release = resolve))
+      return original(...args)
+    })
+    await open(exams, random(15))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(cell(1).getAttribute('aria-busy')).toBe('true'))
+    release()
+    await waitFor(() => expect(cell(1).getAttribute('aria-busy')).toBeNull())
+  })
+
+  it('a failed save keeps the local choice and shows a retry toast; "Reintentar" sends it again', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem').mockRejectedValueOnce(new Error('sin conexión'))
+    await open(exams, random(15))
+    fireEvent.click(options()[2])
+    const toast = await screen.findByRole('alert')
+    expect(toast.textContent).toContain('No se pudo guardar la pregunta 1')
+    expect(checked()).toEqual([options()[2]])
+    fireEvent.click(within(toast).getByRole('button', { name: 'Reintentar' }))
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(2))
+    expect(put).toHaveBeenLastCalledWith(expect.any(String), 0, { selected: ['C'], flagged: false })
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, respondida')
+  })
+
+  it('saves of one item go out in order, so the last choice wins', async () => {
+    const { exams } = setup()
+    const sent: string[][] = []
+    const original = exams.answerItem.bind(exams)
+    vi.spyOn(exams, 'answerItem').mockImplementation(async (id, position, answer) => {
+      await new Promise((r) => setTimeout(r, sent.length === 0 ? 30 : 0))
+      sent.push(answer.selected)
+      return original(id, position, answer)
+    })
+    const attempt = await open(exams, random(15))
+    fireEvent.click(options()[0])
+    fireEvent.click(options()[1])
+    await waitFor(() => expect(sent).toEqual([['A'], ['B']]))
+    expect((await exams.getAttempt(attempt.id)).items[0].selected).toEqual(['B'])
+  })
+
+  it('a multi question shows "Elige 2" and sends the answer with both labels', async () => {
+    const multi = simpleQuestion('m1', 0, [], { type: 'multi', options: ['A', 'B', 'C', 'D'].map((label, i) => ({ label, text: `m ${label}`, correct: i < 2 })) })
+    const { exams } = setup({ questions: [multi] })
+    const put = vi.spyOn(exams, 'answerItem')
+    await open(exams, random(1))
+    expect(screen.getByText('Elige 2')).toBeTruthy()
+    fireEvent.click(options()[0])
+    fireEvent.click(options()[1])
+    fireEvent.click(options()[2])
+    expect(checked()).toHaveLength(2)
+    await waitFor(() => expect(put).toHaveBeenLastCalledWith(expect.any(String), 0, { selected: expect.arrayContaining([expect.any(String)]), flagged: false }))
+    expect(put.mock.calls.at(-1)![2].selected).toHaveLength(2)
+  })
+})
+
+describe('RunnerPage: moving around and the URL (S09-7)', () => {
+  it('Siguiente and Anterior move between questions and keep the position in ?q=', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    expect((screen.getByRole('button', { name: 'Anterior' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(header()).toBe('Pregunta 2 de 15')
+    expect(currentLocation()).toMatch(/\?q=2$/)
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+    expect(header()).toBe('Pregunta 1 de 15')
+  })
+
+  it('a navigator cell jumps to its question', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    fireEvent.click(cell(9))
+    expect(header()).toBe('Pregunta 9 de 15')
+    expect(currentLocation()).toMatch(/\?q=9$/)
+    expect(cell(9).getAttribute('aria-current')).toBe('step')
+  })
+
+  it('the last question has no Siguiente', async () => {
+    const { exams } = setup()
+    await open(exams, random(3), { query: '?q=3' })
+    expect((screen.getByRole('button', { name: 'Siguiente' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('reopening attempts/:id?q=12 returns to question 12 with its answers, flags and the others restored (S09-7)', async () => {
+    const { exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, random(15), 1)
+    await exams.answerItem(attempt.id, 11, { selected: ['C'], flagged: false })
+    await exams.answerItem(attempt.id, 2, { selected: [], flagged: true })
+    renderAt(`/studies/attempts/${attempt.id}?q=12`, undefined, exams)
+    await screen.findByText('Pregunta 12 de 15')
+    expect(checked().map((o) => o.textContent?.[0])).toEqual(['C'])
+    expect(cell(12).getAttribute('aria-label')).toBe('Pregunta 12, respondida')
+    expect(cell(3).getAttribute('aria-label')).toBe('Pregunta 3, sin responder, marcada')
+    expect((screen.getByRole('button', { name: 'Marcar para revisión' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('a ?q= outside the attempt falls back to the nearest question', async () => {
+    const { exams } = setup()
+    await open(exams, random(15), { query: '?q=99' })
+    expect(header()).toBe('Pregunta 15 de 15')
+  })
+
+  it('without ?q= it starts at question 1', async () => {
+    const { exams } = setup()
+    await open(exams, random(15), { query: '?q=abc' })
+    expect(header()).toBe('Pregunta 1 de 15')
+  })
+})
+
+describe('RunnerPage: keyboard', () => {
+  it('→ and ← move between questions, Enter goes to the next one', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    press('ArrowRight')
+    expect(header()).toBe('Pregunta 2 de 15')
+    press('ArrowRight')
+    expect(header()).toBe('Pregunta 3 de 15')
+    press('ArrowLeft')
+    expect(header()).toBe('Pregunta 2 de 15')
+    press('Enter')
+    expect(header()).toBe('Pregunta 3 de 15')
+  })
+
+  it('arrows do not leave the attempt', async () => {
+    const { exams } = setup()
+    await open(exams, random(3))
+    press('ArrowLeft')
+    expect(header()).toBe('Pregunta 1 de 3')
+  })
+
+  it('F flags and unflags the question', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    press('f')
+    expect(screen.getByRole('button', { name: 'Marcar para revisión' }).getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, sin responder, marcada'))
+    press('F')
+    expect(screen.getByRole('button', { name: 'Marcar para revisión' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('the keys 1–6 belong to QuestionView: 2 picks the second option', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    const second = options()[1]
+    fireEvent.keyDown(second, { key: '2' })
+    expect(checked()).toEqual([second])
+  })
+
+  it('keys typed in a form control are ignored', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    const field = document.createElement('input')
+    document.body.appendChild(field)
+    fireEvent.keyDown(field, { key: 'ArrowRight' })
+    fireEvent.keyDown(field, { key: 'f' })
+    field.remove()
+    expect(header()).toBe('Pregunta 1 de 15')
+    expect(screen.getByRole('button', { name: 'Marcar para revisión' }).getAttribute('aria-pressed')).toBe('false')
+  })
+})
+
+describe('RunnerPage: review mode (feedback each) (S09-5)', () => {
+  it('answering shows the reveal and locks the item; further clicks change nothing; F still flags', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem')
+    const attempt = await open(exams, random(5, { feedback: 'each' }))
+    fireEvent.click(options()[1])
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(screen.getAllByText('Tu respuesta').length).toBeGreaterThan(0)
+    expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true)
+
+    fireEvent.click(options()[2])
+    fireEvent.click(options()[0])
+    expect(checked()).toEqual([options()[1]])
+    expect(put).toHaveBeenCalledTimes(1)
+
+    press('f')
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(2))
+    expect(put).toHaveBeenLastCalledWith(attempt.id, 0, { selected: ['B'], flagged: true })
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, respondida, marcada')
+    expect(screen.getByText('Explicación')).toBeTruthy()
+  })
+
+  it('the reveal survives a reload of the attempt', async () => {
+    const { exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, random(5, { feedback: 'each' }), 1)
+    await exams.answerItem(attempt.id, 0, { selected: ['A'], flagged: false })
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true)
+  })
+
+  it('under "end" nothing is revealed after answering', async () => {
+    const { exams } = setup()
+    await open(exams, random(5))
+    fireEvent.click(options()[1])
+    await waitFor(() => expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, respondida'))
+    expect(screen.queryByText('Explicación')).toBeNull()
+    expect(options().some((o) => o.getAttribute('aria-disabled') === 'true')).toBe(false)
+  })
+
+  it('a multi question reveals only once N labels are chosen: the first click is held back', async () => {
+    const multi = simpleQuestion('m1', 0, [], { type: 'multi', options: ['A', 'B', 'C', 'D'].map((label, i) => ({ label, text: `m ${label}`, correct: i < 2 })) })
+    const { exams } = setup({ questions: [multi] })
+    const put = vi.spyOn(exams, 'answerItem')
+    await open(exams, random(1, { feedback: 'each' }))
+    fireEvent.click(options()[0])
+    await new Promise((r) => setTimeout(r, 30))
+    expect(put).not.toHaveBeenCalled()
+    expect(screen.queryByText('Explicación')).toBeNull()
+    expect(checked()).toHaveLength(1)
+    fireEvent.click(options()[1])
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(put.mock.calls[0][2].selected).toHaveLength(2)
+  })
+})
+
+describe('RunnerPage: submitting (S09-8)', () => {
+  async function answered(count: number, total = 15) {
+    const { exams } = setup()
+    const attempt = await open(exams, random(total))
+    for (let i = 0; i < count; i++) {
+      fireEvent.click(cell(i + 1))
+      fireEvent.click(options()[0])
+    }
+    await waitFor(() => expect(cell(count).getAttribute('aria-label')).toBe(`Pregunta ${count}, respondida`))
+    return { exams, attempt }
+  }
+
+  it('"Entregar" with 2 unanswered items asks "Te quedan 2 sin responder. ¿Entregar?"; confirming submits and opens the result', async () => {
+    const { exams, attempt } = await answered(13)
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    const dialog = await findDialog('Te quedan 2 sin responder. ¿Entregar?')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(1)
+  })
+
+  it('cancelling keeps the attempt open and submits nothing', async () => {
+    const { exams } = await answered(13)
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    const dialog = await findDialog('Te quedan 2 sin responder. ¿Entregar?')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(submit).not.toHaveBeenCalled()
+    expect(currentLocation()).toMatch(/^\/studies\/attempts\/[0-9a-f-]+$/)
+  })
+
+  it('says "Te quedan 1 sin responder" for one, and asks plainly when everything is answered', async () => {
+    const one = await answered(2, 3)
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    expect(await findDialog('Te quedan 1 sin responder. ¿Entregar?')).toBeTruthy()
+    expect(one.attempt.items).toHaveLength(3)
+  })
+
+  it('with every item answered the confirmation asks "¿Entregar el simulacro?"', async () => {
+    await answered(3, 3)
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    expect(await findDialog('¿Entregar el simulacro?')).toBeTruthy()
+  })
+
+  it('waits for saves in flight before submitting', async () => {
+    const { exams } = setup()
+    const order: string[] = []
+    const original = exams.answerItem.bind(exams)
+    vi.spyOn(exams, 'answerItem').mockImplementation(async (...args) => {
+      await new Promise((r) => setTimeout(r, 40))
+      order.push('answer')
+      return original(...args)
+    })
+    const submit = exams.submitAttempt.bind(exams)
+    vi.spyOn(exams, 'submitAttempt').mockImplementation(async (id) => {
+      order.push('submit')
+      return submit(id)
+    })
+    await open(exams, random(1))
+    fireEvent.click(options()[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(currentLocation()).toMatch(/\/result$/))
+    expect(order).toEqual(['answer', 'submit'])
+  })
+
+  it('a submit that fails keeps the runner and shows the failure', async () => {
+    const { exams } = setup()
+    vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new Error('el servidor no responde'))
+    await open(exams, random(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    expect(await screen.findByText(/el servidor no responde/)).toBeTruthy()
+    expect(currentLocation()).not.toMatch(/result/)
+  })
+})
+
+describe('RunnerPage: the timer (S09-3, S09-4)', () => {
+  // Only the interval and the clock are faked, so Testing Library's own timeouts keep working.
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+  const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+
+  it('at 0 it submits once and opens the result (S09-3)', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(55)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    expect(screen.getByRole('timer').textContent).toBe('0:05')
+    await advance(2000)
+    expect(screen.getByRole('timer').textContent).toBe('0:03')
+    expect(submit).not.toHaveBeenCalled()
+    await advance(3000)
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(1)
+    await advance(10_000)
+    expect(submit).toHaveBeenCalledTimes(1)
+  })
+
+  it('if the server already expired the attempt, submit is refused and the result opens anyway', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(59)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new ExamsConflictError('attemptId', 'attempt_expired', 'the deadline passed'))
+    await advance(1000)
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+  })
+
+  it('a window focus asks the server again and the countdown takes its 100 s instead of the local 130 (S09-4)', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
+    clock.advance(50)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    expect(screen.getByRole('timer').textContent).toBe('2:10')
+
+    const get = vi.spyOn(exams, 'getAttempt')
+    clock.advance(30)
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    await waitFor(() => expect(screen.getByRole('timer').textContent).toBe('1:40'))
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('coming back to a visible tab resyncs too; hiding it does not', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    const get = vi.spyOn(exams, 'getAttempt')
+    const visibility = vi.spyOn(document, 'visibilityState', 'get')
+
+    visibility.mockReturnValue('hidden')
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+    expect(get).not.toHaveBeenCalled()
+
+    clock.advance(20)
+    visibility.mockReturnValue('visible')
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+    await waitFor(() => expect(screen.getByRole('timer').textContent).toBe('2:40'))
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('every PUT response resyncs the countdown from the server', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    clock.advance(45)
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(screen.getByRole('timer').textContent).toBe('2:15'))
+  })
+
+  it('a focus after the server expired the attempt opens the result', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    clock.advance(200)
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+  })
+
+  it('a save refused as attempt_expired opens the result', async () => {
+    const { exams } = setup()
+    vi.spyOn(exams, 'answerItem').mockRejectedValue(new ExamsConflictError('attemptId', 'attempt_expired', 'the deadline passed'))
+    const attempt = await open(exams, timed(1))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+  })
+
+  it('an untimed attempt never asks the server again on focus', async () => {
+    const { exams } = setup()
+    await open(exams, random(3))
+    const get = vi.spyOn(exams, 'getAttempt')
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    expect(get).not.toHaveBeenCalled()
+  })
+})
