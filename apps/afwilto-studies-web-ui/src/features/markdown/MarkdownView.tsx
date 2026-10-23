@@ -68,7 +68,14 @@ const components: Components = {
  * Memoized: the editor re-renders on every keystroke, but the pipeline
  * (parse → sanitize → KaTeX) only runs again when the content changes.
  */
-export const MarkdownView = memo(function MarkdownView({ content }: { content: string }) {
+export const MarkdownView = memo(function MarkdownView({
+  content,
+  resolveMediaUrl: _resolveMediaUrl,
+}: {
+  content: string
+  /** Resolves `media:<sha256>` images (exams); notes pass nothing and such images render their alt. */
+  resolveMediaUrl?: (sha256: string) => string | null
+}) {
   return (
     <div className="text-neutral-200">
       <ReactMarkdown
