@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMemoryExamsAdapter'
-import { ExamsConflictError } from '../../src/exams/application/ports'
+import { ExamsConflictError, ExamsValidationError } from '../../src/exams/application/ports'
 import { currentLocation, renderAt } from '../support/renderStudies'
 import { choose, findDialog } from '../support/forms'
 import { CAT, CLS, EXAM_ID, examsSeedFixture } from './examFixtures'
@@ -153,6 +153,35 @@ describe('ExamEditPage: parameters, names and pace', () => {
 })
 
 describe('ExamEditPage: server failures', () => {
+  it('a 422 range on a pace value lands on its row, not on a generic alert', async () => {
+    const exams = open()
+    vi.spyOn(exams, 'updateExam').mockRejectedValue(new ExamsValidationError([{ field: 'categories[0].paceQuestions', rule: 'range', message: 'must be between 1 and 10000' }]))
+    await loaded()
+    type('Ritmo: preguntas de «VPC»', '10')
+    type('Ritmo: minutos de «VPC»', '20')
+    fireEvent.click(save())
+    expect(await screen.findByText('El ritmo admite enteros de 1 a 10 000')).toBeTruthy()
+    expect(screen.queryByText(/must be between/)).toBeNull()
+  })
+
+  it('a 422 invalid_text on the exam name lands on the name field', async () => {
+    const exams = open()
+    vi.spyOn(exams, 'updateExam').mockRejectedValue(new ExamsValidationError([{ field: 'name', rule: 'invalid_text', message: 'contains NUL' }]))
+    await loaded()
+    type('Nombre', 'SAA-C04')
+    fireEvent.click(save())
+    expect(await screen.findByText('El texto contiene caracteres no permitidos')).toBeTruthy()
+    expect(screen.queryByText('contains NUL')).toBeNull()
+  })
+
+  it('the inputs carry the server limits: name 120, classification 40, category 80', async () => {
+    open()
+    await loaded()
+    expect(screen.getByLabelText('Nombre').getAttribute('maxlength')).toBe('120')
+    expect(screen.getByLabelText('Nombre de la clasificación principal').getAttribute('maxlength')).toBe('40')
+    expect(screen.getByLabelText('Nombre de «Seguridad»').getAttribute('maxlength')).toBe('80')
+  })
+
   it('a duplicate exam name lands on the name field', async () => {
     const exams = open()
     vi.spyOn(exams, 'updateExam').mockRejectedValue(new ExamsConflictError('name', 'duplicate_name', 'dup'))

@@ -16,6 +16,28 @@ const type = (label: string, value: string) => fireEvent.change(screen.getByLabe
 const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Crear examen' }))
 
 describe('NewExamPage (S08-1)', () => {
+  it('the name input allows 120 characters, the server limit', async () => {
+    open()
+    await screen.findByRole('heading', { name: 'Nuevo examen' })
+    expect(screen.getByLabelText('Nombre').getAttribute('maxlength')).toBe('120')
+  })
+
+  it('a 422 invalid_text on the name and a range on the count land on their fields', async () => {
+    const exams = open()
+    vi.spyOn(exams, 'createExam').mockRejectedValue(
+      new ExamsValidationError([
+        { field: 'name', rule: 'invalid_text', message: 'contains NUL' },
+        { field: 'questionCount', rule: 'range', message: 'must be between 1 and 200' },
+      ])
+    )
+    await screen.findByRole('heading', { name: 'Nuevo examen' })
+    type('Nombre', 'AIF-C01')
+    submit()
+    expect(await screen.findByText('El texto contiene caracteres no permitidos')).toBeTruthy()
+    expect(screen.getByText('Debe estar entre 1 y 200')).toBeTruthy()
+    expect(screen.queryByText('contains NUL')).toBeNull()
+  })
+
   it('shows the four fields with the defaults 65 / 130 / 72', async () => {
     open()
     expect(await screen.findByRole('heading', { name: 'Nuevo examen' })).toBeTruthy()
@@ -76,7 +98,7 @@ describe('NewExamPage (S08-1)', () => {
     await screen.findByRole('heading', { name: 'Nuevo examen' })
     type('Nombre', 'X')
     submit()
-    expect(await screen.findByText('fuera de rango')).toBeTruthy()
+    expect(await screen.findByText('Debe estar entre 1 y 600')).toBeTruthy()
   })
 
   it('an unexpected failure is shown and the form stays editable', async () => {
