@@ -15,9 +15,9 @@ function sanitizeOne(node: Element): Element | undefined {
 }
 
 describe('studiesSchema (AC-F6, S08-6)', () => {
-  it('allows exactly http, https and mailto for href, and only https for src', () => {
+  it('allows exactly http, https and mailto for href, and https and media for src (Spec 18 slice 07)', () => {
     expect(studiesSchema.protocols?.['href']).toEqual(['http', 'https', 'mailto'])
-    expect(studiesSchema.protocols?.['src']).toEqual(['https'])
+    expect(studiesSchema.protocols?.['src']).toEqual(['https', 'media'])
   })
 
   it.each([
@@ -36,6 +36,7 @@ describe('studiesSchema (AC-F6, S08-6)', () => {
 
   it.each([
     ['https://x/a.png', true],
+    [`media:${'a'.repeat(64)}`, true],
     ['http://x/a.png', false],
     ['data:image/png;base64,AAAA', false],
     ['javascript:alert(1)', false],
