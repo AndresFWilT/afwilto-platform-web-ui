@@ -54,6 +54,12 @@ export function SubjectPage() {
             >
               New note
             </Link>
+            <Link
+              to={`/studies/subjects/${s.id}/exams`}
+              className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-neutral-300 hover:bg-brand-800 hover:text-neutral-100"
+            >
+              Simulacros
+            </Link>
             <Button size="sm" variant="ghost" onClick={() => setModal('edit')}>Edit subject</Button>
             <Button size="sm" variant="ghost" onClick={() => setModal('delete')}>Delete subject</Button>
           </span>
