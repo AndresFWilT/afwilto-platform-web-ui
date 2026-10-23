@@ -22,3 +22,8 @@ export function formatMinutes(seconds: number): string {
 export function formatNumber(value: number): string {
   return String(Math.round(value * 10) / 10)
 }
+
+/** A duration in seconds: `45 s`, `30 min`, `1 min 30 s`, `2 h 10 min`. */
+export function formatDuration(_seconds: number): string {
+  throw new Error('not implemented')
+}
