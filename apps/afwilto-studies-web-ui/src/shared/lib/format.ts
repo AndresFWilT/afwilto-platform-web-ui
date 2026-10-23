@@ -24,6 +24,12 @@ export function formatNumber(value: number): string {
 }
 
 /** A duration in seconds: `45 s`, `30 min`, `1 min 30 s`, `2 h 10 min`. */
-export function formatDuration(_seconds: number): string {
-  throw new Error('not implemented')
+export function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) return m > 0 ? `${h} h ${m} min` : `${h} h`
+  if (m > 0) return s > 0 ? `${m} min ${s} s` : `${m} min`
+  return `${s} s`
 }
