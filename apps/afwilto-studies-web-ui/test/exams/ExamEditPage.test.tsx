@@ -194,7 +194,7 @@ describe('ExamEditPage: merging categories (S08-5)', () => {
     const merge = vi.spyOn(exams, 'mergeCategories')
     await loaded()
     pick('Storage', 'Amazon S3')
-    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías de «Servicio»' }))
     const dialog = await findDialog('¿Combinar «Storage» en «Amazon S3»?')
     expect(within(dialog).getByText(/Las preguntas de «Storage» pasarán a «Amazon S3»/)).toBeTruthy()
     expect(merge).not.toHaveBeenCalled()
@@ -212,7 +212,7 @@ describe('ExamEditPage: merging categories (S08-5)', () => {
     const update = vi.spyOn(exams, 'updateExam')
     await loaded()
     pick('Storage', 'Amazon S3')
-    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías de «Servicio»' }))
     fireEvent.click(within(await findDialog('¿Combinar «Storage» en «Amazon S3»?')).getByRole('button', { name: 'Combinar' }))
     await screen.findByText('Categorías combinadas')
     type('Aprobado con (%)', '80')
@@ -225,7 +225,7 @@ describe('ExamEditPage: merging categories (S08-5)', () => {
     const merge = vi.spyOn(exams, 'mergeCategories')
     await loaded()
     pick('Storage', 'Amazon S3')
-    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Combinar categorías de «Servicio»' }))
     fireEvent.click(within(await findDialog('¿Combinar «Storage» en «Amazon S3»?')).getByRole('button', { name: 'Cancelar' }))
     expect(merge).not.toHaveBeenCalled()
   })
@@ -233,7 +233,7 @@ describe('ExamEditPage: merging categories (S08-5)', () => {
   it('the merge button needs two different categories', async () => {
     open()
     await loaded()
-    const button = screen.getByRole('button', { name: 'Combinar categorías' }) as HTMLButtonElement
+    const button = screen.getByRole('button', { name: 'Combinar categorías de «Servicio»' }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     choose(document.body, 'Combinar desde (Servicio)', 'Storage')
     expect(button.disabled).toBe(true)
