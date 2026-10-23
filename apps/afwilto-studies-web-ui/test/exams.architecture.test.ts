@@ -125,6 +125,17 @@ describe('exams architecture checker (self-test, S07-6)', () => {
     expect(contentViolations('features/take-exam/ui/organisms/O.tsx', 'const s = useServices()')).not.toEqual([])
   })
 
+  it('flags data fetching below a page: @/di and useAsync in atoms, molecules and organisms (review fix 13)', () => {
+    for (const from of ['features/take-exam/ui/organisms/O', 'features/take-exam/ui/molecules/M', 'shared/ui/atoms/A', 'shared/ui/organisms/O']) {
+      expect(edgeViolations(`${from}.tsx`, 'di')).not.toEqual([])
+      expect(edgeViolations(`${from}.tsx`, 'di/index')).not.toEqual([])
+      expect(edgeViolations(`${from}.tsx`, 'hooks/useAsync')).not.toEqual([])
+    }
+    expect(contentViolations('features/take-exam/ui/organisms/O.tsx', 'const data = useAsync(() => load(), [])')).not.toEqual([])
+    expect(contentViolations('shared/ui/molecules/M.tsx', "import { useAsync } from '@/hooks/useAsync'")).not.toEqual([])
+    expect(contentViolations('features/take-exam/ui/pages/P.tsx', 'const data = useAsync(() => load(), [])')).toEqual([])
+  })
+
   it('allows the permitted edges', () => {
     expect(edgeViolations('router/routes.tsx', 'features/manage-exams/ui/pages/ExamsPage')).toEqual([])
     expect(edgeViolations('di/container.ts', 'exams/infrastructure/http/ExamsHttpAdapter')).toEqual([])
