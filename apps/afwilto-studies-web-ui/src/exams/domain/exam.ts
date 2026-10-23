@@ -92,23 +92,23 @@ export function weightsSum(percents: Array<number | null>): number {
 
 /** Largest-remainder apportionment of 100 over `counts` (FR-3.4). All zero counts give all zero. */
 export function inferWeights(counts: number[]): number[] {
-  const total = counts.reduce((a, b) => a + b, 0)
-  if (total === 0) return counts.map(() => 0)
-  const raw = counts.map((c) => (c * 100) / total)
-  const floors = raw.map(Math.floor)
-  let remaining = 100 - floors.reduce((a, b) => a + b, 0)
-  const order = raw
-    .map((r, i) => ({ i, frac: r - floors[i] }))
-    .sort((a, b) => b.frac - a.frac || a.i - b.i)
-  for (const { i } of order) {
-    if (remaining <= 0) break
-    floors[i] += 1
-    remaining -= 1
-  }
-  return floors
+  return apportion(100, counts)
 }
 
 /** Largest-remainder apportionment of `total` over `weights` (FR-9): the parts sum to `total`; all-zero weights give all zeros. */
-export function apportion(_total: number, _weights: number[]): number[] {
-  throw new Error('not implemented')
+export function apportion(total: number, weights: number[]): number[] {
+  const sum = weights.reduce((a, b) => a + b, 0)
+  if (sum === 0) return weights.map(() => 0)
+  const raw = weights.map((w) => (w * total) / sum)
+  const parts = raw.map(Math.floor)
+  let remaining = total - parts.reduce((a, b) => a + b, 0)
+  const order = raw
+    .map((r, i) => ({ i, frac: r - parts[i] }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i)
+  for (const { i } of order) {
+    if (remaining <= 0) break
+    parts[i] += 1
+    remaining -= 1
+  }
+  return parts
 }

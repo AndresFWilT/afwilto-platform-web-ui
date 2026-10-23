@@ -4,8 +4,10 @@ import type {
   AnswerOutcome,
   Attempt,
   AttemptHistory,
+  AttemptItem,
   AttemptReport,
   AttemptResult,
+  AttemptReveal,
   AttemptSummary,
   CreateExamInput,
   Difficulty,
@@ -17,13 +19,18 @@ import type {
   ImportReport,
   MergeCategoriesInput,
   QuestionFilter,
+  QuestionCategoryRef,
   QuestionOrigin,
   QuestionSummary,
+  ReviewItem,
   SessionConfig,
   SessionPreview,
   UpdateExamInput,
+  ViewOption,
 } from '@/exams/domain'
+import { buildBreakdown } from '@/exams/domain'
 import {
+  ExamsAttemptInProgressError,
   ExamsConflictError,
   ExamsNotFoundError,
   ExamsValidationError,
@@ -69,6 +76,49 @@ const fromWireReport = (report: WireReport): ImportReport => ({ ...report, previ
 
 type WireAttempt = Omit<AttemptSummary, 'passed'> & { passed?: boolean | null }
 
+interface WireReveal {
+  correct?: boolean
+  correctLabels?: string[]
+  rationales?: Record<string, string>
+  explanation?: string | null
+}
+type WireAttemptItem = Omit<AttemptItem, 'selected' | 'flagged' | 'answered' | 'reveal'> & { selected?: string[]; flagged?: boolean; answered?: boolean } & WireReveal
+type WireAttemptDetail = Omit<Attempt, 'items'> & { items: WireAttemptItem[] }
+type WireReviewItem = Omit<ReviewItem, 'reveal' | 'noteId'> & WireReveal & { correct: boolean; categories?: QuestionCategoryRef[]; noteId?: string | null; options: ViewOption[] }
+
+function toReveal(wire: WireReveal): AttemptReveal | undefined {
+  if (wire.correctLabels === undefined) return undefined
+  return {
+    correct: wire.correct ?? false,
+    correctLabels: wire.correctLabels,
+    rationales: wire.rationales ?? {},
+    ...optional({ explanation: wire.explanation }),
+  }
+}
+
+function fromWireAttempt(wire: WireAttemptDetail): Attempt {
+  return {
+    ...wire,
+    items: wire.items.map((item): AttemptItem => {
+      const { selected, flagged, answered, correct: _c, correctLabels: _l, rationales: _r, explanation: _e, ...rest } = item
+      const reveal = toReveal(item)
+      return { ...rest, selected: selected ?? [], flagged: flagged ?? false, answered: answered ?? false, ...(reveal && { reveal }) }
+    }),
+  }
+}
+
+function fromWireReview(item: WireReviewItem): ReviewItem {
+  const { correct, correctLabels, rationales, explanation, categories, noteId, ...rest } = item
+  return {
+    ...rest,
+    reveal: toReveal({ correct, correctLabels, rationales, explanation }) ?? { correct, correctLabels: [], rationales: {} },
+    categories: categories ?? [],
+    ...optional({ noteId }),
+  }
+}
+
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
 const SHA256 = /^[0-9a-f]{64}$/
 
 /** HTTP failures → the port's domain errors; status codes never leave the adapter. */
@@ -79,6 +129,9 @@ function translateError(e: unknown): Error {
   if (e.status === 422 && details.length) return new ExamsValidationError(details, err?.message)
   if (e.status === 409 && details.length) {
     const [first] = details
+    if (first.rule === 'attempt_in_progress') {
+      return new ExamsAttemptInProgressError(first.message.match(UUID)?.[0] ?? err?.message?.match(UUID)?.[0] ?? '', first.message || err?.message)
+    }
     return new ExamsConflictError(first.field, first.rule as ExamsConflictRule, first.message || err?.message || 'conflict')
   }
   if (e.status === 404) return new ExamsNotFoundError(err?.message)
@@ -187,23 +240,57 @@ export class ExamsHttpAdapter implements IExamsService {
     })
   }
 
-  async previewSession(_examId: string, _config: SessionConfig): Promise<SessionPreview> {
-    throw new Error('not implemented')
+  async previewSession(examId: string, config: SessionConfig): Promise<SessionPreview> {
+    return this.call(async () => (await this.http.post<{ data: SessionPreview }>(`/exams/${encodeURIComponent(examId)}/sessions/preview`, { config })).data)
   }
-  async startAttempt(_examId: string, _config: SessionConfig, _seed?: number): Promise<Attempt> {
-    throw new Error('not implemented')
+
+  async startAttempt(examId: string, config: SessionConfig, seed?: number): Promise<Attempt> {
+    return this.call(async () => {
+      const body = seed === undefined ? { config } : { config, seed }
+      return fromWireAttempt((await this.http.post<{ data: WireAttemptDetail }>(`/exams/${encodeURIComponent(examId)}/attempts`, body)).data)
+    })
   }
-  async getAttempt(_attemptId: string): Promise<Attempt> {
-    throw new Error('not implemented')
+
+  async getAttempt(attemptId: string): Promise<Attempt> {
+    return this.call(async () => fromWireAttempt((await this.http.get<{ data: WireAttemptDetail }>(`/attempts/${encodeURIComponent(attemptId)}`)).data))
   }
-  async answerItem(_attemptId: string, _position: number, _answer: AnswerInput): Promise<AnswerOutcome> {
-    throw new Error('not implemented')
+
+  async answerItem(attemptId: string, position: number, answer: AnswerInput): Promise<AnswerOutcome> {
+    return this.call(async () => {
+      const res = await this.http.put<{ data: WireReveal & AnswerInput & { position: number } }>(`/attempts/${encodeURIComponent(attemptId)}/items/${position}`, answer)
+      const reveal = toReveal(res.data)
+      return { position: res.data.position, selected: res.data.selected, flagged: res.data.flagged, ...(reveal && { reveal }) }
+    })
   }
-  async submitAttempt(_attemptId: string): Promise<AttemptResult> {
-    throw new Error('not implemented')
+
+  async submitAttempt(attemptId: string): Promise<AttemptResult> {
+    return this.call(async () => (await this.http.post<{ data: AttemptResult }>(`/attempts/${encodeURIComponent(attemptId)}/submit`, {})).data)
   }
-  async getAttemptReport(_attemptId: string): Promise<AttemptReport> {
-    throw new Error('not implemented')
+
+  async getAttemptReport(attemptId: string): Promise<AttemptReport> {
+    const attempt = await this.getAttempt(attemptId)
+    if (attempt.status === 'in_progress') throw new ExamsAttemptInProgressError(attemptId)
+    const [history, review] = await Promise.all([
+      this.listAttempts(attempt.examId),
+      this.call(async () => (await this.http.get<{ data: WireReviewItem[] }>(`/attempts/${encodeURIComponent(attemptId)}/review`)).data.map(fromWireReview)).catch((e: unknown) => {
+        throw e instanceof ExamsAttemptInProgressError ? new ExamsAttemptInProgressError(attemptId, e.message) : e
+      }),
+    ])
+    const summary = history.attempts.find((a) => a.id === attemptId)
+    const correctCount = review.filter((r) => r.reveal.correct).length
+    return {
+      examId: attempt.examId,
+      selectionKind: attempt.config.selection.kind,
+      review,
+      result: {
+        scorePercent: summary?.scorePercent ?? (review.length ? Math.round((10000 * correctCount) / review.length) / 100 : 0),
+        passed: summary?.passed ?? null,
+        correctCount,
+        total: review.length,
+        durationSeconds: summary?.durationSeconds ?? 0,
+        breakdown: buildBreakdown(review),
+      },
+    }
   }
 
   mediaUrl(sha256: string): string | null {

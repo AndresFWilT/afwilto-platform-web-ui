@@ -31,6 +31,7 @@ import {
 } from '@/exams/application/ports'
 import { fold } from './names'
 import { planImport } from './memoryImport'
+import { MemoryAttempts } from './memoryAttempts'
 
 export interface ExamsSeed {
   exams: Exam[]
@@ -105,14 +106,21 @@ export class InMemoryExamsAdapter implements IExamsService {
   private readonly media: Record<string, string>
   private questions: ExamQuestion[]
   private readonly attempts: Record<string, AttemptHistory>
+  private readonly engine: MemoryAttempts
   private readonly createdAt = new Date().toISOString()
   private readonly touched = new Map<string, string>()
 
-  constructor(seed: ExamsSeed, _options: InMemoryExamsOptions = {}) {
+  constructor(seed: ExamsSeed, options: InMemoryExamsOptions = {}) {
     this.exams = clone(seed.exams)
     this.media = { ...seed.media }
     this.questions = clone(seed.questions ?? [])
     this.attempts = clone(seed.attempts ?? {})
+    this.engine = new MemoryAttempts({
+      now: options.now ?? Date.now,
+      exam: (examId) => this.view(this.stored(examId)),
+      bank: (examId) => this.questions.filter((q) => q.examId === examId),
+      notes: seed.notes ?? {},
+    })
   }
 
   // ── exams ──────────────────────────────────────────────────────────────────
@@ -237,7 +245,8 @@ export class InMemoryExamsAdapter implements IExamsService {
   }
 
   async listAttempts(examId: string): Promise<AttemptHistory> {
-    return clone(this.attempts[examId] ?? { attempts: [], trend: [] })
+    this.stored(examId)
+    return this.engine.history(examId, clone(this.attempts[examId]))
   }
 
   exportUrl(examId: string): string {
@@ -318,23 +327,30 @@ export class InMemoryExamsAdapter implements IExamsService {
     this.questions.splice(this.questions.indexOf(this.question(questionId)), 1)
   }
 
-  async previewSession(_examId: string, _config: SessionConfig): Promise<SessionPreview> {
-    throw new Error('not implemented')
+  // ── sessions and attempts ─────────────────────────────────────────────────
+
+  async previewSession(examId: string, config: SessionConfig): Promise<SessionPreview> {
+    return this.engine.preview(examId, config)
   }
-  async startAttempt(_examId: string, _config: SessionConfig, _seed?: number): Promise<Attempt> {
-    throw new Error('not implemented')
+
+  async startAttempt(examId: string, config: SessionConfig, seed?: number): Promise<Attempt> {
+    return this.engine.start(examId, config, seed)
   }
-  async getAttempt(_attemptId: string): Promise<Attempt> {
-    throw new Error('not implemented')
+
+  async getAttempt(attemptId: string): Promise<Attempt> {
+    return this.engine.get(attemptId)
   }
-  async answerItem(_attemptId: string, _position: number, _answer: AnswerInput): Promise<AnswerOutcome> {
-    throw new Error('not implemented')
+
+  async answerItem(attemptId: string, position: number, answer: AnswerInput): Promise<AnswerOutcome> {
+    return this.engine.answer(attemptId, position, answer)
   }
-  async submitAttempt(_attemptId: string): Promise<AttemptResult> {
-    throw new Error('not implemented')
+
+  async submitAttempt(attemptId: string): Promise<AttemptResult> {
+    return this.engine.submit(attemptId)
   }
-  async getAttemptReport(_attemptId: string): Promise<AttemptReport> {
-    throw new Error('not implemented')
+
+  async getAttemptReport(attemptId: string): Promise<AttemptReport> {
+    return this.engine.report(attemptId)
   }
 
   mediaUrl(sha256: string): string | null {
@@ -366,6 +382,8 @@ export class InMemoryExamsAdapter implements IExamsService {
     const copy = clone(exam)
     const mine = questions.filter((q) => q.examId === exam.id)
     copy.questionTotal = mine.length
+    const lastSimulation = this.engine.lastSimulation(exam.id)
+    if (lastSimulation) copy.lastSimulation = lastSimulation
     copy.classifications.sort((a, b) => a.position - b.position)
     for (const classification of copy.classifications) {
       for (const category of classification.categories) {
