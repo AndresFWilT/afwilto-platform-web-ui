@@ -104,5 +104,5 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
   - A `simulation` preview and start report `suggestedMinutes` = the exam's `timeLimitMin` (FR-8), or 0 when nothing can be drawn.
   - The draw consumes one PCG stream (`rand.NewPCG(seed, seed)`) in this order: per-category shuffles (simulation) or the pool shuffle (random, categories), then the final question shuffle (simulation only), then one option shuffle per drawn question in final order.
   - The seed is a uint64 on the wire (0 to 18446744073709551615) and its bit pattern is stored in the `bigint` column.
-  - `suggestedMinutes` sums the paces as floats and rounds up after subtracting 1e-9, so `3 × 10/3` is 10 and not 11.
+  - `suggestedMinutes` sums the paces as floats and rounds up after subtracting 1e-9, so `6 × 7/3`, which floats sum to 14.000000000000002, is 14 and not 15.
   - An attempt past its deadline stays `in_progress` (and blocks a new start with BR-A1) until 06b's lazy finalize touches it, i.e. until the next `GET`/`PUT`/`POST submit` on that attempt. Starting does not finalize other attempts.
