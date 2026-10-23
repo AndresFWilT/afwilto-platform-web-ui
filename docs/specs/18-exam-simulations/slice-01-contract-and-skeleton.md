@@ -76,7 +76,7 @@ None, since this is an infrastructure slice.
 `info.version: 0.2.0` adds the following, typed from parent §2:
 
 - paths: every parent §6 endpoint;
-- schemas: `Exam`, `ExamSummary`, `Classification`, `Category`, `QuestionSummary`, `Question`,
+- schemas: `Exam`, `ExamSummary`, `Classification`, `ExamCategory`, `QuestionSummary`, `Question`,
   `QuestionOption`, `ImportReport`, `SessionConfig`, `SessionPreview`, `Attempt`,
   `AttemptItem`, `AttemptResult`, `ReviewItem` and `AttemptSummary`.
 
@@ -105,3 +105,9 @@ None.
 - `golang.org/x/text` becomes a direct dependency. It is already in the module graph.
 - `cmd/api/main.go` switches to `httpx.NewServer(cfg, studieshttp.Register(deps),
   examshttp.Register(examDeps))`.
+
+## 8. Amendments
+
+- 2026-10-22: the exams category schema is named `ExamCategory`, not `Category` (§4). `Category` is already the studies category-tree schema in `openapi.yaml`, and a second definition cannot share the name.
+- 2026-10-22: S01-2 reads "pre-existing test files change only in their import lines, except that the three middleware unit tests (`TestPanicBecomesInternalError`, `TestBodyLimitMiddlewareCapsReads`, `TestBodyLimitIgnoresDeclaredLengthOnBodylessMethods`) move verbatim, with the renamed exported functions, to `internal/platform/httpx` together with the code they exercise". The unexported functions they call no longer exist in `studieshttp`. `contract_test.go` also moves its `info.version` assertion to `0.2.0` (S01-1).
+- 2026-10-22: implementation detail for §1.4: `httpx.Config` carries `BodyLimits map[string]int64` (mux pattern → limit, overriding `MaxBodyBytes`), and `examshttp.ImportPattern` names the import route. `cmd/api/main.go` maps it to `MAX_IMPORT_BYTES`.
