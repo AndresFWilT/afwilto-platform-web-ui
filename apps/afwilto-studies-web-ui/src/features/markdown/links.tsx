@@ -35,7 +35,7 @@ export function MarkdownLink({ href, children, className: _ignored, target: _tar
 const MEDIA_SRC = /^media:([0-9a-f]{64})$/i
 
 /**
- * Images: https always; `media:<sha256>` only through `resolveMediaUrl`. Anything
+ * Images: https for notes; `media:<sha256>` only through `resolveMediaUrl`, and with a resolver (exam content) nothing else. Anything
  * else, or a resolver that returns null, renders its alt text and is never requested.
  */
 export function MarkdownImage({
@@ -47,7 +47,8 @@ export function MarkdownImage({
   let url: string | null = src
   const media = MEDIA_SRC.exec(src)
   if (src.startsWith('media:')) url = media && resolveMediaUrl ? resolveMediaUrl(media[1]) : null
-  else if (!src.startsWith('https://')) url = null
+  // Exam content (a resolver is present) shows only its own stored images; notes may still embed https ones.
+  else if (resolveMediaUrl || !src.startsWith('https://')) url = null
   if (!url) return <>{alt ?? ''}</>
   return <img src={url} alt={alt ?? ''} loading="lazy" referrerPolicy="no-referrer" className="my-4 max-w-full rounded-lg" />
 }
