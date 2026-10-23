@@ -722,6 +722,64 @@ describe('RunnerPage: review mode stays locked while any save of the item is in 
   })
 })
 
+describe('RunnerPage: a manual submit in flight when the clock hits 0 (R8)', () => {
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
+  const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+
+  async function openAlmostOver() {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(59)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    return { exams, attempt }
+  }
+
+  it('the manual submit fails after 0: the auto-submit takes over and opens the result', async () => {
+    const { exams, attempt } = await openAlmostOver()
+    let fail: (e: Error) => void = () => {}
+    const original = exams.submitAttempt.bind(exams)
+    const submit = vi.spyOn(exams, 'submitAttempt').mockImplementationOnce(() => new Promise((_, reject) => (fail = reject)))
+    submit.mockImplementation((id) => original(id))
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 5 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
+    await advance(2000)
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(currentLocation()).not.toMatch(/result/)
+
+    await act(async () => fail(new Error('el servidor no responde')))
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(2)
+  })
+
+  it('the user cancels the unsaved-answers question after 0: the auto-submit takes over and the result shows the unsaved count', async () => {
+    const { exams, attempt } = await openAlmostOver()
+    const pending = gated(exams)
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    fireEvent.click(options()[0])
+    await settle()
+    expect(pending).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 4 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
+    await advance(2000)
+    await act(async () => pending[0].fail(new Error('sin conexión')))
+    await settle()
+    expect(pending).toHaveLength(2)
+    await act(async () => pending[1].fail(new Error('sin conexión')))
+    const unsaved = await findDialog('Hay respuestas sin guardar. ¿Entregar de todos modos?')
+    expect(submit).not.toHaveBeenCalled()
+
+    fireEvent.click(within(unsaved).getByRole('button', { name: 'Cancelar' }))
+    await settle()
+    expect(pending).toHaveLength(3)
+    await act(async () => pending[2].fail(new Error('sin conexión')))
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('1 respuesta no se pudo guardar')).toBeTruthy()
+  })
+})
+
 describe('RunnerPage: failed saves are a set, retried before submitting (R3)', () => {
   const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
 
