@@ -293,22 +293,30 @@ describe('ExamsHttpAdapter: errors are mapped by rule even when details is empty
     adapter = new ExamsHttpAdapter(http, API)
   })
 
-  it.each(['answer_locked', 'attempt_closed', 'attempt_expired'])('a 409 whose code or message names %s is an ExamsConflictError with that rule', async (rule) => {
+  it.each(['answer_locked', 'attempt_closed', 'attempt_expired'])('a 409 whose code names %s is an ExamsConflictError with that rule', async (rule) => {
     vi.mocked(http.put).mockRejectedValueOnce(new HttpError(409, 'Conflict', envelope(rule, 'x')))
     const byCode = (await adapter.answerItem(ATTEMPT_ID, 0, { selected: [], flagged: false }).catch((e: unknown) => e)) as ExamsConflictError
     expect(byCode).toBeInstanceOf(ExamsConflictError)
     expect(byCode.rule).toBe(rule)
-    vi.mocked(http.put).mockRejectedValueOnce(new HttpError(409, 'Conflict', envelope('conflict', `conflict: ${rule}: no`, [])))
-    const byMessage = (await adapter.answerItem(ATTEMPT_ID, 0, { selected: [], flagged: false }).catch((e: unknown) => e)) as ExamsConflictError
-    expect(byMessage).toBeInstanceOf(ExamsConflictError)
-    expect(byMessage.rule).toBe(rule)
   })
 
-  it.each(['invalid_text', 'range'])('a 422 whose code or message names %s is an ExamsValidationError carrying that rule', async (rule) => {
+  it.each(['answer_locked', 'attempt_closed', 'attempt_expired'])('a 409 without details whose message merely contains %s is NOT turned into a conflict rule', async (rule) => {
+    vi.mocked(http.put).mockRejectedValueOnce(new HttpError(409, 'Conflict', envelope('conflict', `conflict: ${rule}: no`, [])))
+    const error = await adapter.answerItem(ATTEMPT_ID, 0, { selected: [], flagged: false }).catch((e: unknown) => e)
+    expect(error).not.toBeInstanceOf(ExamsConflictError)
+  })
+
+  it.each(['invalid_text', 'range'])('a 422 whose code names %s is an ExamsValidationError carrying that rule', async (rule) => {
     vi.mocked(http.put).mockRejectedValueOnce(new HttpError(422, 'Unprocessable', envelope(rule, 'bad value', [])))
     const error = (await adapter.answerItem(ATTEMPT_ID, 0, { selected: [], flagged: false }).catch((e: unknown) => e)) as ExamsValidationError
     expect(error).toBeInstanceOf(ExamsValidationError)
     expect(error.details.map((d) => d.rule)).toEqual([rule])
+  })
+
+  it.each(['invalid_text', 'range'])('a 422 without details whose message contains the word %s is NOT turned into a validation error', async (rule) => {
+    vi.mocked(http.put).mockRejectedValueOnce(new HttpError(422, 'Unprocessable', envelope('unprocessable', `value out of ${rule} for the field`, [])))
+    const error = await adapter.answerItem(ATTEMPT_ID, 0, { selected: [], flagged: false }).catch((e: unknown) => e)
+    expect(error).not.toBeInstanceOf(ExamsValidationError)
   })
 
   it('an unrelated 409 without details stays a plain Error', async () => {
