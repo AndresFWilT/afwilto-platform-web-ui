@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/shared/ui/organisms/ConfirmDialog'
 import { BankFilters, type BankFilterValues } from '../organisms/BankFilters'
 import { QuestionDetail } from '../organisms/QuestionDetail'
 import { QuestionList } from '../organisms/QuestionList'
+import { QuestionBankTemplate } from '../templates/QuestionBankTemplate'
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 
@@ -71,70 +72,70 @@ function Bank({ exam }: { exam: Exam }) {
 
   const originSets = everything.status === 'success' ? [...new Set(everything.data.flatMap((q) => (q.origin?.set ? [q.origin.set] : [])))].sort() : []
 
+  const empty = everything.status === 'success' && everything.data.length === 0
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <Link to={`/studies/exams/${exam.id}`} className="text-sm text-neutral-400 hover:text-neutral-100">{exam.name}</Link>
-        <Text variant="h1" color="default">Banco de preguntas</Text>
-      </header>
-
-      {everything.status === 'success' && everything.data.length === 0 ? (
-        <EmptyState
-          icon="📝"
-          title="Este examen aún no tiene preguntas"
-          description="Impórtalas desde un archivo .json o .zip."
-          action={<ButtonLink to={`/studies/exams/${exam.id}/import`}>Importar preguntas</ButtonLink>}
-        />
-      ) : (
+    <QuestionBankTemplate
+      back={{ to: `/studies/exams/${exam.id}`, label: exam.name }}
+      title="Banco de preguntas"
+      empty={
+        empty ? (
+          <EmptyState
+            icon="📝"
+            title="Este examen aún no tiene preguntas"
+            description="Impórtalas desde un archivo .json o .zip."
+            action={<ButtonLink to={`/studies/exams/${exam.id}/import`}>Importar preguntas</ButtonLink>}
+          />
+        ) : undefined
+      }
+      filters={<BankFilters classifications={exam.classifications} originSets={originSets} values={values} onChange={change} onClear={() => setParams({}, { replace: true })} active={active} />}
+      list={
         <>
-          <BankFilters classifications={exam.classifications} originSets={originSets} values={values} onChange={change} onClear={() => setParams({}, { replace: true })} active={active} />
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="flex basis-[24rem] grow flex-col gap-2">
-              {list.status === 'loading' && <LoadingRows />}
-              {list.status === 'error' && <LoadError error={list.error} title="No se pudo cargar el banco" />}
-              {list.status === 'success' && (
-                <>
-                  <Text variant="small" color="muted">
-                    {list.data.length} de {everything.status === 'success' ? everything.data.length : list.data.length} preguntas
-                  </Text>
-                  {list.data.length === 0 ? (
-                    <EmptyState icon="🔎" title="No hay preguntas con estos filtros" />
-                  ) : (
-                    <QuestionList questions={list.data} openId={openId} onOpen={setOpenId} />
-                  )}
-                </>
+          {list.status === 'loading' && <LoadingRows />}
+          {list.status === 'error' && <LoadError error={list.error} title="No se pudo cargar el banco" />}
+          {list.status === 'success' && (
+            <>
+              <Text variant="small" color="muted">
+                {list.data.length} de {everything.status === 'success' ? everything.data.length : list.data.length} preguntas
+              </Text>
+              {list.data.length === 0 ? (
+                <EmptyState icon="🔎" title="No hay preguntas con estos filtros" />
+              ) : (
+                <QuestionList questions={list.data} openId={openId} onOpen={setOpenId} />
               )}
-            </div>
-            {openId && (
-              <section aria-label="Pregunta seleccionada" className="flex basis-[28rem] grow flex-col gap-3 rounded-lg border border-surface-border p-4">
-                {open.status === 'loading' && <LoadingRows />}
-                {open.status === 'error' && <LoadError error={open.error} title="No se pudo cargar la pregunta" />}
-                {open.status === 'success' && open.data && (
-                  <QuestionDetail question={open.data} resolveMediaUrl={resolveMediaUrl} onDelete={() => setDeleting(true)} onClose={() => setOpenId(null)} />
-                )}
-              </section>
-            )}
-          </div>
+            </>
+          )}
         </>
-      )}
-
-      {deleting && open.status === 'success' && open.data && (
-        <ConfirmDialog
-          danger
-          title={`¿Eliminar la pregunta «${open.data.key}»?`}
-          confirmLabel="Eliminar pregunta"
-          onClose={() => setDeleting(false)}
-          onConfirm={async () => {
-            await examsService.deleteQuestion(open.data!.id)
-            showToast('Pregunta eliminada', 'success')
-            setDeleting(false)
-            setOpenId(null)
-            setRevision((n) => n + 1)
-          }}
-        >
-          <p className="text-sm text-neutral-300">Se elimina del banco; los intentos pasados conservan su copia.</p>
-        </ConfirmDialog>
-      )}
-    </div>
+      }
+      detail={
+        openId && (
+          <>
+            {open.status === 'loading' && <LoadingRows />}
+            {open.status === 'error' && <LoadError error={open.error} title="No se pudo cargar la pregunta" />}
+            {open.status === 'success' && open.data && (
+              <QuestionDetail question={open.data} resolveMediaUrl={resolveMediaUrl} onDelete={() => setDeleting(true)} onClose={() => setOpenId(null)} />
+            )}
+          </>
+        )
+      }
+      overlays={
+        deleting && open.status === 'success' && open.data ? (
+          <ConfirmDialog
+            danger
+            title={`¿Eliminar la pregunta «${open.data.key}»?`}
+            confirmLabel="Eliminar pregunta"
+            onClose={() => setDeleting(false)}
+            onConfirm={async () => {
+              await examsService.deleteQuestion(open.data!.id)
+              showToast('Pregunta eliminada', 'success')
+              setDeleting(false)
+              setOpenId(null)
+              setRevision((n) => n + 1)
+            }}
+          >
+            <p className="text-sm text-neutral-300">Se elimina del banco; los intentos pasados conservan su copia.</p>
+          </ConfirmDialog>
+        ) : undefined
+      }
+    />
   )
 }

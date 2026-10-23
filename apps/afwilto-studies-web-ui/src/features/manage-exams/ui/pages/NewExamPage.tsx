@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Alert, Button, Text, useToast } from '@afwilto/design-system'
+import { Alert, Button, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { validateExamInput, violationProblems, type ExamFormValues } from '@/exams/domain'
 import { ExamsConflictError, ExamsValidationError } from '@/exams/application/ports'
 import { ButtonLink } from '@/shared/ui/atoms/ButtonLink'
 import { ExamParametersFields } from '../organisms/ExamParametersFields'
+import { ManageExamTemplate } from '../templates/ManageExamTemplate'
 
 type FieldErrors = Partial<Record<keyof ExamFormValues, string>>
 
@@ -48,14 +49,15 @@ export function NewExamPage() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex max-w-xl flex-col gap-4">
-      <Text variant="h1" color="default">Nuevo examen</Text>
-      <ExamParametersFields values={values} errors={errors} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} disabled={saving} />
-      {alert && <Alert variant="error">{alert}</Alert>}
-      <div className="flex gap-2">
-        <Button type="submit" loading={saving}>Crear examen</Button>
-        <ButtonLink to={`/studies/subjects/${subjectId}/exams`} variant="ghost">Cancelar</ButtonLink>
-      </div>
+    <form onSubmit={submit} noValidate>
+      <ManageExamTemplate title="Nuevo examen" width="narrow">
+        <ExamParametersFields values={values} errors={errors} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} disabled={saving} />
+        {alert && <Alert variant="error">{alert}</Alert>}
+        <div className="flex gap-2">
+          <Button type="submit" loading={saving}>Crear examen</Button>
+          <ButtonLink to={`/studies/subjects/${subjectId}/exams`} variant="ghost">Cancelar</ButtonLink>
+        </div>
+      </ManageExamTemplate>
     </form>
   )
 }

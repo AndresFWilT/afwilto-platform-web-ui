@@ -107,9 +107,26 @@ export function contentViolations(rel: string, source: string): string[] {
   return found
 }
 
-/** Stub of the red commit. */
-export function templateViolations(_entries: Array<{ rel: string; source: string }>): string[] {
-  return []
+/**
+ * Pages orchestrate (data and handlers become props); templates carry the layout. So every feature that has
+ * `ui/pages/` also has `ui/templates/`, and every page imports a template of its own feature or a shared one.
+ */
+export function templateViolations(entries: Array<{ rel: string; source: string }>): string[] {
+  const found: string[] = []
+  const features = new Set(entries.map((e) => e.rel.split('/')[1]))
+  for (const feature of features) {
+    const own = entries.filter((e) => e.rel.startsWith(`features/${feature}/`))
+    const pages = own.filter((e) => e.rel.startsWith(`features/${feature}/ui/pages/`))
+    if (pages.length === 0) continue
+    if (!own.some((e) => e.rel.startsWith(`features/${feature}/ui/templates/`))) found.push(`features/${feature} has pages and no ui/templates/`)
+    for (const page of pages) {
+      const usesTemplate = localImports(page.rel, page.source).some(
+        (to) => to.startsWith(`features/${feature}/ui/templates/`) || to.startsWith('shared/ui/templates/')
+      )
+      if (!usesTemplate) found.push(`${page.rel} imports no template`)
+    }
+  }
+  return found
 }
 
 describe('exams architecture checker (self-test, S07-6)', () => {

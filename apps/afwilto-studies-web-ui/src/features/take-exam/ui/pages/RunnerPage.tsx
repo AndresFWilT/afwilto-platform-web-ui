@@ -23,6 +23,7 @@ import { RunnerFooter } from '../organisms/RunnerFooter'
 import { RunnerHeader } from '../organisms/RunnerHeader'
 import { SaveFailedToast } from '../organisms/SaveFailedToast'
 import { SubmitConfirm } from '../organisms/SubmitConfirm'
+import { RunnerTemplate } from '../templates/RunnerTemplate'
 import { UnsavedConfirm } from '../organisms/UnsavedConfirm'
 import { MultiChoiceHint } from '../molecules/MultiChoiceHint'
 
@@ -325,11 +326,11 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   const itemLocked = item.reveal !== undefined || locked.has(item.position)
   const failedKey = failed.join(',')
   return (
-    <div className="flex flex-col gap-4">
-      <RunnerHeader examName={examName} position={position} total={total} remainingSeconds={remaining} />
-      {submitError && <Alert variant="error" title="No se pudo entregar el simulacro">{submitError}</Alert>}
-      <div className="flex flex-wrap items-start gap-6">
-        <main className="flex basis-[36rem] grow flex-col gap-4">
+    <RunnerTemplate
+      header={<RunnerHeader examName={examName} position={position} total={total} remainingSeconds={remaining} />}
+      notice={submitError && <Alert variant="error" title="No se pudo entregar el simulacro">{submitError}</Alert>}
+      question={
+        <>
           <QuestionView
             key={item.position}
             question={itemView(item)}
@@ -342,26 +343,30 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
           {feedback === 'each' && item.type === 'multi' && !itemLocked && item.selected.length < (item.chooseCount ?? 1) && (
             <MultiChoiceHint chooseCount={item.chooseCount ?? 1} selectedCount={item.selected.length} />
           )}
-        </main>
-        <aside className="flex basis-[16rem] grow flex-col gap-2">
-          <QuestionNavigator items={items} current={position} saving={new Set(saving.keys())} onSelect={goTo} />
-        </aside>
-      </div>
-      <RunnerFooter
-        hasPrevious={position > 0}
-        hasNext={position < total - 1}
-        flagged={item.flagged}
-        submitting={submitting}
-        onPrevious={() => goTo(position - 1)}
-        onNext={() => goTo(position + 1)}
-        onFlag={toggleFlag}
-        onSubmit={() => setConfirming(true)}
-      />
-      {failed.length > 0 && failedKey !== dismissedKey && (
-        <SaveFailedToast questions={failed.map((at) => at + 1)} onRetry={retryFailed} onDismiss={() => setDismissedKey(failedKey)} />
-      )}
-      {confirming && <SubmitConfirm unanswered={unansweredCount(items)} onConfirm={() => submit()} onClose={() => setConfirming(false)} />}
-      {unsaved && <UnsavedConfirm questions={unsaved} onConfirm={() => submit({ confirmed: true })} onClose={() => setUnsaved(undefined)} />}
-    </div>
+        </>
+      }
+      navigator={<QuestionNavigator items={items} current={position} saving={new Set(saving.keys())} onSelect={goTo} />}
+      footer={
+        <RunnerFooter
+          hasPrevious={position > 0}
+          hasNext={position < total - 1}
+          flagged={item.flagged}
+          submitting={submitting}
+          onPrevious={() => goTo(position - 1)}
+          onNext={() => goTo(position + 1)}
+          onFlag={toggleFlag}
+          onSubmit={() => setConfirming(true)}
+        />
+      }
+      overlays={
+        <>
+          {failed.length > 0 && failedKey !== dismissedKey && (
+            <SaveFailedToast questions={failed.map((at) => at + 1)} onRetry={retryFailed} onDismiss={() => setDismissedKey(failedKey)} />
+          )}
+          {confirming && <SubmitConfirm unanswered={unansweredCount(items)} onConfirm={() => submit()} onClose={() => setConfirming(false)} />}
+          {unsaved && <UnsavedConfirm questions={unsaved} onConfirm={() => submit({ confirmed: true })} onClose={() => setUnsaved(undefined)} />}
+        </>
+      }
+    />
   )
 }

@@ -11,6 +11,7 @@ import { LoadError } from '@/shared/ui/molecules/LoadError'
 import { BreakdownBars } from '../organisms/BreakdownBars'
 import { ReviewList } from '../organisms/ReviewList'
 import { ScoreSummary } from '../organisms/ScoreSummary'
+import { ResultTemplate } from '../templates/ResultTemplate'
 
 export function ResultPage() {
   const { attemptId = '' } = useParams()
@@ -43,20 +44,19 @@ export function ResultPage() {
   }
   const { report, examName } = loaded.data
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        {examName && <Text variant="small" color="muted">{examName}</Text>}
-        <Text variant="h1" color="default">Resultado</Text>
-      </header>
-      {unsavedAnswers > 0 && (
-        <Alert variant="warning">{unsavedAnswers === 1 ? '1 respuesta no se pudo guardar' : `${unsavedAnswers} respuestas no se pudieron guardar`}</Alert>
-      )}
+    <ResultTemplate
+      examName={examName}
+      title="Resultado"
+      notice={
+        unsavedAnswers > 0 && (
+          <Alert variant="warning">{unsavedAnswers === 1 ? '1 respuesta no se pudo guardar' : `${unsavedAnswers} respuestas no se pudieron guardar`}</Alert>
+        )
+      }
+      footer={<ButtonLink to={`/studies/exams/${report.examId}`} variant="ghost">Volver al examen</ButtonLink>}
+    >
       <ScoreSummary result={report.result} />
       <BreakdownBars breakdown={report.result.breakdown} />
       <ReviewList review={report.review} filter={filter} onFilter={setFilter} resolveMediaUrl={resolveMediaUrl} />
-      <div>
-        <ButtonLink to={`/studies/exams/${report.examId}`} variant="ghost">Volver al examen</ButtonLink>
-      </div>
-    </div>
+    </ResultTemplate>
   )
 }

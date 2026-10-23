@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
@@ -11,6 +11,7 @@ import { LoadError } from '@/shared/ui/molecules/LoadError'
 import { StepIndicator, type WizardStep } from '../molecules/StepIndicator'
 import { FilePicker } from '../organisms/FilePicker'
 import { ImportReportView } from '../organisms/ImportReportView'
+import { ImportWizardTemplate } from '../templates/ImportWizardTemplate'
 
 export function ImportWizardPage() {
   const { examId = '' } = useParams()
@@ -114,12 +115,7 @@ function Wizard({ exam }: { exam: Exam }) {
   const nothingToDo = report !== null && report.counts.create + report.counts.update === 0
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Link to={`/studies/exams/${exam.id}`} className="text-sm text-neutral-400 hover:text-neutral-100">{exam.name}</Link>
-        <Text variant="h1" color="default">Importar preguntas</Text>
-        <StepIndicator current={step} />
-      </header>
+    <ImportWizardTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="Importar preguntas" steps={<StepIndicator current={step} />}>
 
       {step === 'file' && <FilePicker onFile={chooseFile} busy={busy} error={error} />}
 
@@ -160,6 +156,6 @@ function Wizard({ exam }: { exam: Exam }) {
           </div>
         </section>
       )}
-    </div>
+    </ImportWizardTemplate>
   )
 }

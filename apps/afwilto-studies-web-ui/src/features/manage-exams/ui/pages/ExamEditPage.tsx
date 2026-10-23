@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, EmptyState, Input, Select, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
@@ -12,6 +12,7 @@ import { CategoryRows } from '../organisms/CategoryRows'
 import { ExamParametersFields } from '../organisms/ExamParametersFields'
 import { MergeCategories } from '../organisms/MergeCategories'
 import { WeightsTable } from '../organisms/WeightsTable'
+import { ManageExamTemplate } from '../templates/ManageExamTemplate'
 
 const PARAM_FIELDS = ['name', 'questionCount', 'timeLimitMin', 'passPercent'] as const
 const STALE = 'El examen cambió mientras lo editabas. Recarga para ver la última versión.'
@@ -108,16 +109,12 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
   return (
     <form
       noValidate
-      className="flex max-w-3xl flex-col gap-6"
       onSubmit={(e) => {
         e.preventDefault()
         void save()
       }}
     >
-      <header className="flex flex-col gap-1">
-        <Link to={`/studies/exams/${base.id}`} className="text-sm text-neutral-400 hover:text-neutral-100">{base.name}</Link>
-        <Text variant="h1" color="default">Editar examen</Text>
-      </header>
+      <ManageExamTemplate back={{ to: `/studies/exams/${base.id}`, label: base.name }} title="Editar examen" width="form">
 
       <section aria-label="Parámetros" className="flex max-w-xl flex-col gap-4">
         <ExamParametersFields values={draft.params} errors={paramErrors} onChange={(field, value) => edit((d) => ({ ...d, params: { ...d.params, [field]: value } }))} disabled={saving} />
@@ -191,6 +188,7 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
         <Button type="submit" disabled={!check.patch} loading={saving}>Guardar cambios</Button>
         <ButtonLink to={`/studies/exams/${base.id}`} variant="ghost">Cancelar</ButtonLink>
       </div>
+      </ManageExamTemplate>
     </form>
   )
 }

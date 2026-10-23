@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert, Button, EmptyState, Text } from '@afwilto/design-system'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Alert, Button, EmptyState } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
 import {
@@ -23,6 +23,7 @@ import { PreviewSummary, type PreviewState } from '../organisms/PreviewSummary'
 import { SelectionFields } from '../organisms/SelectionFields'
 import { TimingFields } from '../organisms/TimingFields'
 import { ChoiceInput } from '../molecules/ChoiceInput'
+import { SessionSetupTemplate } from '../templates/SessionSetupTemplate'
 
 /** Every change to the selection is previewed after this pause. */
 const PREVIEW_DEBOUNCE_MS = 300
@@ -104,11 +105,7 @@ function SessionSetup({ exam, sets }: { exam: Exam; sets: string[] }) {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <Link to={`/studies/exams/${exam.id}`} className="text-sm text-neutral-400 hover:text-neutral-100">{exam.name}</Link>
-        <Text variant="h1" color="default">Nuevo simulacro</Text>
-      </header>
+    <SessionSetupTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="Nuevo simulacro">
 
       <div role="radiogroup" aria-label="Tipo de simulacro" className="flex flex-wrap gap-3">
         <div className="min-w-[16rem] flex-1 rounded-lg border border-surface-border bg-surface-raised p-4">
@@ -150,6 +147,6 @@ function SessionSetup({ exam, sets }: { exam: Exam; sets: string[] }) {
       <div>
         <Button onClick={start} disabled={!canStart} loading={starting}>Empezar</Button>
       </div>
-    </div>
+    </SessionSetupTemplate>
   )
 }
