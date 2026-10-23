@@ -101,6 +101,8 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   const [submitError, setSubmitError] = useState<string>()
   const closing = useRef(false)
   const autoSubmitting = useRef(false)
+  /** The countdown is at 0 (cleared by the next clock sync). */
+  const expired = useRef(false)
   const alive = useRef(true)
   const resultPath = `/studies/attempts/${attempt.id}/result`
   const resolveMediaUrl = useCallback((sha: string) => examsService.mediaUrl(sha), [examsService])
@@ -142,6 +144,7 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   const applySync = useCallback((seconds: number, requestedAt: number) => {
     if (requestedAt < syncedAt.current) return
     syncedAt.current = requestedAt
+    expired.current = false
     setSync((s) => ({ seconds, token: (s?.token ?? 0) + 1 }))
   }, [])
 
@@ -282,6 +285,8 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
       if (isClosedRule(e)) return toResult()
       closing.current = false
       setSubmitting(false)
+      // The clock hit 0 while this manual submit was in flight and the auto-submit stood aside: it takes over now.
+      if (expired.current && !auto) void autoSubmit()
       throw e
     }
   }
@@ -306,7 +311,15 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
       autoSubmitting.current = false
     }
   }
-  const remaining = useCountdown(sync, () => void autoSubmit())
+  const remaining = useCountdown(sync, () => {
+    expired.current = true
+    void autoSubmit()
+  })
+  /** Cancelling the unsaved-answers question after the clock hit 0 must not leave the attempt open for good. */
+  const dismissUnsaved = () => {
+    setUnsaved(undefined)
+    if (expired.current) void autoSubmit()
+  }
 
   // ── keyboard: F flags, 1–6 pick, ←/→ move, Enter goes on ─────────────────
   const keys = useRef({ toggleFlag, toggleOption, goTo, position })
@@ -370,7 +383,7 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
             <SaveFailedToast questions={failed.map((at) => at + 1)} onRetry={retryFailed} onDismiss={() => setDismissedKey(failedKey)} />
           )}
           {confirming && <SubmitConfirm unanswered={unansweredCount(items)} onConfirm={() => submit()} onClose={() => setConfirming(false)} />}
-          {unsaved && <UnsavedConfirm questions={unsaved} onConfirm={() => submit({ confirmed: true })} onClose={() => setUnsaved(undefined)} />}
+          {unsaved && <UnsavedConfirm questions={unsaved} onConfirm={() => submit({ confirmed: true })} onClose={dismissUnsaved} />}
         </>
       }
     />
