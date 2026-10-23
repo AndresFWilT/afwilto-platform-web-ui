@@ -143,6 +143,22 @@ describe('InMemoryExamsAdapter.updateExam', () => {
     expect((error as ExamsConflictError).rule).toBe('duplicate_name')
   })
 
+  it('a rename that is followed by a failure in the same update changes nothing, not even the question links', async () => {
+    const service = adapter()
+    const error = await failure(
+      service.updateExam(EXAM_ID, { version: 1, categories: [{ id: CAT.seguridad, name: 'Seguridad 2' }, { id: CAT.vpc, paceQuestions: 3 }] })
+    )
+    expect(error).toBeInstanceOf(ExamsValidationError)
+    await service.updateExam(EXAM_ID, { version: 1, name: 'Otro nombre' })
+    const exam = await service.getExam(EXAM_ID)
+    expect(cat(exam, CAT.seguridad)).toMatchObject({ name: 'Seguridad', questionCount: 5 })
+  })
+
+  it('renaming a category keeps its questions linked', async () => {
+    const renamed = await adapter().updateExam(EXAM_ID, { version: 1, categories: [{ id: CAT.seguridad, name: 'Seguridad y cumplimiento' }] })
+    expect(cat(renamed, CAT.seguridad)?.questionCount).toBe(5)
+  })
+
   it('a pace needs both values or neither; null clears it', async () => {
     const service = adapter()
     const bad = await failure(service.updateExam(EXAM_ID, { version: 1, categories: [{ id: CAT.vpc, paceQuestions: 10 }] }))

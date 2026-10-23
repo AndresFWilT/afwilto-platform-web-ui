@@ -1,6 +1,7 @@
 import { HttpError, type IHttpClient } from '@afwilto/http-client'
 import type {
   AttemptHistory,
+  AttemptSummary,
   CreateExamInput,
   Exam,
   ExamQuestion,
@@ -24,6 +25,8 @@ import {
 interface WireError {
   error?: { code?: string; message?: string; details?: ExamsViolation[] }
 }
+
+type WireAttempt = Omit<AttemptSummary, 'passed'> & { passed?: boolean | null }
 
 const SHA256 = /^[0-9a-f]{64}$/
 
@@ -51,35 +54,48 @@ export class ExamsHttpAdapter implements IExamsService {
     this.apiUrl = apiUrl.replace(/\/+$/, '')
   }
 
-  async createExam(subjectId: string, input: CreateExamInput): Promise<Exam> {
+  /** Runs a request and translates its failure into the port's domain errors. */
+  private async call<T>(request: () => Promise<T>): Promise<T> {
     try {
-      const res = await this.http.post<{ data: Exam }>(`/subjects/${encodeURIComponent(subjectId)}/exams`, input)
-      return res.data
+      return await request()
     } catch (e) {
       throw translateError(e)
     }
   }
 
-  listExams(_subjectId: string): Promise<ExamSummary[]> {
-    throw new Error('not implemented')
+  async createExam(subjectId: string, input: CreateExamInput): Promise<Exam> {
+    return this.call(async () => (await this.http.post<{ data: Exam }>(`/subjects/${encodeURIComponent(subjectId)}/exams`, input)).data)
   }
-  getExam(_examId: string): Promise<Exam> {
-    throw new Error('not implemented')
+
+  async listExams(subjectId: string): Promise<ExamSummary[]> {
+    return this.call(async () => (await this.http.get<{ data: ExamSummary[] }>(`/subjects/${encodeURIComponent(subjectId)}/exams`)).data)
   }
-  updateExam(_examId: string, _input: UpdateExamInput): Promise<Exam> {
-    throw new Error('not implemented')
+
+  async getExam(examId: string): Promise<Exam> {
+    return this.call(async () => (await this.http.get<{ data: Exam }>(`/exams/${encodeURIComponent(examId)}`)).data)
   }
-  deleteExam(_examId: string): Promise<void> {
-    throw new Error('not implemented')
+
+  async updateExam(examId: string, input: UpdateExamInput): Promise<Exam> {
+    return this.call(async () => (await this.http.patch<{ data: Exam }>(`/exams/${encodeURIComponent(examId)}`, input)).data)
   }
-  mergeCategories(_examId: string, _input: MergeCategoriesInput): Promise<Exam> {
-    throw new Error('not implemented')
+
+  async deleteExam(examId: string): Promise<void> {
+    return this.call(async () => {
+      await this.http.delete(`/exams/${encodeURIComponent(examId)}`)
+    })
   }
+
+  async mergeCategories(examId: string, input: MergeCategoriesInput): Promise<Exam> {
+    return this.call(
+      async () => (await this.http.post<{ data: Exam }>(`/exams/${encodeURIComponent(examId)}/categories/merge`, input)).data
+    )
+  }
+
   importQuestions(_examId: string, _file: File, _options: ImportOptions): Promise<ImportReport> {
     throw new Error('not implemented')
   }
-  exportUrl(_examId: string): string {
-    throw new Error('not implemented')
+  exportUrl(examId: string): string {
+    return `${this.apiUrl}/exams/${encodeURIComponent(examId)}/questions/export`
   }
   listQuestions(_examId: string, _filter?: QuestionFilter): Promise<QuestionSummary[]> {
     throw new Error('not implemented')
@@ -90,8 +106,16 @@ export class ExamsHttpAdapter implements IExamsService {
   deleteQuestion(_questionId: string): Promise<void> {
     throw new Error('not implemented')
   }
-  listAttempts(_examId: string): Promise<AttemptHistory> {
-    throw new Error('not implemented')
+  async listAttempts(examId: string): Promise<AttemptHistory> {
+    return this.call(async () => {
+      const res = await this.http.get<{ data: WireAttempt[]; meta?: { trend?: AttemptHistory['trend'] } }>(
+        `/exams/${encodeURIComponent(examId)}/attempts`
+      )
+      return {
+        attempts: res.data.map(({ passed, ...rest }) => ({ ...rest, ...(passed == null ? {} : { passed }) })),
+        trend: res.meta?.trend ?? [],
+      }
+    })
   }
 
   mediaUrl(sha256: string): string | null {

@@ -68,30 +68,42 @@ export interface MergeCategoriesInput {
   into: string
 }
 
-const notImplemented = (): never => {
-  throw new Error('not implemented')
-}
-
-export function primaryClassification(_exam: Exam): Classification | undefined {
-  return notImplemented()
+export function primaryClassification(exam: Exam): Classification | undefined {
+  return exam.classifications.find((c) => c.position === 0)
 }
 
 /** Alive questions with no category in the primary classification ("sin clasificar"). */
-export function unclassifiedCount(_exam: Exam): number {
-  return notImplemented()
+export function unclassifiedCount(exam: Exam): number {
+  const primary = primaryClassification(exam)
+  if (!primary) return exam.questionTotal
+  const classified = primary.categories.reduce((sum, c) => sum + c.questionCount, 0)
+  return Math.max(0, exam.questionTotal - classified)
 }
 
 /** The exam's own pace in minutes per question (FR-3.5). */
-export function examPaceMinutes(_exam: Pick<ExamSummary, 'timeLimitMin' | 'questionCount'>): number {
-  return notImplemented()
+export function examPaceMinutes(exam: Pick<ExamSummary, 'timeLimitMin' | 'questionCount'>): number {
+  return exam.timeLimitMin / exam.questionCount
 }
 
 /** The sum of the weights in the draft, ignoring blanks (they count as 0). */
-export function weightsSum(_percents: Array<number | null>): number {
-  return notImplemented()
+export function weightsSum(percents: Array<number | null>): number {
+  return percents.reduce<number>((sum, p) => sum + (p ?? 0), 0)
 }
 
 /** Largest-remainder apportionment of 100 over `counts` (FR-3.4). All zero counts give all zero. */
-export function inferWeights(_counts: number[]): number[] {
-  return notImplemented()
+export function inferWeights(counts: number[]): number[] {
+  const total = counts.reduce((a, b) => a + b, 0)
+  if (total === 0) return counts.map(() => 0)
+  const raw = counts.map((c) => (c * 100) / total)
+  const floors = raw.map(Math.floor)
+  let remaining = 100 - floors.reduce((a, b) => a + b, 0)
+  const order = raw
+    .map((r, i) => ({ i, frac: r - floors[i] }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i)
+  for (const { i } of order) {
+    if (remaining <= 0) break
+    floors[i] += 1
+    remaining -= 1
+  }
+  return floors
 }
