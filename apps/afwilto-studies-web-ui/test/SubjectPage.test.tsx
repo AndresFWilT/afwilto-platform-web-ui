@@ -30,6 +30,13 @@ describe('SubjectPage (AC-F4)', () => {
     expect(screen.getByText('Foundational AWS certification.')).toBeTruthy()
   })
 
+  it('links to the subject exams: a single "Simulacros" link (S08-9)', async () => {
+    renderAt(SUBJECT_URL)
+    const link = await screen.findByRole('link', { name: 'Simulacros' })
+    expect(link.getAttribute('href')).toBe(`/studies/subjects/${IDS.ccp}/exams`)
+    expect(screen.getAllByRole('link', { name: 'Simulacros' })).toHaveLength(1)
+  })
+
   it('a breadcrumb segment navigates to that category view (S09a2-8)', async () => {
     renderAt(SUBJECT_URL)
     const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' })

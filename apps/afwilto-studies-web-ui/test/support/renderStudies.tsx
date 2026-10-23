@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom'
 import { App } from '../../src/App'
 import type { IStudiesService } from '../../src/application/ports'
+import type { IExamsService } from '../../src/exams/application/ports'
 import { InMemoryStudiesAdapter } from '../../src/infrastructure/adapters/memory/InMemoryStudiesAdapter'
 import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMemoryExamsAdapter'
 import { librarySeed } from '../fixtures'
@@ -18,12 +19,16 @@ function LocationProbe() {
 }
 
 /** Mounts the exposed App under /studies/* exactly as the shell does. */
-export function renderAt(url: string, service: IStudiesService = new InMemoryStudiesAdapter(librarySeed())) {
+export function renderAt(
+  url: string,
+  service: IStudiesService = new InMemoryStudiesAdapter(librarySeed()),
+  exams: IExamsService = new InMemoryExamsAdapter({ exams: [], media: {} })
+) {
   return render(
     <MemoryRouter initialEntries={[url]}>
       <LocationProbe />
       <Routes>
-        <Route path="/studies/*" element={<App value={{ studiesService: service, examsService: new InMemoryExamsAdapter({ exams: [], media: {} }) }} />} />
+        <Route path="/studies/*" element={<App value={{ studiesService: service, examsService: exams }} />} />
       </Routes>
     </MemoryRouter>
   )
