@@ -22,6 +22,8 @@ import {
   type ExamsViolation,
   type IExamsService,
 } from '@/exams/application/ports'
+import { fold } from './names'
+import { planImport } from './memoryImport'
 
 export interface ExamsSeed {
   exams: Exam[]
@@ -39,16 +41,29 @@ const RANGES = {
   passPercent: [1, 100],
 } as const
 
-/** Case-, accent- and space-insensitive form of a name (FR-3.1). */
-export const fold = (name: string) =>
-  name
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-
 const clone = <T>(value: T): T => structuredClone(value)
+/** The text of a File; jsdom's File has no `text()`. */
+function readText(file: File): Promise<string> {
+  if (typeof file.text === 'function') return file.text()
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsText(file)
+  })
+}
+
+/** The first 200 characters of a stem without Markdown syntax. */
+function excerpt(stem: string): string {
+  return stem
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*`#>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200)
+}
+
 const violation = (field: string, rule: string, message: string): ExamsViolation => ({ field, rule, message })
 
 function rangeViolations(input: Partial<CreateExamInput>): ExamsViolation[] {
@@ -76,6 +91,8 @@ export class InMemoryExamsAdapter implements IExamsService {
   private readonly media: Record<string, string>
   private questions: ExamQuestion[]
   private readonly attempts: Record<string, AttemptHistory>
+  private readonly createdAt = new Date().toISOString()
+  private readonly touched = new Map<string, string>()
 
   constructor(seed: ExamsSeed) {
     this.exams = clone(seed.exams)
@@ -215,19 +232,76 @@ export class InMemoryExamsAdapter implements IExamsService {
     return `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(body))}`
   }
 
-  // ── bank and import (next commit) ─────────────────────────────────────────
+  // ── bank and import ───────────────────────────────────────────────────────
 
-  async importQuestions(_examId: string, _file: File, _options: ImportOptions): Promise<ImportReport> {
-    throw new Error('not implemented')
+  async importQuestions(examId: string, file: File, options: ImportOptions): Promise<ImportReport> {
+    const exam = this.stored(examId)
+    if (/\.zip$/i.test(file.name)) {
+      throw new ExamsValidationError([violation('file', 'file_type', 'the offline importer reads .json only; run against the API for .zip')])
+    }
+    const bank = this.questions.filter((q) => q.examId === examId)
+    const plan = planImport({ exam, bank, text: await readText(file), primary: options.primary })
+    const others = this.questions.filter((q) => q.examId !== examId)
+    const after = this.view(plan.exam, [...others, ...plan.questions])
+    const primary = primaryClassification(after)
+    const apply = !options.dryRun && plan.report.errors.length === 0
+    if (apply) {
+      this.exams[this.exams.indexOf(exam)] = plan.exam
+      this.questions = [...others, ...plan.questions]
+      const now = new Date().toISOString()
+      for (const key of [...plan.report.keys.create, ...plan.report.keys.update]) {
+        const changed = plan.questions.find((q) => q.key === key)
+        if (changed) this.touched.set(changed.id, now)
+      }
+    }
+    return {
+      dryRun: options.dryRun,
+      applied: apply,
+      ...plan.report,
+      weightsAfter: (primary?.categories ?? []).map((c) => ({ category: c.name, percent: c.weightPercent ?? 0, mode: primary!.weightMode })),
+    }
   }
-  async listQuestions(_examId: string, _filter?: QuestionFilter): Promise<QuestionSummary[]> {
-    throw new Error('not implemented')
+
+  async listQuestions(examId: string, filter: QuestionFilter = {}): Promise<QuestionSummary[]> {
+    const exam = this.view(this.stored(examId))
+    const primary = primaryClassification(exam)
+    const wanted = exam.classifications.flatMap((c) => c.categories.map((k) => ({ id: k.id, classification: c.name, name: k.name }))).find((k) => k.id === filter.category)
+    const needle = filter.q?.toLowerCase()
+    const matches = (q: ExamQuestion) =>
+      (!filter.category || (wanted !== undefined && q.categories.some((r) => r.classification === wanted.classification && r.name === wanted.name))) &&
+      (!filter.origin || q.origin?.set === filter.origin) &&
+      (!filter.difficulty || q.difficulty === filter.difficulty) &&
+      (!needle || q.stem.toLowerCase().includes(needle)) &&
+      (!filter.unclassified || !q.categories.some((r) => r.classification === primary?.name))
+    const nullsLast = <T,>(a: T | undefined, b: T | undefined, compare: (x: T, y: T) => number) =>
+      a === undefined ? (b === undefined ? 0 : 1) : b === undefined ? -1 : compare(a, b)
+    return this.questions
+      .filter((q) => q.examId === examId && matches(q))
+      .sort(
+        (a, b) =>
+          nullsLast(a.origin?.set, b.origin?.set, (x, y) => x.localeCompare(y)) ||
+          nullsLast(a.origin?.number, b.origin?.number, (x, y) => x - y) ||
+          a.key.localeCompare(b.key)
+      )
+      .map((q) => ({
+        id: q.id,
+        key: q.key,
+        type: q.type,
+        stemExcerpt: excerpt(q.stem),
+        categories: clone(q.categories),
+        ...(q.difficulty && { difficulty: q.difficulty }),
+        ...(q.origin && { origin: clone(q.origin) }),
+        version: q.version,
+        updatedAt: this.touched.get(q.id) ?? this.createdAt,
+      }))
   }
-  async getQuestion(_questionId: string): Promise<ExamQuestion> {
-    throw new Error('not implemented')
+
+  async getQuestion(questionId: string): Promise<ExamQuestion> {
+    return clone(this.question(questionId))
   }
-  async deleteQuestion(_questionId: string): Promise<void> {
-    throw new Error('not implemented')
+
+  async deleteQuestion(questionId: string): Promise<void> {
+    this.questions.splice(this.questions.indexOf(this.question(questionId)), 1)
   }
 
   mediaUrl(sha256: string): string | null {
@@ -235,6 +309,12 @@ export class InMemoryExamsAdapter implements IExamsService {
   }
 
   // ── internals ─────────────────────────────────────────────────────────────
+
+  private question(questionId: string): ExamQuestion {
+    const found = this.questions.find((q) => q.id === questionId)
+    if (!found) throw new ExamsNotFoundError('question not found')
+    return found
+  }
 
   private stored(examId: string): Exam {
     const exam = this.exams.find((e) => e.id === examId)
@@ -249,9 +329,9 @@ export class InMemoryExamsAdapter implements IExamsService {
   }
 
   /** A copy of the exam with the counts and the inferred weights derived from the bank. */
-  private view(exam: Exam): Exam {
+  private view(exam: Exam, questions: ExamQuestion[] = this.questions): Exam {
     const copy = clone(exam)
-    const mine = this.questions.filter((q) => q.examId === exam.id)
+    const mine = questions.filter((q) => q.examId === exam.id)
     copy.questionTotal = mine.length
     copy.classifications.sort((a, b) => a.position - b.position)
     for (const classification of copy.classifications) {

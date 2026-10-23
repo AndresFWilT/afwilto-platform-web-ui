@@ -3,13 +3,16 @@ import type {
   AttemptHistory,
   AttemptSummary,
   CreateExamInput,
+  Difficulty,
   Exam,
+  ExamOption,
   ExamQuestion,
   ExamSummary,
   ImportOptions,
   ImportReport,
   MergeCategoriesInput,
   QuestionFilter,
+  QuestionOrigin,
   QuestionSummary,
   UpdateExamInput,
 } from '@/exams/domain'
@@ -25,6 +28,37 @@ import {
 interface WireError {
   error?: { code?: string; message?: string; details?: ExamsViolation[] }
 }
+
+/** The wire sends null where the domain leaves the field out. */
+const optional = <T extends object>(fields: T): Partial<{ [K in keyof T]: NonNullable<T[K]> }> =>
+  Object.fromEntries(Object.entries(fields).filter(([, v]) => v != null)) as Partial<{ [K in keyof T]: NonNullable<T[K]> }>
+
+type WireSummary = Omit<QuestionSummary, 'difficulty' | 'origin'> & { difficulty: Difficulty | null; origin: QuestionOrigin | null }
+type WireOption = ExamOption & { position?: number }
+type WireQuestion = Omit<ExamQuestion, 'explanation' | 'difficulty' | 'origin' | 'options'> & {
+  explanation: string | null
+  difficulty: Difficulty | null
+  origin: QuestionOrigin | null
+  options: WireOption[]
+}
+type WireReport = Omit<ImportReport, 'preview'> & { preview: WireQuestion[] }
+
+function fromWireQuestion(q: WireQuestion): ExamQuestion {
+  const { explanation, difficulty, origin, options, ...rest } = q
+  return {
+    id: rest.id,
+    examId: rest.examId,
+    key: rest.key,
+    type: rest.type,
+    stem: rest.stem,
+    categories: rest.categories,
+    version: rest.version,
+    ...optional({ explanation, difficulty, origin }),
+    options: options.map(({ position: _position, ...option }) => option),
+  }
+}
+
+const fromWireReport = (report: WireReport): ImportReport => ({ ...report, preview: report.preview.map(fromWireQuestion) })
 
 type WireAttempt = Omit<AttemptSummary, 'passed'> & { passed?: boolean | null }
 
@@ -91,21 +125,49 @@ export class ExamsHttpAdapter implements IExamsService {
     )
   }
 
-  importQuestions(_examId: string, _file: File, _options: ImportOptions): Promise<ImportReport> {
-    throw new Error('not implemented')
+  async importQuestions(examId: string, file: File, options: ImportOptions): Promise<ImportReport> {
+    const params = new URLSearchParams({ dryRun: String(options.dryRun) })
+    if (options.primary) params.set('primary', options.primary)
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      const res = await this.http.postMultipart<{ data: WireReport }>(`/exams/${encodeURIComponent(examId)}/questions/import?${params}`, form)
+      return fromWireReport(res.data)
+    } catch (e) {
+      // A refused apply answers 422 with the full report; only an unusable file answers with the error envelope.
+      const report = e instanceof HttpError && e.status === 422 ? (e.body as { data?: WireReport } | null)?.data : undefined
+      if (report) return fromWireReport(report)
+      throw translateError(e)
+    }
   }
+
   exportUrl(examId: string): string {
     return `${this.apiUrl}/exams/${encodeURIComponent(examId)}/questions/export`
   }
-  listQuestions(_examId: string, _filter?: QuestionFilter): Promise<QuestionSummary[]> {
-    throw new Error('not implemented')
+  async listQuestions(examId: string, filter: QuestionFilter = {}): Promise<QuestionSummary[]> {
+    const params = new URLSearchParams()
+    if (filter.category) params.set('category', filter.category)
+    if (filter.origin) params.set('origin', filter.origin)
+    if (filter.difficulty) params.set('difficulty', filter.difficulty)
+    if (filter.q) params.set('q', filter.q)
+    if (filter.unclassified) params.set('unclassified', 'true')
+    const query = params.size ? `?${params}` : ''
+    return this.call(async () => {
+      const res = await this.http.get<{ data: WireSummary[] }>(`/exams/${encodeURIComponent(examId)}/questions${query}`)
+      return res.data.map(({ difficulty, origin, ...rest }) => ({ ...rest, ...optional({ difficulty, origin }) }))
+    })
   }
-  getQuestion(_questionId: string): Promise<ExamQuestion> {
-    throw new Error('not implemented')
+
+  async getQuestion(questionId: string): Promise<ExamQuestion> {
+    return this.call(async () => fromWireQuestion((await this.http.get<{ data: WireQuestion }>(`/questions/${encodeURIComponent(questionId)}`)).data))
   }
-  deleteQuestion(_questionId: string): Promise<void> {
-    throw new Error('not implemented')
+
+  async deleteQuestion(questionId: string): Promise<void> {
+    return this.call(async () => {
+      await this.http.delete(`/questions/${encodeURIComponent(questionId)}`)
+    })
   }
+
   async listAttempts(examId: string): Promise<AttemptHistory> {
     return this.call(async () => {
       const res = await this.http.get<{ data: WireAttempt[]; meta?: { trend?: AttemptHistory['trend'] } }>(
