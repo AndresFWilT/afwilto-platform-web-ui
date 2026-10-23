@@ -123,9 +123,8 @@ const SHA256 = /^[0-9a-f]{64}$/
 const CONFLICT_RULES: readonly ExamsConflictRule[] = ['duplicate_name', 'in_use', 'stale_version', 'attempt_in_progress', 'attempt_expired', 'attempt_closed', 'answer_locked']
 const VALIDATION_RULES = ['invalid_text', 'range'] as const
 
-/** A rule the server named in `code` or `message` when it sent no `details`. */
-const ruleNamedBy = <R extends string>(rules: readonly R[], err: WireError['error']): R | undefined =>
-  rules.find((rule) => err?.code === rule) ?? rules.find((rule) => new RegExp(`\\b${rule}\\b`).test(err?.message ?? ''))
+/** A rule the server named in `code` when it sent no `details` (the free-text `message` is never matched). */
+const ruleNamedBy = <R extends string>(rules: readonly R[], err: WireError['error']): R | undefined => rules.find((rule) => err?.code === rule)
 
 /** HTTP failures → the port's domain errors; status codes never leave the adapter. */
 function translateError(e: unknown): Error {
