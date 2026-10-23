@@ -73,7 +73,7 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
 
 ## 3. Database changes
 
-`0012_create_attempts.{up,down}.sql`:
+`0013_create_attempts.{up,down}.sql`:
 - `attempts` (`id`, `exam_id`, `config jsonb`, `status`, `seed bigint`, `started_at`,
   `deadline_at`, `submitted_at`, `score_percent numeric(5,2)`, `passed`), with a partial
   unique index on `(exam_id) WHERE status = 'in_progress'` to enforce BR-A1 in the DB;

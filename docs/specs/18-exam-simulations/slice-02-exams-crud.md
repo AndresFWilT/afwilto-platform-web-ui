@@ -76,3 +76,7 @@ checked against it.
 | `exams/adapter/in/http/exams_api_test.go` | `httptest` + contract | S02-1–S02-6 |
 | `studies/app/usecase/subjects_test.go` (extended) | unit | S02-7 |
 | `exams/adapter/out/postgres/exam_repo_test.go` | integration | S02-6, S02-8 |
+
+## 7. Amendments
+
+- 2026-10-23: a subject delete racing an exam create had no database guard, so both could commit. Migration `0011_guard_subject_exams.{up,down}.sql` (between slice 03's 0010 and the later slices) mirrors Spec 16's `guard_subject_notes`: a `BEFORE UPDATE OF deleted_at` trigger on `subjects` and a `BEFORE INSERT OR UPDATE` trigger on `exams` take one advisory lock (`studies.exams.refs`), so the two writes serialize. The subject delete then fails with `subject_in_use` (409 `in_use`) when an alive exam exists, and the exam write fails with `exam_subject_not_found` (404 `not_found` on `subjectId`) when the subject is gone. The 409 message from the database path no longer names notes. This renumbers slice 05's media migration to `0012` and slice 06a's attempts migration to `0013`.

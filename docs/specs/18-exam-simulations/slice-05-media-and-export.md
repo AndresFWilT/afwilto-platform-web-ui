@@ -67,7 +67,7 @@ The parent's AC-10 to AC-13 apply, plus these:
 
 ## 3. Database changes
 
-`0011_create_media.{up,down}.sql`: `media` (`sha256 char(64) pk`, `content_type`, `bytes`,
+`0012_create_media.{up,down}.sql`: `media` (`sha256 char(64) pk`, `content_type`, `bytes`,
 `width`, `height`, `created_at`), with a no-delete trigger.
 
 ## 4. Test plan

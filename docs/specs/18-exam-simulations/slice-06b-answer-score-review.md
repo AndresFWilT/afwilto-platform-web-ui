@@ -69,7 +69,7 @@ The parent's AC-18 to AC-20 apply, plus these:
 
 ## 3. Database changes
 
-None. `attempt_items.revealed` already exists from slice 06a's `0012`.
+None. `attempt_items.revealed` already exists from slice 06a's `0013`.
 
 ## 4. Test plan
 
