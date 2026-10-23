@@ -83,3 +83,11 @@ fixtures of `ImportReport`.
 | `test/exams/QuestionBankPage.test.tsx` | S08-6 |
 | `test/exams/ExamOverviewPage.test.tsx` | S08-7, S08-8 |
 | `test/SubjectPage.test.tsx` (extended) | S08-9 |
+
+## 4. Amendments
+
+- 2026-10-23 (review of slices 07-09, coordinator decisions; backend contract 0.3.0):
+  - **Client ranges mirror the server.** Pace values (questions and minutes) are integers 1..10,000; a weight is an integer 0..100 each; a classification name has at most 40 characters and a category name at most 80; the exam name input has `maxLength` = `EXAM_NAME_MAX` (120). The client refuses a value outside them before sending.
+  - **Server field errors land on the fields.** A 422 from `updateExam` or `createExam` (rules `range`, `invalid_text`, `weights_sum`, `pace_pair`, ...) is mapped onto the offending form fields (`name`, `questionCount`, `classification:<id>`, `category:<id>`, `pace:<id>`, `weights`) instead of one generic alert; a violation whose field matches no form field still shows as the alert.
+  - **Unclassified count from the server.** The HTTP adapter reads the "sin clasificar" count of the overview from `GET /exams/{id}/questions?unclassified=true&pageSize=1` (`meta.totalItems`) and not from the classifications; the in-memory adapter keeps deriving it. S08-7 holds for both.
+  - **Templates.** The management pages get `features/manage-exams/ui/templates/` (see slice 07 amendments): the pages pass data and handlers, the templates carry the layout.
