@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { FormField } from '@afwilto/design-system'
-import type { ExamFormValues } from '@/exams/domain'
+import { EXAM_NAME_MAX, type ExamFormValues } from '@/exams/domain'
 
 const FIELDS: Array<{ name: keyof ExamFormValues; label: string; numeric: boolean }> = [
   { name: 'name', label: 'Nombre', numeric: false },
@@ -31,7 +31,7 @@ export function ExamParametersFields({ values, errors, onChange, disabled }: Pro
           errorMessage={errors[name]}
           aria-invalid={Boolean(errors[name])}
           disabled={disabled}
-          {...(numeric ? { type: 'number', min: 1, step: 1 } : { maxLength: 200 })}
+          {...(numeric ? { type: 'number', min: 1, step: 1 } : { maxLength: EXAM_NAME_MAX })}
         />
       ))}
     </>

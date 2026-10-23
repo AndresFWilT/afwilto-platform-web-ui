@@ -15,13 +15,19 @@ export interface ExamFormCheck {
   value?: CreateExamInput
 }
 
-const RANGES = {
+export const EXAM_RANGES = {
   questionCount: [1, 200],
   timeLimitMin: [1, 600],
   passPercent: [1, 100],
 } as const
+const RANGES = EXAM_RANGES
 
+/** Limits the server enforces (contract 0.3.0); the client refuses the same values before sending. */
 export const EXAM_NAME_MAX = 120
+export const CLASSIFICATION_NAME_MAX = 40
+export const CATEGORY_NAME_MAX = 80
+export const PACE_MAX = 10_000
+export const WEIGHT_MAX = 100
 
 /** Checks the form before anything is sent (BR-E2); the server repeats the rules. */
 export function validateExamInput(values: ExamFormValues): ExamFormCheck {

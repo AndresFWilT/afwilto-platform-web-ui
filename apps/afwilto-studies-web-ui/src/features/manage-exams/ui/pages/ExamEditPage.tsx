@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, EmptyState, Input, Select, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
-import { checkDraft, draftFrom, primaryClassification, type Exam, type ExamDraft, type ExamFormValues } from '@/exams/domain'
+import { CLASSIFICATION_NAME_MAX, checkDraft, draftFrom, primaryClassification, violationProblems, type Exam, type ExamDraft } from '@/exams/domain'
 import { ExamsConflictError, ExamsNotFoundError, ExamsValidationError } from '@/exams/application/ports'
 import { ButtonLink } from '@/shared/ui/atoms/ButtonLink'
 import { LoadingRows } from '@/shared/ui/atoms/LoadingRows'
@@ -13,7 +13,7 @@ import { ExamParametersFields } from '../organisms/ExamParametersFields'
 import { MergeCategories } from '../organisms/MergeCategories'
 import { WeightsTable } from '../organisms/WeightsTable'
 
-const PARAM_FIELDS: Array<keyof ExamFormValues> = ['name', 'questionCount', 'timeLimitMin', 'passPercent']
+const PARAM_FIELDS = ['name', 'questionCount', 'timeLimitMin', 'passPercent'] as const
 const STALE = 'El examen cambió mientras lo editabas. Recarga para ver la última versión.'
 
 export function ExamEditPage() {
@@ -72,14 +72,10 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
         if (e.field === 'name') setServerErrors({ name: 'Ya existe un examen con ese nombre' })
         else setAlert(e.field === 'classifications' ? 'Ya existe una clasificación con ese nombre.' : 'Ya existe una categoría con ese nombre en su clasificación.')
       } else if (e instanceof ExamsValidationError) {
-        const fields: Record<string, string> = {}
-        const others: string[] = []
-        for (const v of e.details) {
-          if (PARAM_FIELDS.includes(v.field as keyof ExamFormValues)) fields[v.field] ??= v.message
-          else others.push(v.message)
-        }
-        setServerErrors(fields)
-        if (others.length) setAlert(others.join('; '))
+        // Each violation lands on its field (parameters, names, pace rows, weights); the rest is one alert.
+        const { problems, unmapped } = violationProblems(check.patch, e.details)
+        setServerErrors(problems)
+        if (unmapped.length) setAlert(unmapped.join('; '))
       } else if (e instanceof ExamsNotFoundError) setAlert('El examen ya no existe.')
       else setAlert(e instanceof Error ? e.message : String(e))
       setSaving(false)
@@ -137,6 +133,7 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
               <div key={c.id} className="flex flex-col gap-1">
                 <Input
                   aria-label={`Nombre de la clasificación ${c.position === 0 ? 'principal' : 'secundaria'}`}
+                  maxLength={CLASSIFICATION_NAME_MAX}
                   value={draft.classificationNames[c.id] ?? ''}
                   error={Boolean(errors[`classification:${c.id}`])}
                   onChange={(e) => edit((d) => ({ ...d, classificationNames: { ...d.classificationNames, [c.id]: e.target.value } }))}

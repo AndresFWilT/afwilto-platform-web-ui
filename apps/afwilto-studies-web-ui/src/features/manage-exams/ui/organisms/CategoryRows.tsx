@@ -1,5 +1,5 @@
 import { Input, Text } from '@afwilto/design-system'
-import type { Classification, ExamDraft } from '@/exams/domain'
+import { CATEGORY_NAME_MAX, PACE_MAX, type Classification, type ExamDraft } from '@/exams/domain'
 
 interface Props {
   classification: Classification
@@ -20,13 +20,13 @@ export function CategoryRows({ classification, draft, problems, onChange }: Prop
           <li key={c.id} className="flex flex-col gap-1 px-4 py-2">
             <div className="flex flex-wrap items-center gap-2">
               <div className="min-w-48 grow basis-56">
-                <Input inputSize="sm" aria-label={`Nombre de «${c.name}»`} value={d.name} error={Boolean(problems[`category:${c.id}`])} onChange={(e) => onChange(c.id, 'name', e.target.value)} />
+                <Input inputSize="sm" aria-label={`Nombre de «${c.name}»`} maxLength={CATEGORY_NAME_MAX} value={d.name} error={Boolean(problems[`category:${c.id}`])} onChange={(e) => onChange(c.id, 'name', e.target.value)} />
               </div>
               <div className="w-28">
-                <Input inputSize="sm" type="number" min={1} step={1} placeholder="Preguntas" aria-label={`Ritmo: preguntas de «${c.name}»`} value={d.paceQuestions} error={Boolean(problems[`pace:${c.id}`])} onChange={(e) => onChange(c.id, 'paceQuestions', e.target.value)} />
+                <Input inputSize="sm" type="number" min={1} max={PACE_MAX} step={1} placeholder="Preguntas" aria-label={`Ritmo: preguntas de «${c.name}»`} value={d.paceQuestions} error={Boolean(problems[`pace:${c.id}`])} onChange={(e) => onChange(c.id, 'paceQuestions', e.target.value)} />
               </div>
               <div className="w-28">
-                <Input inputSize="sm" type="number" min={1} step={1} placeholder="Minutos" aria-label={`Ritmo: minutos de «${c.name}»`} value={d.paceMinutes} error={Boolean(problems[`pace:${c.id}`])} onChange={(e) => onChange(c.id, 'paceMinutes', e.target.value)} />
+                <Input inputSize="sm" type="number" min={1} max={PACE_MAX} step={1} placeholder="Minutos" aria-label={`Ritmo: minutos de «${c.name}»`} value={d.paceMinutes} error={Boolean(problems[`pace:${c.id}`])} onChange={(e) => onChange(c.id, 'paceMinutes', e.target.value)} />
               </div>
             </div>
             {error && <Text variant="caption" color="error" role="alert">{error}</Text>}

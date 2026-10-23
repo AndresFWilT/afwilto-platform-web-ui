@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
-import { validateExamInput, type ExamFormValues } from '@/exams/domain'
+import { validateExamInput, violationProblems, type ExamFormValues } from '@/exams/domain'
 import { ExamsConflictError, ExamsValidationError } from '@/exams/application/ports'
 import { ButtonLink } from '@/shared/ui/atoms/ButtonLink'
 import { ExamParametersFields } from '../organisms/ExamParametersFields'
@@ -37,14 +37,9 @@ export function NewExamPage() {
       if (err instanceof ExamsConflictError && err.rule === 'duplicate_name') {
         setErrors({ name: 'Ya existe un examen con ese nombre' })
       } else if (err instanceof ExamsValidationError) {
-        const fields: FieldErrors = {}
-        const others: string[] = []
-        for (const v of err.details) {
-          if (FORM_FIELDS.includes(v.field)) fields[v.field as keyof ExamFormValues] ??= v.message
-          else others.push(v.message)
-        }
-        setErrors(fields)
-        if (others.length) setAlert(others.join('; '))
+        const { problems, unmapped } = violationProblems(undefined, err.details)
+        setErrors(Object.fromEntries(Object.entries(problems).filter(([field]) => FORM_FIELDS.includes(field))) as FieldErrors)
+        if (unmapped.length) setAlert(unmapped.join('; '))
       } else {
         setAlert(err instanceof Error ? err.message : String(err))
       }
