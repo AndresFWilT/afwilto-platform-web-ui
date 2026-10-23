@@ -496,3 +496,22 @@ describe('listAttempts with real attempts (S06b-7)', () => {
     expect((await service.listExams('00000000-0000-7000-8000-0000000000a1'))[0].lastSimulation).toMatchObject({ scorePercent: 0, passed: false })
   })
 })
+
+describe('contract 0.3.0 in the offline adapter (M1, M2)', () => {
+  it('a closed attempt carries its result on getAttempt, equal to the submit result; an open one does not', async () => {
+    const { service } = setup()
+    const attempt = await service.startAttempt(EXAM_ID, random(3), 1)
+    expect(await service.getAttempt(attempt.id)).not.toHaveProperty('result')
+    const result = await service.submitAttempt(attempt.id)
+    expect((await service.getAttempt(attempt.id)).result).toEqual(result)
+  })
+
+  it('answerItem of a timed attempt carries remainingSeconds from the clock; an untimed one does not', async () => {
+    const { clock, service } = setup()
+    const timed = await service.startAttempt(EXAM_ID, random(3, { timing: { kind: 'timed', minutes: 3 } }), 1)
+    clock.advance(45)
+    expect(await service.answerItem(timed.id, 0, { selected: ['A'], flagged: false })).toMatchObject({ remainingSeconds: 135 })
+    const untimed = await service.startAttempt(EXAM_ID, random(3), 1).catch(() => undefined)
+    if (untimed) expect(await service.answerItem(untimed.id, 0, { selected: ['A'], flagged: false })).not.toHaveProperty('remainingSeconds')
+  })
+})

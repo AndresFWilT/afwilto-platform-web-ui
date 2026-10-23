@@ -10,6 +10,7 @@ import {
   editMinutes,
   filterReview,
   formatClock,
+  percentOf,
   initialSessionForm,
   itemView,
   resetMinutes,
@@ -259,5 +260,31 @@ describe('suggested minutes vs. edited minutes (S09-1)', () => {
 
   it('an empty pool (suggestion 0) leaves the field empty instead of 0', () => {
     expect(withSuggestedMinutes(form(), 0).minutes).toBe('')
+  })
+})
+
+describe('scoring mirrors the server: integer half-up on hundredths (contract 0.3.0, M1)', () => {
+  it('percentOf(57, 20000) is 0.29 where float rounding gives 0.28', () => {
+    expect(percentOf(57, 20000)).toBe(0.29)
+    expect(percentOf(1, 3)).toBe(33.33)
+    expect(percentOf(2, 3)).toBe(66.67)
+    expect(percentOf(1, 32)).toBe(3.13)
+    expect(percentOf(0, 0)).toBe(0)
+    expect(percentOf(47, 65)).toBe(72.31)
+  })
+
+  it('buildBreakdown percent is that same value', () => {
+    const items = [...Array.from({ length: 57 }, (_, i) => review(i, true, false, [['D', 'X']])), ...Array.from({ length: 19_943 }, (_, i) => review(57 + i, false, false, [['D', 'X']]))]
+    expect(buildBreakdown(items)[0].categories[0].percent).toBe(0.29)
+  })
+
+  it('percent ties sort by name case-insensitively, then bytewise ("B" before "b")', () => {
+    const items = ['b', 'B', 'a', 'Zed'].map((name, i) => review(i, true, false, [['D', name]]))
+    expect(buildBreakdown(items)[0].categories.map((c) => c.name)).toEqual(['a', 'B', 'b', 'Zed'])
+  })
+
+  it('classifications are sorted by name', () => {
+    const items = [review(0, true, false, [['Servicio', 'S3'], ['Dominio', 'A']])]
+    expect(buildBreakdown(items).map((c) => c.classification)).toEqual(['Dominio', 'Servicio'])
   })
 })
