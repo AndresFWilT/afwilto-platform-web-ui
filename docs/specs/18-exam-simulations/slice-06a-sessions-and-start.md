@@ -41,7 +41,8 @@
      - `random` and `categories`: a seeded shuffle of the pool sorted by id, taking `count`,
        or everything for `"all"`.
      - `origin-set`: all alive questions with `origin.set` equal to the value, ordered by
-       `origin.number`, then `key`. An empty set → 422 `insufficient_questions`.
+       `origin.number`, then `key`; questions with `origin.set` but no `origin.number` come last (after the numbered ones), by `key`, as in the bank browser.
+       An empty set → 422 `insufficient_questions`.
    - **Order.** Questions are shuffled, except in `origin-set`. Options are always shuffled,
      both seeded.
    - **Snapshot.** Each `AttemptItem` holds the stem, the options in displayed order with
@@ -97,6 +98,7 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
 
 - 2026-10-23: `attempts` gains `suggested_minutes` and `pass_percent`, both frozen when the attempt starts. 06b's `GET` must return the same `suggestedMinutes` the start did, and a simulation's value is the exam's `timeLimitMin`, which a later exam edit could change; `passed` must compare against the pass mark the taker faced, for the same reason as the snapshot (AC-8: a later edit never changes a past attempt). Both are in `0013`, so 06b needs no migration.
 - 2026-10-23: the item snapshot also holds `key`, `type` and `origin` (`set`, `number`, `noteRef`) next to the fields §1.3 lists. 06b's review needs `noteRef` for the note link, and `type`/`chooseCount` come from the options' correct flags.
+- 2026-10-23 (phase-3 review): in the `origin-set` draw, questions with `origin.set` but no `origin.number` sort last, then by `key`, consistent with the bank browser; the spec only said "by `origin.number`, then `key`", which left their place undefined.
 - 2026-10-23: details the slice left open, fixed by the tests.
   - Rule fields are body paths: `config.timing`, `config.feedback` for `locked_by_simulation`; `config` for `insufficient_questions`.
   - `random`, `categories` and `origin-set` have a shortage too when their pool is empty, so the preview and the start agree: `{category: "banco"}` for `random`, the chosen category names joined by ", " for `categories`, the set name for `origin-set`, each with `needed: 1, available: 0`. A `simulation` whose primary classification has no category with weight > 0 reports `{category: "categorías con peso", needed: questionCount, available: 0}`.
