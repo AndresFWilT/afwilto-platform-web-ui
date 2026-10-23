@@ -119,11 +119,14 @@ describe('SessionSetupPage: preview and suggested minutes (S09-1)', () => {
     await waitFor(() => expect(fieldValue(page(), 'Minutos')).toBe('15'))
   })
 
-  it('debounces: three quick changes make one preview call, with the last value', async () => {
+  it('debounces by 300 ms: three changes 100 ms apart make one preview call, with the last value', async () => {
     const exams = await open()
     const preview = vi.spyOn(exams, 'previewSession')
     fireEvent.click(radio('Personalizado'))
-    for (const value of ['10', '15', '30']) fill(page(), 'Número de preguntas', value)
+    for (const value of ['10', '15', '30']) {
+      fill(page(), 'Número de preguntas', value)
+      await new Promise((r) => setTimeout(r, 100))
+    }
     expect(await screen.findByText(/se tomarán 30$/)).toBeTruthy()
     const randomCalls = preview.mock.calls.filter(([, config]) => config.selection.kind === 'random')
     expect(randomCalls).toHaveLength(1)
