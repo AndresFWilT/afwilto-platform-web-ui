@@ -2,10 +2,13 @@ import { FetchHttpClient } from '@afwilto/http-client'
 import type { IStudiesService } from '@/application/ports'
 import { StudiesHttpAdapter } from '@/infrastructure/adapters/http/StudiesHttpAdapter'
 import { InMemoryStudiesAdapter } from '@/infrastructure/adapters/memory/InMemoryStudiesAdapter'
+import type { IExamsService } from '@/exams/application/ports'
+import { InMemoryExamsAdapter } from '@/exams/infrastructure/memory/InMemoryExamsAdapter'
 import { devSeed } from '@/infrastructure/adapters/memory/devSeed'
 
 export interface ServiceContainer {
   studiesService: IStudiesService
+  examsService: IExamsService
 }
 
 function createStudiesService(): IStudiesService {
@@ -18,4 +21,5 @@ function createStudiesService(): IStudiesService {
 
 export const container: ServiceContainer = {
   studiesService: createStudiesService(),
+  examsService: new InMemoryExamsAdapter({ exams: [], media: {} }),
 }

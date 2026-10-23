@@ -3,6 +3,7 @@ import { MemoryRouter, Routes, Route, useLocation, useNavigationType } from 'rea
 import { App } from '../../src/App'
 import type { IStudiesService } from '../../src/application/ports'
 import { InMemoryStudiesAdapter } from '../../src/infrastructure/adapters/memory/InMemoryStudiesAdapter'
+import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMemoryExamsAdapter'
 import { librarySeed } from '../fixtures'
 
 function LocationProbe() {
@@ -22,7 +23,7 @@ export function renderAt(url: string, service: IStudiesService = new InMemoryStu
     <MemoryRouter initialEntries={[url]}>
       <LocationProbe />
       <Routes>
-        <Route path="/studies/*" element={<App value={{ studiesService: service }} />} />
+        <Route path="/studies/*" element={<App value={{ studiesService: service, examsService: new InMemoryExamsAdapter({ exams: [], media: {} }) }} />} />
       </Routes>
     </MemoryRouter>
   )
