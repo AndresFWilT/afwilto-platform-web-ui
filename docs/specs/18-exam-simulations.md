@@ -159,7 +159,7 @@ content hash and never deleted, so the snapshots keep resolving their images.
     mixed banks;
   - `options[]` (2–6), each with `text` and/or `image` + `alt`, `correct`, and an optional
     `rationale`;
-  - optional `explanation`, `difficulty`, `categories` and `origin`.
+  - optional `explanation`, `difficulty`, `categories` and `origin` (`origin.number` is a whole number from 1 to 1,000,000).
 - **`categories` is keyed by classification name and lists category names:**
   `{ "Dominio": ["Alto rendimiento"], "Servicio": ["Amazon S3", "CloudFront"] }`.
 - Option letters are never in the file. They come from the order of `options`.
