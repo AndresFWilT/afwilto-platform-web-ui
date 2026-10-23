@@ -64,7 +64,8 @@
 The structure of a purchased set is extracted **by code**, and a model only labels it.
 
 - **Split (deterministic).** `split_<source>.py <raw> --set "<name>" --config exam-<key>.json`
-  writes a skeleton: per question `number`, stem, options and explanation **verbatim**, and the
+  writes a skeleton: per question `number` (its position in the file, 1..n; TD restarts its own
+  numbering in every domain, so the vendor number is not unique), stem, options and explanation **verbatim**, and the
   primary category from the config's `categoryMap` (the vendor's domain heading → the exam's
   category name). It drops the vendor's per-attempt result columns (`(view)`, points, time).
   It fails loudly (exit 1, question number) when a block does not match the source layout, so
@@ -74,7 +75,8 @@ The structure of a purchased set is extracted **by code**, and a model only labe
     `Category: <heading>` lines set the domain for the blocks that follow. TD shows the correct
     answer **only inside the explanation**, never on the options.
   - A new source gets its own splitter, written from its first saved set.
-- **Label (model).** One session per raw set; the model comes from `convertModel`. Input: the
+- **Label (model).** One session per raw set; the model comes from `convertModel` (pass `-` as
+  the model to `label_one.sh`). Input: the
   skeleton. Output, via `--json-schema` structured output, one entry per question:
   `{number, correct: ["A".."F"] | null, services: [names], evidence}` where `evidence` is the
   shortest explanation excerpt that justifies `correct`.
@@ -86,7 +88,10 @@ The structure of a purchased set is extracted **by code**, and a model only labe
 - **Merge.** `merge_labels.py` builds the FR-2 file: `type` is `multi` when `correct` has ≥ 2
   labels, `categories` = `{primary: [domain], secondary: services}`, keys
   `<prefix>-<set-slug>-NNN`, `origin {set, number}`. Unreadable questions are left out and
-  listed. The validator runs on the result.
+  listed. A label for a question the answer sentence does not settle needs non-empty `evidence`
+  that occurs in that question's explanation (after whitespace and case folding); otherwise the
+  question is unreadable ("evidence not in explanation"). Duplicate label numbers make that
+  question unreadable. The validator runs on the result and `merge_labels.py` exits 1 on errors.
 - **Review.** An **independent Sonnet review** gets the skeleton and the labels. To keep it
   cheap, the full question (stem, options, explanation) is sent only for questions the
   deterministic answer sentence (§1.5) does not resolve, or resolves differently from a
@@ -110,6 +115,11 @@ The structure of a purchased set is extracted **by code**, and a model only labe
 - `pilot.py` reports, against the reference: correct-label agreement for each model, the
   questions where they differ, unreadable counts, and option capture (skeleton options vs raw
   option lines, expected 100% by construction).
+- A non-null label on a question with no reference counts as a miss (nothing may be guessed).
+- Capture is checked independently of the splitter: every non-blank raw line other than the
+  vendor's structural rows (header, `Category:`, question number, `(view)`, `Sub-Total:`,
+  `Total`, `Refresh`) must occur in some question's stem, options or explanation (line coverage),
+  besides each skeleton field occurring verbatim in the raw file.
 - **Threshold.** Haiku is adopted for labelling when its **correct-label agreement is 100%**.
   Otherwise `convertModel` becomes `sonnet`.
 - The result and the numbers go to `runs/<exam>/pilot.md` and are reported to the owner.
@@ -161,3 +171,6 @@ the dry-run report and applies only with `--apply` and no errors.
 - **2026-10-22.** The review cost more than the labelling (USD 0.51 vs 0.17 for 65 questions)
   while 53 answers were already settled by the answer sentence, so the review gets full
   questions only where the answer is not settled, and a merge guard enforces the settled ones.
+- **2026-10-22.** Independent review of the pipeline: the answer-sentence matcher must not match
+  inside "incorrect answer is"; unsettled labels need verbatim evidence; the pilot penalizes
+  labels without a reference; question numbers are file positions.
