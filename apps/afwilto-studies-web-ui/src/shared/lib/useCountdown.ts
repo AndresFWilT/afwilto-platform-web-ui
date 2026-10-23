@@ -10,7 +10,8 @@ export interface CountdownSync {
 const TICK_MS = 250
 
 /**
- * Whole seconds left, counted against the clock (so a throttled background tab catches up).
+ * Whole seconds left, counted against `performance.now()` (monotonic: a wall-clock change cannot move it,
+ * and a throttled background tab catches up).
  * It restarts from `sync.seconds` whenever the token changes, stops at 0 and calls `onExpire`
  * once per sync. There is no pause. `undefined` without a sync (an untimed attempt).
  */
@@ -28,10 +29,10 @@ export function useCountdown(sync: CountdownSync | undefined, onExpire: () => vo
       setLeft(undefined)
       return
     }
-    const deadline = Date.now() + seconds * 1000
+    const deadline = performance.now() + seconds * 1000
     let expired = false
     const tick = () => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+      const remaining = Math.max(0, Math.ceil((deadline - performance.now()) / 1000))
       setLeft(remaining)
       if (remaining === 0 && !expired) {
         expired = true

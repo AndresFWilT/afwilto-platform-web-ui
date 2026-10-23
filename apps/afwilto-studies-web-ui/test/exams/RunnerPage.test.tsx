@@ -420,7 +420,7 @@ describe('RunnerPage: submitting (S09-8)', () => {
 
 describe('RunnerPage: the timer (S09-3, S09-4)', () => {
   // Only the interval and the clock are faked, so Testing Library's own timeouts keep working.
-  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
   const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
 
   it('at 0 it submits once and opens the result (S09-3)', async () => {
@@ -567,7 +567,7 @@ function gated(exams: InMemoryExamsAdapter) {
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)) })
 
 describe('RunnerPage: the clock rides on the PUT, errors by rule (contract 0.3.0, M2, M3)', () => {
-  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
 
   it('a save resyncs the countdown from the PUT response and does not GET the attempt', async () => {
     fakeTime()
@@ -681,7 +681,7 @@ describe('RunnerPage: saves are ordered and deduped against what is queued (R1, 
 })
 
 describe('RunnerPage: failed saves are a set, retried before submitting (R3)', () => {
-  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
 
   async function answerTwoFailing(exams: InMemoryExamsAdapter) {
     vi.spyOn(exams, 'answerItem').mockRejectedValue(new Error('sin conexión'))
@@ -866,22 +866,16 @@ describe('RunnerPage: the clock and the submit at 0 (R6)', () => {
     clock.advance(59)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
     await vi.waitFor(() => screen.getByText(/^Pregunta \d+ de \d+$/))
-    const submit = vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new Error('el servidor no responde'))
-    await advance(1000)
-    expect(submit).toHaveBeenCalledTimes(1)
-    await advance(999)
-    expect(submit).toHaveBeenCalledTimes(1)
-    await advance(1)
-    expect(submit).toHaveBeenCalledTimes(2)
-    await advance(2000)
-    expect(submit).toHaveBeenCalledTimes(3)
-    await advance(3999)
-    expect(submit).toHaveBeenCalledTimes(3)
-    await advance(1)
-    expect(submit).toHaveBeenCalledTimes(4)
+    const at: number[] = []
+    vi.spyOn(exams, 'submitAttempt').mockImplementation(async () => {
+      at.push(performance.now())
+      throw new Error('el servidor no responde')
+    })
+    await advance(70_000)
+    expect(at).toHaveLength(4)
+    // The first call is at 0; each retry waits 1 s, 2 s, 4 s after the previous failure.
+    expect(at.slice(1).map((t, i) => t - at[i])).toEqual([1000, 2000, 4000])
     expect(screen.getByText(/el servidor no responde/)).toBeTruthy()
-    await advance(60_000)
-    expect(submit).toHaveBeenCalledTimes(4)
   })
 
   it('a retry that succeeds opens the result and stops retrying', async () => {

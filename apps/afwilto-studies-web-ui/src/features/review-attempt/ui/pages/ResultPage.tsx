@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { EmptyState, Text } from '@afwilto/design-system'
+import { useLocation, useParams } from 'react-router-dom'
+import { Alert, EmptyState, Text } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
 import type { ReviewFilter } from '@/exams/domain'
@@ -15,6 +15,9 @@ import { ScoreSummary } from '../organisms/ScoreSummary'
 export function ResultPage() {
   const { attemptId = '' } = useParams()
   const { examsService } = useServices()
+  const location = useLocation()
+  // The runner passes how many answers never reached the server when it submitted anyway.
+  const unsavedAnswers = Number((location.state as { unsavedAnswers?: number } | null)?.unsavedAnswers ?? 0)
   const [filter, setFilter] = useState<ReviewFilter>('incorrect')
   const resolveMediaUrl = useCallback((sha: string) => examsService.mediaUrl(sha), [examsService])
   const loaded = useAsync(async () => {
@@ -45,6 +48,9 @@ export function ResultPage() {
         {examName && <Text variant="small" color="muted">{examName}</Text>}
         <Text variant="h1" color="default">Resultado</Text>
       </header>
+      {unsavedAnswers > 0 && (
+        <Alert variant="warning">{unsavedAnswers === 1 ? '1 respuesta no se pudo guardar' : `${unsavedAnswers} respuestas no se pudieron guardar`}</Alert>
+      )}
       <ScoreSummary result={report.result} />
       <BreakdownBars breakdown={report.result.breakdown} />
       <ReviewList review={report.review} filter={filter} onFilter={setFilter} resolveMediaUrl={resolveMediaUrl} />
