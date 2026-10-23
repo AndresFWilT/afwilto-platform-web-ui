@@ -33,3 +33,8 @@ export function formatDuration(seconds: number): string {
   if (m > 0) return s > 0 ? `${m} min ${s} s` : `${m} min`
   return `${s} s`
 }
+
+/** The server's score with its two decimals and a decimal comma: `69,96 %`, `70,00 %`. */
+export function formatScore(value: number): string {
+  return `${value.toFixed(2).replace('.', ',')} %`
+}
