@@ -83,6 +83,8 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   const queued = useRef(new Map<number, AnswerInput>(attempt.items.map((i) => [i.position, { selected: i.selected, flagged: i.flagged }])))
   const queues = useRef(new Map<number, Promise<void>>())
   const [saving, setSaving] = useState<ReadonlyMap<number, number>>(new Map())
+  /** Saves in flight per item, readable inside `run` (the `saving` state is stale there). */
+  const inFlight = useRef(new Map<number, number>())
   /** Positions whose last save failed. */
   const failedRef = useRef(new Set<number>())
   const [failed, setFailed] = useState<number[]>([])
@@ -204,13 +206,16 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
     // Review mode: the first non-empty save reveals and locks on the server, so lock here from the click.
     if (feedback === 'each' && payload.selected.length > 0 && !item.reveal) setLock(at, true)
     track(at, 1)
+    inFlight.current.set(at, (inFlight.current.get(at) ?? 0) + 1)
+    /** Under review mode an item unlocks only when this is the last save of it still in flight. */
+    const lastInFlight = () => (inFlight.current.get(at) ?? 0) <= 1
     const run = async () => {
       const requestedAt = performance.now()
       try {
         const outcome = await examsService.answerItem(attempt.id, at, payload)
         if (outcome.remainingSeconds !== undefined) applySync(outcome.remainingSeconds, requestedAt)
         if (outcome.reveal) patchItem(at, { reveal: outcome.reveal, answered: true, selected: outcome.selected })
-        else if (feedback === 'each') setLock(at, false)
+        else if (feedback === 'each' && lastInFlight()) setLock(at, false)
         setFailedAt(at, false)
       } catch (e) {
         if (isClosedRule(e)) return toResult()
@@ -222,10 +227,11 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
             setFailedAt(at, true)
           }
         } else {
-          if (!itemsRef.current[at].reveal) setLock(at, false)
+          if (!itemsRef.current[at].reveal && lastInFlight()) setLock(at, false)
           setFailedAt(at, true)
         }
       } finally {
+        inFlight.current.set(at, (inFlight.current.get(at) ?? 1) - 1)
         track(at, -1)
       }
     }
