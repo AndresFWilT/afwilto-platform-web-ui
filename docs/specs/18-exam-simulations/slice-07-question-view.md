@@ -121,3 +121,10 @@ The parent's AC-22 to AC-25 apply, plus these:
 ## 4. Amendments
 
 - 2026-10-22: `mediaUrl` no longer repeats `/api/v1` — `VITE_API_URL` already ends in `/api/v1`, so the original `${VITE_API_URL}/api/v1/media/${sha}` would request `/api/v1/api/v1/media/…`.
+- 2026-10-23 (review of slices 07-09, coordinator decisions):
+  - **Accepted bridges.** The legacy bridges of §1.1 (`MarkdownView`, `@/di`, `@/hooks/useAsync`) stay as specified. The review found them to be deviations from the standard (S1 pages call the legacy `useAsync`, S3 `MarkdownView` lives outside the new area); both are recorded as accepted, not defects.
+  - **Standard check, atoms to organisms.** `test/exams.architecture.test.ts` also fails when an atom, molecule or organism of the new area imports `@/di` or `@/hooks/useAsync`: data fetching and the port hook belong to pages only.
+  - **Pages and templates.** Every feature folder that has `ui/pages/` also has `ui/templates/`, and each page imports a template of its feature: pages orchestrate (data and handlers become template props), templates carry the layout.
+  - **Exam images only from `media:`.** When `MarkdownView` gets a `resolveMediaUrl` (exam content), only `media:<sha256>` images render; an `https:` or any other image source renders its `alt` text. Notes pass no resolver, so they keep rendering `https:` images.
+  - **Code is not a media image.** `splitMediaStem` ignores `![x](media:...)` inside fenced code blocks and inline code spans: such text stays in the stem as written and yields no image.
+  - **Port errors by rule.** `ExamsHttpAdapter` maps a 409 by `error.code`/rule (`answer_locked`, `attempt_closed`, `attempt_expired`) and a 422 `invalid_text` or `range` to the domain errors even when `details` is empty.
