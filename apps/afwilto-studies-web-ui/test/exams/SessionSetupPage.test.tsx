@@ -11,7 +11,7 @@ const page = () => document.body
 const service = (overrides = {}, perDomain: Partial<Record<string, number>> = {}) => new InMemoryExamsAdapter(bigSeed(overrides, perDomain))
 const open = async (exams = service()) => {
   renderAt(URL, undefined, exams)
-  await screen.findByRole('radio', { name: /Simulacro real/ }, { timeout: 5000 })
+  await screen.findByRole('radio', { name: /Simulacro real/ })
   return exams
 }
 const radio = (name: RegExp | string) => screen.getByRole('radio', { name })

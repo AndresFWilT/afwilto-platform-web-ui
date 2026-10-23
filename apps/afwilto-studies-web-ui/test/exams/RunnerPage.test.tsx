@@ -20,12 +20,10 @@ function setup(seedOverrides = {}) {
 async function open(exams: InMemoryExamsAdapter, config: SessionConfig, { query = '', seed = 1 } = {}) {
   const attempt = await exams.startAttempt(EXAM_ID, config, seed)
   renderAt(`/studies/attempts/${attempt.id}${query}`, undefined, exams)
-  await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+  await screen.findByText(/^Pregunta \d+ de \d+$/)
   return attempt
 }
 
-/** The first render of a page pays for its lazy chunk; under load that can exceed the 1 s default. */
-const SLOW = { timeout: 5000 }
 const options = () => [...document.querySelectorAll<HTMLElement>('[role=radio], [role=checkbox]')]
 const checked = () => options().filter((o) => o.getAttribute('aria-checked') === 'true')
 const cell = (n: number) => screen.getByRole('button', { name: new RegExp(`^Pregunta ${n},`) })
@@ -431,7 +429,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
     clock.advance(55)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     expect(screen.getByRole('timer').textContent).toBe('0:05')
     await advance(2000)
     expect(screen.getByRole('timer').textContent).toBe('0:03')
@@ -449,7 +447,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
     clock.advance(59)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     let release: () => void = () => {}
     const original = exams.submitAttempt.bind(exams)
     const submit = vi.spyOn(exams, 'submitAttempt').mockImplementation(async (id) => {
@@ -472,7 +470,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
     clock.advance(59)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new ExamsConflictError('attemptId', 'attempt_expired', 'the deadline passed'))
     await advance(1000)
     await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
@@ -484,7 +482,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
     clock.advance(50)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     expect(screen.getByRole('timer').textContent).toBe('2:10')
 
     const get = vi.spyOn(exams, 'getAttempt')
@@ -499,7 +497,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const { clock, exams } = setup()
     const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     const get = vi.spyOn(exams, 'getAttempt')
     const visibility = vi.spyOn(document, 'visibilityState', 'get')
 
@@ -519,7 +517,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const { clock, exams } = setup()
     const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     clock.advance(45)
     fireEvent.click(options()[0])
     await waitFor(() => expect(screen.getByRole('timer').textContent).toBe('2:15'))
@@ -530,7 +528,7 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const { clock, exams } = setup()
     const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
     renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
-    await screen.findByText(/^Pregunta \d+ de \d+$/, {}, SLOW)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
     clock.advance(200)
     await act(async () => { window.dispatchEvent(new Event('focus')) })
     await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
