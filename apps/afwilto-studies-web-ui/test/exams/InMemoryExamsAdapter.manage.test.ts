@@ -32,6 +32,11 @@ describe('InMemoryExamsAdapter: reading exams', () => {
     expect(unclassifiedCount(exam)).toBe(3)
   })
 
+  it('countUnclassified derives the "sin clasificar" count from the bank: 3 in the fixture', async () => {
+    expect(await adapter().countUnclassified(EXAM_ID)).toBe(3)
+    await expect(adapter().countUnclassified('nope')).rejects.toBeInstanceOf(ExamsNotFoundError)
+  })
+
   it('getExam of an unknown id is an ExamsNotFoundError', async () => {
     expect(await failure(adapter().getExam('nope'))).toBeInstanceOf(ExamsNotFoundError)
   })

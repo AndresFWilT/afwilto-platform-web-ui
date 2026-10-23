@@ -53,6 +53,15 @@ describe('ExamOverviewPage: parameters and classifications (S08-7)', () => {
     expect(await screen.findByText('3 sin clasificar')).toBeTruthy()
   })
 
+  it('takes the "sin clasificar" count from the service, not from the classifications (fix 16)', async () => {
+    const exams = service()
+    const count = vi.spyOn(exams, 'countUnclassified').mockResolvedValue(7)
+    open(exams)
+    expect(await screen.findByText('7 sin clasificar')).toBeTruthy()
+    expect(screen.queryByText('3 sin clasificar')).toBeNull()
+    expect(count).toHaveBeenCalledWith(EXAM_ID)
+  })
+
   it('hides the unclassified line when every question is classified', async () => {
     open(service({ questions: [], exams: [examFixture()] }))
     await screen.findByRole('heading', { level: 1, name: 'SAA-C03' })

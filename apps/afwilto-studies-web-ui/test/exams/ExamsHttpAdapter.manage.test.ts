@@ -110,4 +110,20 @@ describe('ExamsHttpAdapter: managing exams (slice 08)', () => {
       await expect(adapter.getExam(EXAM_ID)).rejects.toBeInstanceOf(ExamsNotFoundError)
     })
   })
+
+  it('countUnclassified reads meta.totalItems of the unclassified bank query (page size 1), not the classifications', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: [{}], meta: { totalItems: 7 } })
+    expect(await adapter.countUnclassified(EXAM_ID)).toBe(7)
+    expect(http.get).toHaveBeenCalledWith(`/exams/${EXAM_ID}/questions?unclassified=true&pageSize=1`)
+  })
+
+  it('countUnclassified without meta.totalItems is an error, never a made-up 0', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: [] })
+    await expect(adapter.countUnclassified(EXAM_ID)).rejects.toBeInstanceOf(Error)
+  })
+
+  it('countUnclassified of an unknown exam is an ExamsNotFoundError', async () => {
+    vi.mocked(http.get).mockRejectedValue(new HttpError(404, 'Not Found', envelope('not_found', 'no exam')))
+    await expect(adapter.countUnclassified(EXAM_ID)).rejects.toBeInstanceOf(ExamsNotFoundError)
+  })
 })
