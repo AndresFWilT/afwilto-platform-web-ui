@@ -111,10 +111,10 @@ describe('ExamsHttpAdapter: managing exams (slice 08)', () => {
     })
   })
 
-  it('countUnclassified reads meta.totalItems of the unclassified bank query (page size 1), not the classifications', async () => {
+  it('countUnclassified reads meta.totalItems of the full unclassified bank list (no pageSize: the bank list has no pagination), not the classifications', async () => {
     vi.mocked(http.get).mockResolvedValue({ data: [{}], meta: { totalItems: 7 } })
     expect(await adapter.countUnclassified(EXAM_ID)).toBe(7)
-    expect(http.get).toHaveBeenCalledWith(`/exams/${EXAM_ID}/questions?unclassified=true&pageSize=1`)
+    expect(http.get).toHaveBeenCalledWith(`/exams/${EXAM_ID}/questions?unclassified=true`)
   })
 
   it('countUnclassified without meta.totalItems is an error, never a made-up 0', async () => {
