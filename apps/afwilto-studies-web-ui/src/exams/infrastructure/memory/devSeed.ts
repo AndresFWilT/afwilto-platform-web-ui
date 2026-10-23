@@ -18,6 +18,8 @@ export const examsDevSeed: ExamsSeed = {
       questionCount: 65,
       timeLimitMin: 130,
       passPercent: 72,
+      questionTotal: 0,
+      classifications: [],
       version: 1,
       createdAt: T,
       updatedAt: T,

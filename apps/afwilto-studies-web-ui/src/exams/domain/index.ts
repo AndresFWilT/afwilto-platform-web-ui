@@ -1,4 +1,7 @@
 export * from './types'
+export * from './exam'
+export * from './bank'
 export { chooseTemplate } from './chooseTemplate'
 export { hasMediaImage, splitMediaStem, type StemImage } from './mediaStem'
 export { toggleSelection } from './selection'
+export { toRevealInfo, toViewQuestion } from './questionView'

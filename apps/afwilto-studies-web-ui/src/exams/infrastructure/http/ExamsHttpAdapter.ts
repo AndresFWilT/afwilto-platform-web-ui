@@ -1,5 +1,17 @@
 import { HttpError, type IHttpClient } from '@afwilto/http-client'
-import type { CreateExamInput, Exam } from '@/exams/domain'
+import type {
+  AttemptHistory,
+  CreateExamInput,
+  Exam,
+  ExamQuestion,
+  ExamSummary,
+  ImportOptions,
+  ImportReport,
+  MergeCategoriesInput,
+  QuestionFilter,
+  QuestionSummary,
+  UpdateExamInput,
+} from '@/exams/domain'
 import {
   ExamsConflictError,
   ExamsNotFoundError,
@@ -46,6 +58,40 @@ export class ExamsHttpAdapter implements IExamsService {
     } catch (e) {
       throw translateError(e)
     }
+  }
+
+  listExams(_subjectId: string): Promise<ExamSummary[]> {
+    throw new Error('not implemented')
+  }
+  getExam(_examId: string): Promise<Exam> {
+    throw new Error('not implemented')
+  }
+  updateExam(_examId: string, _input: UpdateExamInput): Promise<Exam> {
+    throw new Error('not implemented')
+  }
+  deleteExam(_examId: string): Promise<void> {
+    throw new Error('not implemented')
+  }
+  mergeCategories(_examId: string, _input: MergeCategoriesInput): Promise<Exam> {
+    throw new Error('not implemented')
+  }
+  importQuestions(_examId: string, _file: File, _options: ImportOptions): Promise<ImportReport> {
+    throw new Error('not implemented')
+  }
+  exportUrl(_examId: string): string {
+    throw new Error('not implemented')
+  }
+  listQuestions(_examId: string, _filter?: QuestionFilter): Promise<QuestionSummary[]> {
+    throw new Error('not implemented')
+  }
+  getQuestion(_questionId: string): Promise<ExamQuestion> {
+    throw new Error('not implemented')
+  }
+  deleteQuestion(_questionId: string): Promise<void> {
+    throw new Error('not implemented')
+  }
+  listAttempts(_examId: string): Promise<AttemptHistory> {
+    throw new Error('not implemented')
   }
 
   mediaUrl(sha256: string): string | null {

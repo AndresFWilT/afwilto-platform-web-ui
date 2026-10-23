@@ -35,6 +35,19 @@ export interface ExamOption extends ViewOption {
   rationale?: string
 }
 
+export type Difficulty = 'easy' | 'medium' | 'hard'
+
+export interface QuestionCategoryRef {
+  classification: string
+  name: string
+}
+
+export interface QuestionOrigin {
+  set?: string
+  number?: number
+  noteRef?: string
+}
+
 /** A stored question with its answer key (GET /questions/{id}). */
 export interface ExamQuestion {
   id: string
@@ -43,20 +56,11 @@ export interface ExamQuestion {
   type: QuestionType
   stem: string
   explanation?: string
+  difficulty?: Difficulty
+  origin?: QuestionOrigin
+  categories: QuestionCategoryRef[]
   options: ExamOption[]
   version: number
-}
-
-export interface Exam {
-  id: string
-  subjectId: string
-  name: string
-  questionCount: number
-  timeLimitMin: number
-  passPercent: number
-  version: number
-  createdAt: string
-  updatedAt: string
 }
 
 export interface CreateExamInput {
