@@ -1,5 +1,6 @@
 export type { IExamsService } from './IExamsService'
 export {
+  ExamsAttemptInProgressError,
   ExamsConflictError,
   ExamsNotFoundError,
   ExamsValidationError,

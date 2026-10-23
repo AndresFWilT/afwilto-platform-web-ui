@@ -1,6 +1,11 @@
 import { HttpError, type IHttpClient } from '@afwilto/http-client'
 import type {
+  AnswerInput,
+  AnswerOutcome,
+  Attempt,
   AttemptHistory,
+  AttemptReport,
+  AttemptResult,
   AttemptSummary,
   CreateExamInput,
   Difficulty,
@@ -14,6 +19,8 @@ import type {
   QuestionFilter,
   QuestionOrigin,
   QuestionSummary,
+  SessionConfig,
+  SessionPreview,
   UpdateExamInput,
 } from '@/exams/domain'
 import {
@@ -178,6 +185,25 @@ export class ExamsHttpAdapter implements IExamsService {
         trend: res.meta?.trend ?? [],
       }
     })
+  }
+
+  async previewSession(_examId: string, _config: SessionConfig): Promise<SessionPreview> {
+    throw new Error('not implemented')
+  }
+  async startAttempt(_examId: string, _config: SessionConfig, _seed?: number): Promise<Attempt> {
+    throw new Error('not implemented')
+  }
+  async getAttempt(_attemptId: string): Promise<Attempt> {
+    throw new Error('not implemented')
+  }
+  async answerItem(_attemptId: string, _position: number, _answer: AnswerInput): Promise<AnswerOutcome> {
+    throw new Error('not implemented')
+  }
+  async submitAttempt(_attemptId: string): Promise<AttemptResult> {
+    throw new Error('not implemented')
+  }
+  async getAttemptReport(_attemptId: string): Promise<AttemptReport> {
+    throw new Error('not implemented')
   }
 
   mediaUrl(sha256: string): string | null {

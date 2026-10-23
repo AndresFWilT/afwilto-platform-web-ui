@@ -1,7 +1,12 @@
 import {
   inferWeights,
   primaryClassification,
+  type AnswerInput,
+  type AnswerOutcome,
+  type Attempt,
   type AttemptHistory,
+  type AttemptReport,
+  type AttemptResult,
   type Classification,
   type CreateExamInput,
   type Exam,
@@ -13,6 +18,8 @@ import {
   type MergeCategoriesInput,
   type QuestionFilter,
   type QuestionSummary,
+  type SessionConfig,
+  type SessionPreview,
   type UpdateExamInput,
 } from '@/exams/domain'
 import {
@@ -33,6 +40,13 @@ export interface ExamsSeed {
   questions?: ExamQuestion[]
   /** examId → attempt history. */
   attempts?: Record<string, AttemptHistory>
+  /** Alive note titles → note ids, to link `origin.noteRef` in the review. */
+  notes?: Record<string, string>
+}
+
+export interface InMemoryExamsOptions {
+  /** The wall clock in epoch milliseconds; tests move it to cross a deadline. */
+  now?: () => number
 }
 
 const RANGES = {
@@ -94,7 +108,7 @@ export class InMemoryExamsAdapter implements IExamsService {
   private readonly createdAt = new Date().toISOString()
   private readonly touched = new Map<string, string>()
 
-  constructor(seed: ExamsSeed) {
+  constructor(seed: ExamsSeed, _options: InMemoryExamsOptions = {}) {
     this.exams = clone(seed.exams)
     this.media = { ...seed.media }
     this.questions = clone(seed.questions ?? [])
@@ -302,6 +316,25 @@ export class InMemoryExamsAdapter implements IExamsService {
 
   async deleteQuestion(questionId: string): Promise<void> {
     this.questions.splice(this.questions.indexOf(this.question(questionId)), 1)
+  }
+
+  async previewSession(_examId: string, _config: SessionConfig): Promise<SessionPreview> {
+    throw new Error('not implemented')
+  }
+  async startAttempt(_examId: string, _config: SessionConfig, _seed?: number): Promise<Attempt> {
+    throw new Error('not implemented')
+  }
+  async getAttempt(_attemptId: string): Promise<Attempt> {
+    throw new Error('not implemented')
+  }
+  async answerItem(_attemptId: string, _position: number, _answer: AnswerInput): Promise<AnswerOutcome> {
+    throw new Error('not implemented')
+  }
+  async submitAttempt(_attemptId: string): Promise<AttemptResult> {
+    throw new Error('not implemented')
+  }
+  async getAttemptReport(_attemptId: string): Promise<AttemptReport> {
+    throw new Error('not implemented')
   }
 
   mediaUrl(sha256: string): string | null {

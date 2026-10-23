@@ -5,6 +5,10 @@ export interface ExamsViolation {
   field: string
   rule: string
   message: string
+  /** `insufficient_questions` only. */
+  category?: string
+  needed?: number
+  available?: number
 }
 
 /** A 422: one violation per offending field. */
@@ -30,6 +34,7 @@ export type ExamsConflictRule =
   | 'attempt_in_progress'
   | 'attempt_expired'
   | 'attempt_closed'
+  | 'answer_locked'
 
 /** A 409: the rule that was broken says what the caller can do about it. */
 export class ExamsConflictError extends Error {
@@ -41,6 +46,17 @@ export class ExamsConflictError extends Error {
     this.name = 'ExamsConflictError'
     this.field = field
     this.rule = rule
+  }
+}
+
+/** A 409 `attempt_in_progress`: the exam already has an open attempt, which the UI can continue (BR-A1). */
+export class ExamsAttemptInProgressError extends ExamsConflictError {
+  readonly attemptId: string
+
+  constructor(attemptId: string, message = 'the exam already has an attempt in progress') {
+    super('attemptId', 'attempt_in_progress', message)
+    this.name = 'ExamsAttemptInProgressError'
+    this.attemptId = attemptId
   }
 }
 

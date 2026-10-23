@@ -107,3 +107,8 @@ export function inferWeights(counts: number[]): number[] {
   }
   return floors
 }
+
+/** Largest-remainder apportionment of `total` over `weights` (FR-9): the parts sum to `total`; all-zero weights give all zeros. */
+export function apportion(_total: number, _weights: number[]): number[] {
+  throw new Error('not implemented')
+}
