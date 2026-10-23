@@ -1,5 +1,5 @@
-import { Children, isValidElement, memo, type ReactElement, type ReactNode } from 'react'
-import ReactMarkdown, { type Components } from 'react-markdown'
+import { Children, isValidElement, memo, useMemo, type ReactElement, type ReactNode } from 'react'
+import ReactMarkdown, { defaultUrlTransform, type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeSanitize from 'rehype-sanitize'
@@ -13,6 +13,11 @@ import { MarkdownImage, MarkdownLink } from './links'
 
 // Parent §9.3, in this order: sanitize first, then KaTeX on the sanitized tree.
 const KATEX_OPTIONS = { throwOnError: false, trust: false, strict: 'ignore', errorColor: '#F87171' } as const
+
+/** react-markdown drops unknown schemes after sanitizing; `media:` image sources are kept for `MarkdownImage` to resolve. */
+function urlTransform(url: string, key: string): string {
+  return key === 'src' && url.startsWith('media:') ? url : defaultUrlTransform(url)
+}
 
 /** Pulls the fence language and raw text out of `<pre><code class="language-x">`. */
 function fence(children: ReactNode): { lang?: string; text: string } {
@@ -70,12 +75,17 @@ const components: Components = {
  */
 export const MarkdownView = memo(function MarkdownView({
   content,
-  resolveMediaUrl: _resolveMediaUrl,
+  resolveMediaUrl,
 }: {
   content: string
   /** Resolves `media:<sha256>` images (exams); notes pass nothing and such images render their alt. */
   resolveMediaUrl?: (sha256: string) => string | null
 }) {
+  // The image component is the one place that resolves `media:`; without a resolver the shared map is used as is.
+  const mapped = useMemo<Components>(
+    () => (resolveMediaUrl ? { ...components, img: ({ src, alt }) => <MarkdownImage src={src} alt={alt} resolveMediaUrl={resolveMediaUrl} /> } : components),
+    [resolveMediaUrl]
+  )
   return (
     <div className="text-neutral-200">
       <ReactMarkdown
@@ -84,7 +94,8 @@ export const MarkdownView = memo(function MarkdownView({
           [rehypeSanitize, studiesSchema],
           [rehypeKatex, KATEX_OPTIONS],
         ]}
-        components={components}
+        components={mapped}
+        urlTransform={urlTransform}
       >
         {content}
       </ReactMarkdown>

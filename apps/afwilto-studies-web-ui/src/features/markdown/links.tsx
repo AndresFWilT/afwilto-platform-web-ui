@@ -32,8 +32,22 @@ export function MarkdownLink({ href, children, className: _ignored, target: _tar
   )
 }
 
-/** Images: https only; anything else renders its alt text and is never requested. */
-export function MarkdownImage({ src, alt }: ComponentPropsWithoutRef<'img'>) {
-  if (typeof src !== 'string' || !src.startsWith('https://')) return <>{alt ?? ''}</>
-  return <img src={src} alt={alt ?? ''} loading="lazy" referrerPolicy="no-referrer" className="my-4 max-w-full rounded-lg" />
+const MEDIA_SRC = /^media:([0-9a-f]{64})$/i
+
+/**
+ * Images: https always; `media:<sha256>` only through `resolveMediaUrl`. Anything
+ * else, or a resolver that returns null, renders its alt text and is never requested.
+ */
+export function MarkdownImage({
+  src,
+  alt,
+  resolveMediaUrl,
+}: ComponentPropsWithoutRef<'img'> & { resolveMediaUrl?: (sha256: string) => string | null }) {
+  if (typeof src !== 'string') return <>{alt ?? ''}</>
+  let url: string | null = src
+  const media = MEDIA_SRC.exec(src)
+  if (src.startsWith('media:')) url = media && resolveMediaUrl ? resolveMediaUrl(media[1]) : null
+  else if (!src.startsWith('https://')) url = null
+  if (!url) return <>{alt ?? ''}</>
+  return <img src={url} alt={alt ?? ''} loading="lazy" referrerPolicy="no-referrer" className="my-4 max-w-full rounded-lg" />
 }
