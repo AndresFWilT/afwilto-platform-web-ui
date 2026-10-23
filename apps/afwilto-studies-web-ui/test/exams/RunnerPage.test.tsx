@@ -368,7 +368,7 @@ describe('RunnerPage: submitting (S09-8)', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(submit).not.toHaveBeenCalled()
-    expect(currentLocation()).toMatch(/^\/studies\/attempts\/[0-9a-f-]+$/)
+    expect(currentLocation()).toMatch(/^\/studies\/attempts\/[0-9a-f-]+(\?q=\d+)?$/)
   })
 
   it('says "Te quedan 1 sin responder" for one, and asks plainly when everything is answered', async () => {
@@ -411,7 +411,7 @@ describe('RunnerPage: submitting (S09-8)', () => {
     vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new Error('el servidor no responde'))
     await open(exams, random(1))
     fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
-    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 1 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
     expect(await screen.findByText(/el servidor no responde/)).toBeTruthy()
     expect(currentLocation()).not.toMatch(/result/)
   })
@@ -439,6 +439,29 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     expect(submit).toHaveBeenCalledTimes(1)
     await advance(10_000)
     expect(submit).toHaveBeenCalledTimes(1)
+  })
+
+  it('the countdown reaching 0 while a manual submit is pending does not submit a second time', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(59)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    let release: () => void = () => {}
+    const original = exams.submitAttempt.bind(exams)
+    const submit = vi.spyOn(exams, 'submitAttempt').mockImplementation(async (id) => {
+      await new Promise<void>((resolve) => (release = resolve))
+      return original(id)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 5 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
+    await advance(0)
+    expect(submit).toHaveBeenCalledTimes(1)
+    await advance(2000)
+    expect(submit).toHaveBeenCalledTimes(1)
+    release()
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
   })
 
   it('if the server already expired the attempt, submit is refused and the result opens anyway', async () => {
