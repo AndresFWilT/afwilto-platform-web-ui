@@ -84,6 +84,21 @@ describe('QuestionView — selection (S07-4, AC-23)', () => {
     expect(checked()).toEqual([item('C').textContent])
   })
 
+  it('6 selects the sixth option and 7 and 0 do nothing', () => {
+    const six: ViewQuestion = {
+      type: 'single',
+      chooseCount: 1,
+      stem: 'Six options',
+      options: ['A', 'B', 'C', 'D', 'E', 'F'].map((label) => ({ label, text: `Option ${label}` })),
+    }
+    render(<Harness question={six} />)
+    fireEvent.keyDown(item('A'), { key: '7' })
+    fireEvent.keyDown(item('A'), { key: '0' })
+    expect(checked()).toEqual([])
+    fireEvent.keyDown(item('A'), { key: '6' })
+    expect(checked()).toEqual([item('F').textContent])
+  })
+
   it('Space on a focused option selects it', () => {
     render(<Harness question={t1} />)
     fireEvent.keyDown(item('B'), { key: ' ' })
