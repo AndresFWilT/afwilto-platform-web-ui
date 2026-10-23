@@ -137,3 +137,15 @@ trigger:
 | `exams/app/usecase/import_test.go` | unit (fakes) | AC-1–AC-9, S03-4–S03-6 |
 | `exams/adapter/in/http/import_api_test.go` | `httptest` + contract | S03-7, report shape |
 | `exams/adapter/out/postgres/import_repo_test.go` | integration | AC-2, AC-4 atomicity, AC-8, S03-8, S03-9 |
+
+## 6. Amendments
+
+Fixes from the phase-1 independent review. Each one changes or pins behaviour the slice left open.
+
+- 2026-10-23, schema stage bounds (H2). Before the JSON Schema runs, a `questions` array of more than 2,000 items is one error (rule `schema`, path `questions`, message names `maxItems` 2,000 and the actual count), and the schema is not run, so a 10 MiB file of `{}` items cannot build millions of errors. Any report holds at most 200 errors; when more were found, `warnings` gains "N more errors not shown" (N is the number left out) and `counts.invalid` still counts every invalid question.
+- 2026-10-23, NUL bytes (H3). Stage 3 gains the rule `invalid_text`: any string of the file (key, stem, explanation, option text, image, alt, rationale, category and classification names, origin, source) that contains U+0000 is an error at that string's path (`questions[3].stem`, `questions[3].options[1].text`, `questions[3].categories` for a name), because Postgres text cannot store it. If the database still refuses a text value on apply (SQLSTATE 22021 or 22P05), the apply answers 422 with a report whose single error is `invalid_text` at `$`, never a 500. The rule joins the module spec's error-rule table in the slice 03 row and the OpenAPI `ErrorDetail.rule` list.
+- 2026-10-23, `origin.number` (M2). The schema accepts `1.0` and `1e3` as integers, and so does the decoder. A value that is an integer but does not fit a 64-bit signed integer (for example `1e30`) is a stage-2 error at `questions[i].origin.number`, rule `schema`, never a decode error at `$`.
+- 2026-10-23, default primary (M3), a reading of §1.4 step 3 and FR-3.1. A classification qualifies when **no question lists more than one value in it**. A question with no value in it is unclassified (FR-3.3) and does not disqualify it, but the file must use the classification in at least one question. Among the qualifying ones the first in order of first appearance wins. Example: `q1 {Servicio: [S]}`, `q2 {Dominio: [A]}` → both qualify, `Servicio` is chosen, `q2` is unclassified in it.
+- 2026-10-23, snapshot reads (M1). Reading the bank (classifications, questions and the exam summary) happens in one `REPEATABLE READ, READ ONLY` transaction, so a concurrent import cannot show half of itself.
+- 2026-10-23, S03-8 is checked with a checksum of every exams-context row, including `deleted_at` and `version`, instead of a row count: a dry run that only flipped a flag or a version would pass a count.
+

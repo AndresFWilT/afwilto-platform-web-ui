@@ -487,7 +487,7 @@ New error rules, a closed set and the slice that introduces each:
 | Rules | Slice |
 |---|---|
 | `range` | 02 |
-| `json`, `schema`, `file_type`, `too_many_classifications`, `primary_single_valued`, `correct_count`, `option_content`, `duplicate_key`, `media_missing` | 03 |
+| `json`, `schema`, `file_type`, `too_many_classifications`, `primary_single_valued`, `correct_count`, `option_content`, `duplicate_key`, `media_missing`, `invalid_text` | 03 |
 | `weights_sum`, `pace_pair`, `merge_scope` | 04 |
 | `zip_entries`, `zip_size`, `zip_path`, `zip_layout`, `media_type`, `media_size`, `media_dimensions` | 05 |
 | `insufficient_questions`, `locked_by_simulation`, `attempt_in_progress` | 06a |
