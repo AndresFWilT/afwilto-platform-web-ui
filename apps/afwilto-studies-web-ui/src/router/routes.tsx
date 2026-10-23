@@ -26,6 +26,9 @@ const ExamOverviewPage = lazy(() =>
 const ExamEditPage = lazy(() =>
   import('@/features/manage-exams/ui/pages/ExamEditPage').then((m) => ({ default: m.ExamEditPage }))
 )
+const ImportWizardPage = lazy(() =>
+  import('@/features/import-questions/ui/pages/ImportWizardPage').then((m) => ({ default: m.ImportWizardPage }))
+)
 const TagPage = lazy(() => import('@/pages/Tag/TagPage').then((m) => ({ default: m.TagPage })))
 
 function Fallback() {
@@ -67,6 +70,7 @@ export const childRoutes: RouteObject[] = [
   { path: 'subjects/:subjectId/notes/new', element: withSuspense(NoteEditorPage) },
   { path: 'exams/:examId', element: withSuspense(ExamOverviewPage) },
   { path: 'exams/:examId/edit', element: withSuspense(ExamEditPage) },
+  { path: 'exams/:examId/import', element: withSuspense(ImportWizardPage) },
   { path: 'notes/:noteId', element: withSuspense(NotePage) },
   { path: 'notes/:noteId/edit', element: withSuspense(NoteEditorPage) },
   { path: 'tags/:tag', element: withSuspense(TagPage) },

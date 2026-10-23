@@ -127,3 +127,5 @@ export function reportFixture(overrides: Partial<ImportReport> = {}): ImportRepo
     ...overrides,
   }
 }
+
+export const FILE_JSON = () => new File(['{"questions":[]}'], 'preguntas.json', { type: 'application/json' })

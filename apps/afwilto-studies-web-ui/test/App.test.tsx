@@ -26,6 +26,7 @@ describe('route table (parent §9.1, Slice 07 scope)', () => {
       'subjects/:subjectId/notes/new',
       'exams/:examId',
       'exams/:examId/edit',
+      'exams/:examId/import',
       'notes/:noteId',
       'notes/:noteId/edit',
       'tags/:tag',
