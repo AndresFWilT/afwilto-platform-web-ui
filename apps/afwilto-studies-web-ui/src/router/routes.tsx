@@ -32,6 +32,13 @@ const ImportWizardPage = lazy(() =>
 const QuestionBankPage = lazy(() =>
   import('@/features/browse-question-bank/ui/pages/QuestionBankPage').then((m) => ({ default: m.QuestionBankPage }))
 )
+const SessionSetupPage = lazy(() =>
+  import('@/features/take-exam/ui/pages/SessionSetupPage').then((m) => ({ default: m.SessionSetupPage }))
+)
+const RunnerPage = lazy(() => import('@/features/take-exam/ui/pages/RunnerPage').then((m) => ({ default: m.RunnerPage })))
+const ResultPage = lazy(() =>
+  import('@/features/review-attempt/ui/pages/ResultPage').then((m) => ({ default: m.ResultPage }))
+)
 const TagPage = lazy(() => import('@/pages/Tag/TagPage').then((m) => ({ default: m.TagPage })))
 
 function Fallback() {
@@ -75,6 +82,9 @@ export const childRoutes: RouteObject[] = [
   { path: 'exams/:examId/edit', element: withSuspense(ExamEditPage) },
   { path: 'exams/:examId/import', element: withSuspense(ImportWizardPage) },
   { path: 'exams/:examId/questions', element: withSuspense(QuestionBankPage) },
+  { path: 'exams/:examId/start', element: withSuspense(SessionSetupPage) },
+  { path: 'attempts/:attemptId', element: withSuspense(RunnerPage) },
+  { path: 'attempts/:attemptId/result', element: withSuspense(ResultPage) },
   { path: 'notes/:noteId', element: withSuspense(NotePage) },
   { path: 'notes/:noteId/edit', element: withSuspense(NoteEditorPage) },
   { path: 'tags/:tag', element: withSuspense(TagPage) },
