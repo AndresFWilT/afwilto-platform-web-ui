@@ -48,8 +48,17 @@ describe('MarkdownView — media: images (S07-2)', () => {
     expect(resolve).not.toHaveBeenCalled()
   })
 
-  it('keeps https images working when a resolver is present', () => {
-    const { container } = render(<MarkdownView content="![logo](https://example.com/l.png)" resolveMediaUrl={() => '/unused'} />)
+  it('exam content (a resolver is present) renders only media: images: https and other sources show their alt text', () => {
+    for (const src of ['https://example.com/l.png', 'http://example.com/l.png', '//example.com/l.png', 'data:image/png;base64,AAAA', '/api/v1/media/x']) {
+      const { container, unmount } = render(<MarkdownView content={`![logo](${src})`} resolveMediaUrl={() => '/unused'} />)
+      expect(container.querySelector('img')).toBeNull()
+      expect(container.textContent).toContain('logo')
+      unmount()
+    }
+  })
+
+  it('notes (no resolver) keep rendering https images', () => {
+    const { container } = render(<MarkdownView content="![logo](https://example.com/l.png)" />)
     expect(container.querySelector('img')!.getAttribute('src')).toBe('https://example.com/l.png')
   })
 

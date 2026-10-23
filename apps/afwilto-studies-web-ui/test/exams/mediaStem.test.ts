@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitMediaStem } from '../../src/exams/domain'
+import { hasMediaImage, splitMediaStem } from '../../src/exams/domain'
 
 const SHA = 'b'.repeat(64)
 
@@ -24,5 +24,36 @@ describe('splitMediaStem', () => {
 
   it('returns empty text for a stem that is only an image', () => {
     expect(splitMediaStem(`![x](media:${SHA})`)).toEqual({ text: '', images: [{ alt: 'x', sha: SHA }] })
+  })
+
+  describe('code is not a media image (review fix 14)', () => {
+    const ref = `![x](media:${SHA})`
+
+    it('leaves a reference inside a fenced code block in the text', () => {
+      const stem = `Mira el ejemplo:\n\n\`\`\`md\n${ref}\n\`\`\`\n\nFin`
+      expect(splitMediaStem(stem)).toEqual({ text: stem, images: [] })
+      expect(hasMediaImage(stem)).toBe(false)
+    })
+
+    it('leaves a reference inside a ~~~ fence, and inside an unclosed fence, in the text', () => {
+      const tilde = `~~~\n${ref}\n~~~`
+      expect(splitMediaStem(tilde)).toEqual({ text: tilde, images: [] })
+      const open = `texto\n\`\`\`\n${ref}`
+      expect(splitMediaStem(open)).toEqual({ text: open, images: [] })
+    })
+
+    it('leaves a reference inside an inline code span in the text', () => {
+      const stem = `Escribe \`${ref}\` para incluir una imagen`
+      expect(splitMediaStem(stem)).toEqual({ text: stem, images: [] })
+      expect(hasMediaImage(stem)).toBe(false)
+    })
+
+    it('still lifts a real image that sits next to code', () => {
+      const other = 'c'.repeat(64)
+      const out = splitMediaStem(`\`${ref}\`\n\n![real](media:${other})\n\n\`\`\`\n${ref}\n\`\`\``)
+      expect(out.images).toEqual([{ alt: 'real', sha: other }])
+      expect(out.text).toBe(`\`${ref}\`\n\n\`\`\`\n${ref}\n\`\`\``)
+      expect(hasMediaImage(`\`${ref}\` ![real](media:${other})`)).toBe(true)
+    })
   })
 })
