@@ -232,10 +232,10 @@ export class ExamsHttpAdapter implements IExamsService {
     })
   }
 
-  /** The server counts them: `meta.totalItems` of the unclassified bank query (a page of one question is enough). */
+  /** The server counts them: `meta.totalItems` of the unclassified bank list (that list has no pagination and ignores `pageSize`). */
   async countUnclassified(examId: string): Promise<number> {
     return this.call(async () => {
-      const res = await this.http.get<{ meta?: { totalItems?: number } }>(`/exams/${encodeURIComponent(examId)}/questions?unclassified=true&pageSize=1`)
+      const res = await this.http.get<{ meta?: { totalItems?: number } }>(`/exams/${encodeURIComponent(examId)}/questions?unclassified=true`)
       const total = res.meta?.totalItems
       if (typeof total !== 'number') throw new Error('The server sent no total for the unclassified questions')
       return total
