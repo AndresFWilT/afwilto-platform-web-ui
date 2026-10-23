@@ -127,7 +127,7 @@ describe('ImportWizardPage: step 2, Reporte (S08-2)', () => {
       weightsAfter: [{ category: 'Seguridad', percent: 100, mode: 'inferred' }],
       duplicateStems: [{ key: 'copia', existingKey: 'orig' }],
       media: { referenced: 2, inZip: 1, missing: ['img/falta.png'], unused: ['img/sobra.png'] },
-      preview: [questionFixture('p1')],
+      preview: [questionFixture('p1', [], { explanation: undefined })],
     })
     open(emptyExam(), full)
     await choose()
