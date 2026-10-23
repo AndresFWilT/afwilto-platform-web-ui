@@ -78,7 +78,10 @@ export function edgeViolations(fromRel: string, toRel: string): string[] {
     return LEGACY_TO_NEW.includes(from) ? [] : ['legacy code imports the new area outside the allowed bridges']
   }
   if (fromNew && !toNew) {
-    return NEW_TO_LEGACY.includes(to) ? [] : ['new area imports legacy code outside the allowed bridges']
+    if (!NEW_TO_LEGACY.includes(to)) return ['new area imports legacy code outside the allowed bridges']
+    // The port hook and useAsync belong to pages: nothing below them fetches.
+    const fetches = to === 'di' || to.startsWith('di/') || to === 'hooks/useAsync'
+    return fetches && zoneOf(from).level !== LEVELS.indexOf('pages') ? ['@/di or useAsync outside a page'] : []
   }
   if (!fromNew) return []
 
@@ -100,6 +103,7 @@ export function contentViolations(rel: string, source: string): string[] {
   if (/\bfetch\(/.test(source) && !zone.infrastructure) found.push('fetch( outside exams/infrastructure')
   const callsHook = /\buseServices\(\)/.test(source)
   if (callsHook && zone.level !== LEVELS.indexOf('pages')) found.push('useServices() outside a page')
+  if (/\buseAsync\b/.test(source) && zone.level !== LEVELS.indexOf('pages')) found.push('useAsync outside a page')
   return found
 }
 
