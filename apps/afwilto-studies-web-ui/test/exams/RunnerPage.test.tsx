@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { InMemoryExamsAdapter } from '../../src/exams/infrastructure/memory/InMemoryExamsAdapter'
 import { ExamsConflictError } from '../../src/exams/application/ports'
+import type { AnswerInput } from '../../src/exams/domain'
 import type { SessionConfig } from '../../src/exams/domain'
 import { currentLocation, renderAt } from '../support/renderStudies'
 import { findDialog } from '../support/forms'
@@ -548,5 +549,352 @@ describe('RunnerPage: the timer (S09-3, S09-4)', () => {
     const get = vi.spyOn(exams, 'getAttempt')
     await act(async () => { window.dispatchEvent(new Event('focus')) })
     expect(get).not.toHaveBeenCalled()
+  })
+})
+
+/** Holds every PUT until the test releases it, then runs the real in-memory save. */
+function gated(exams: InMemoryExamsAdapter) {
+  const original = exams.answerItem.bind(exams)
+  const pending: Array<{ position: number; answer: AnswerInput; release: () => void; fail: (e: Error) => void }> = []
+  vi.spyOn(exams, 'answerItem').mockImplementation(
+    (id, position, answer) =>
+      new Promise((resolve, reject) => {
+        pending.push({ position, answer, release: () => original(id, position, answer).then(resolve, reject), fail: reject })
+      })
+  )
+  return pending
+}
+const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)) })
+
+describe('RunnerPage: the clock rides on the PUT, errors by rule (contract 0.3.0, M2, M3)', () => {
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+
+  it('a save resyncs the countdown from the PUT response and does not GET the attempt', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    const get = vi.spyOn(exams, 'getAttempt')
+    clock.advance(45)
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(screen.getByRole('timer').textContent).toBe('2:15'))
+    fireEvent.click(options()[1])
+    await settle()
+    expect(get).not.toHaveBeenCalled()
+  })
+
+  it('a save refused as attempt_closed opens the result', async () => {
+    const { exams } = setup()
+    vi.spyOn(exams, 'answerItem').mockRejectedValue(new ExamsConflictError('status', 'attempt_closed', 'closed'))
+    const attempt = await open(exams, timed(1))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+  })
+
+  it('a save refused as answer_locked re-reads the item from the server: the revealed choice shows, no failure toast', async () => {
+    const { exams } = setup()
+    const attempt = await open(exams, random(5, { feedback: 'each' }))
+    await exams.answerItem(attempt.id, 0, { selected: ['B'], flagged: false })
+    fireEvent.click(options()[2])
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(checked()).toEqual([options()[1]])
+    expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true)
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+describe('RunnerPage: saves are ordered and deduped against what is queued (R1, R2)', () => {
+  // A radio cannot be deselected; a multi option can, which is what these cases need.
+  const multi = () => simpleQuestion('m1', 0, [], { type: 'multi', options: ['A', 'B', 'C', 'D'].map((label, i) => ({ label, text: `m ${label}`, correct: i < 2 })) })
+  const flagButton = () => screen.getByRole('button', { name: 'Marcar para revisión' })
+
+  it('R1: toggling the flag twice during an in-flight PUT ends with the server flag equal to the UI', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    const attempt = await open(exams, random(3))
+    press('f')
+    press('f')
+    expect(flagButton().getAttribute('aria-pressed')).toBe('false')
+    await waitFor(() => expect(pending).toHaveLength(1))
+    await act(async () => pending[0].release())
+    await waitFor(() => expect(pending).toHaveLength(2))
+    await act(async () => pending[1].release())
+    await waitFor(() => expect(cell(1).getAttribute('aria-busy')).toBeNull())
+    expect(pending.map((p) => p.answer.flagged)).toEqual([true, false])
+    expect((await exams.getAttempt(attempt.id)).items[0].flagged).toBe(false)
+  })
+
+  it('R1: selecting and deselecting during an in-flight PUT ends with the server selection equal to the UI', async () => {
+    const { exams } = setup({ questions: [multi()] })
+    const pending = gated(exams)
+    const attempt = await open(exams, random(1))
+    fireEvent.click(options()[0])
+    fireEvent.click(options()[0])
+    expect(checked()).toEqual([])
+    await waitFor(() => expect(pending).toHaveLength(1))
+    await act(async () => pending[0].release())
+    await waitFor(() => expect(pending).toHaveLength(2))
+    await act(async () => pending[1].release())
+    await waitFor(() => expect(cell(1).getAttribute('aria-busy')).toBeNull())
+    expect(pending.map((p) => p.answer.selected)).toEqual([['A'], []])
+    expect((await exams.getAttempt(attempt.id)).items[0].selected).toEqual([])
+  })
+
+  it('R1: select, deselect and select again are three distinct saves, sent in that order', async () => {
+    const { exams } = setup({ questions: [multi()] })
+    const put = vi.spyOn(exams, 'answerItem')
+    await open(exams, random(1))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(1))
+    fireEvent.click(options()[0])
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(3))
+    expect(put.mock.calls.map((c) => c[2].selected)).toEqual([['A'], [], ['A']])
+  })
+
+  it('R2: under feedback each, clicking B then C before the first PUT resolves sends one PUT and shows B with its reveal', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(5, { feedback: 'each' }))
+    fireEvent.click(options()[1])
+    fireEvent.click(options()[2])
+    expect(checked()).toEqual([options()[1]])
+    expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true)
+    await waitFor(() => expect(pending).toHaveLength(1))
+    await act(async () => pending[0].release())
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(pending).toHaveLength(1)
+    expect(checked()).toEqual([options()[1]])
+  })
+
+  it('R2: a failed first PUT unlocks the item so the choice can be retried', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(5, { feedback: 'each' }))
+    fireEvent.click(options()[1])
+    await waitFor(() => expect(pending).toHaveLength(1))
+    await act(async () => pending[0].fail(new Error('sin conexión')))
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    expect(options().some((o) => o.getAttribute('aria-disabled') === 'true')).toBe(false)
+  })
+})
+
+describe('RunnerPage: failed saves are a set, retried before submitting (R3)', () => {
+  const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+
+  async function answerTwoFailing(exams: InMemoryExamsAdapter) {
+    vi.spyOn(exams, 'answerItem').mockRejectedValue(new Error('sin conexión'))
+    fireEvent.click(options()[0])
+    fireEvent.click(cell(2))
+    fireEvent.click(options()[0])
+    await screen.findByText('No se pudieron guardar las preguntas 1, 2')
+  }
+
+  it('two failed items are both listed in one toast, and "Reintentar" resends both', async () => {
+    const { exams } = setup()
+    await open(exams, random(5))
+    await answerTwoFailing(exams)
+    const put = vi.mocked(exams.answerItem)
+    put.mockClear()
+    put.mockResolvedValue({ position: 0, selected: ['A'], flagged: false })
+    fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Reintentar' }))
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(2))
+    expect(put.mock.calls.map((c) => c[1]).sort()).toEqual([0, 1])
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+  })
+
+  it('a manual submit retries the failed saves once first; when they now succeed it goes straight to the result', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem').mockRejectedValueOnce(new Error('sin conexión'))
+    const attempt = await open(exams, random(1))
+    fireEvent.click(options()[0])
+    await screen.findByText('No se pudo guardar la pregunta 1')
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(put).toHaveBeenCalledTimes(2)
+    expect(screen.queryByText(/no se pudo(ieron)? guardar/)).toBeNull()
+  })
+
+  it('a manual submit with saves still failing asks again, listing them; confirming submits and the result says how many were lost', async () => {
+    const { exams } = setup()
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    const attempt = await open(exams, random(5))
+    await answerTwoFailing(exams)
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 3 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
+    const unsaved = await findDialog('Hay respuestas sin guardar. ¿Entregar de todos modos?')
+    expect(unsaved.textContent).toContain('Preguntas sin guardar: 1, 2')
+    expect(submit).not.toHaveBeenCalled()
+    fireEvent.click(within(unsaved).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('2 respuestas no se pudieron guardar')).toBeTruthy()
+  })
+
+  it('cancelling the unsaved-answers question keeps the attempt open and submits nothing', async () => {
+    const { exams } = setup()
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    await open(exams, random(1))
+    vi.spyOn(exams, 'answerItem').mockRejectedValue(new Error('sin conexión'))
+    fireEvent.click(options()[0])
+    await screen.findByText('No se pudo guardar la pregunta 1')
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    fireEvent.click(within(await findDialog('Hay respuestas sin guardar. ¿Entregar de todos modos?')).getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(submit).not.toHaveBeenCalled()
+    expect(currentLocation()).not.toMatch(/result/)
+  })
+
+  it('the auto-submit at 0 retries the failed saves, then submits anyway and the result shows the notice', async () => {
+    fakeTime()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(58)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await screen.findByText(/^Pregunta \d+ de \d+$/)
+    const put = vi.spyOn(exams, 'answerItem').mockRejectedValue(new Error('sin conexión'))
+    fireEvent.click(options()[0])
+    await screen.findByText('No se pudo guardar la pregunta 1')
+    const submit = vi.spyOn(exams, 'submitAttempt')
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    await waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(put).toHaveBeenCalledTimes(2)
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('1 respuesta no se pudo guardar')).toBeTruthy()
+  })
+})
+
+describe('RunnerPage: multi under feedback each (R5)', () => {
+  const multi = () => simpleQuestion('m1', 0, [], { type: 'multi', options: ['A', 'B', 'C', 'D'].map((label, i) => ({ label, text: `m ${label}`, correct: i < 2 })) })
+
+  it('shows "Elige 2 opciones" with how many remain until N are chosen, then the hint goes away', async () => {
+    const { exams } = setup({ questions: [multi()] })
+    await open(exams, random(1, { feedback: 'each' }))
+    expect(screen.getByText('Elige 2 opciones · faltan 2')).toBeTruthy()
+    fireEvent.click(options()[0])
+    expect(screen.getByText('Elige 2 opciones · falta 1')).toBeTruthy()
+    fireEvent.click(options()[1])
+    expect(screen.queryByText(/^Elige 2 opciones/)).toBeNull()
+  })
+
+  it('a partial selection is never saved and the cell stays "sin responder"', async () => {
+    const { exams } = setup({ questions: [multi()] })
+    const put = vi.spyOn(exams, 'answerItem')
+    await open(exams, random(1, { feedback: 'each' }))
+    fireEvent.click(options()[0])
+    await settle()
+    expect(put).not.toHaveBeenCalled()
+    expect(cell(1).getAttribute('aria-label')).toBe('Pregunta 1, sin responder')
+  })
+
+  it('under feedback end there is no hint and a partial selection is saved', async () => {
+    const { exams } = setup({ questions: [multi()] })
+    const put = vi.spyOn(exams, 'answerItem')
+    await open(exams, random(1))
+    expect(screen.queryByText(/^Elige 2 opciones/)).toBeNull()
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(put).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe('RunnerPage: keyboard after navigation (R4)', () => {
+  it('→ then 2 selects option B of the next question, with no focus inside the question', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    press('ArrowRight')
+    expect(header()).toBe('Pregunta 2 de 15')
+    press('2')
+    expect(checked()).toEqual([options()[1]])
+  })
+
+  it('1–6 beyond the options, or with a modifier, do nothing', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    press('6')
+    fireEvent.keyDown(document.body, { key: '1', ctrlKey: true })
+    expect(checked()).toEqual([])
+  })
+
+  it('a key held down toggles F once, not on every repeat', async () => {
+    const { exams } = setup()
+    await open(exams, random(15))
+    press('f')
+    fireEvent.keyDown(document.body, { key: 'f', repeat: true })
+    fireEvent.keyDown(document.body, { key: 'f', repeat: true })
+    expect(screen.getByRole('button', { name: 'Marcar para revisión' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+describe('RunnerPage: the clock and the submit at 0 (R6)', () => {
+  const fakeAll = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date', 'performance'] })
+  const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+  // Testing Library's own async helpers wait on a real setTimeout(0); with setTimeout faked only vi.waitFor works.
+
+  it('a sync whose request started before the latest applied one is ignored, even if it answers later', async () => {
+    fakeAll()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(3), 1)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await vi.waitFor(() => screen.getByText(/^Pregunta \d+ de \d+$/))
+    const original = exams.getAttempt.bind(exams)
+    const releases: Array<() => void> = []
+    // The server answers at request time; only the delivery waits for the test.
+    vi.spyOn(exams, 'getAttempt').mockImplementation((id) => {
+      const answer = original(id)
+      return new Promise((resolve, reject) => releases.push(() => answer.then(resolve, reject)))
+    })
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    await advance(10)
+    clock.advance(30)
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    expect(releases).toHaveLength(2)
+    // The later request answers first (150 s left) ...
+    await act(async () => releases[1]())
+    expect(screen.getByRole('timer').textContent).toBe('2:30')
+    // ... then the earlier one arrives with a staler 180 s: it must not move the clock back.
+    await act(async () => releases[0]())
+    expect(screen.getByRole('timer').textContent).toBe('2:30')
+  })
+
+  it('a failed submit at 0 is retried after 1 s, 2 s and 4 s, then the error is shown and it stops', async () => {
+    fakeAll()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(59)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await vi.waitFor(() => screen.getByText(/^Pregunta \d+ de \d+$/))
+    const submit = vi.spyOn(exams, 'submitAttempt').mockRejectedValue(new Error('el servidor no responde'))
+    await advance(1000)
+    expect(submit).toHaveBeenCalledTimes(1)
+    await advance(999)
+    expect(submit).toHaveBeenCalledTimes(1)
+    await advance(1)
+    expect(submit).toHaveBeenCalledTimes(2)
+    await advance(2000)
+    expect(submit).toHaveBeenCalledTimes(3)
+    await advance(3999)
+    expect(submit).toHaveBeenCalledTimes(3)
+    await advance(1)
+    expect(submit).toHaveBeenCalledTimes(4)
+    expect(screen.getByText(/el servidor no responde/)).toBeTruthy()
+    await advance(60_000)
+    expect(submit).toHaveBeenCalledTimes(4)
+  })
+
+  it('a retry that succeeds opens the result and stops retrying', async () => {
+    fakeAll()
+    const { clock, exams } = setup()
+    const attempt = await exams.startAttempt(EXAM_ID, timed(1), 1)
+    clock.advance(59)
+    renderAt(`/studies/attempts/${attempt.id}`, undefined, exams)
+    await vi.waitFor(() => screen.getByText(/^Pregunta \d+ de \d+$/))
+    const submit = vi.spyOn(exams, 'submitAttempt').mockRejectedValueOnce(new Error('red caída'))
+    await advance(1000)
+    await advance(1000)
+    await vi.waitFor(() => expect(currentLocation()).toBe(`/studies/attempts/${attempt.id}/result`))
+    expect(submit).toHaveBeenCalledTimes(2)
   })
 })

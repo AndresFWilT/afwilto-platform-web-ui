@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react'
 import { useCountdown, type CountdownSync } from '../../src/shared/lib/useCountdown'
 
 // Only the interval and the clock are faked: nothing else may tick behind the test's back.
-beforeEach(() => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] }))
+beforeEach(() => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] }))
 afterEach(() => vi.useRealTimers())
 
 const tick = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
@@ -81,5 +81,14 @@ describe('useCountdown', () => {
     await tick(2000)
     expect(first).not.toHaveBeenCalled()
     expect(second).toHaveBeenCalledTimes(1)
+  })
+
+  it('measures elapsed time with performance.now(), so a wall-clock jump does not move the countdown (R6)', async () => {
+    const { result } = renderHook(() => useCountdown({ seconds: 130, token: 0 }, () => {}))
+    await tick(20_000)
+    expect(result.current).toBe(110)
+    vi.setSystemTime(Date.now() + 60_000)
+    await tick(1000)
+    expect(result.current).toBe(109)
   })
 })
