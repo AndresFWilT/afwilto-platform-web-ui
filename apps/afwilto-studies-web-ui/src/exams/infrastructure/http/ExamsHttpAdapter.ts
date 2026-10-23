@@ -28,7 +28,6 @@ import type {
   UpdateExamInput,
   ViewOption,
 } from '@/exams/domain'
-import { buildBreakdown } from '@/exams/domain'
 import {
   ExamsAttemptInProgressError,
   ExamsConflictError,
@@ -121,18 +120,34 @@ const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
 
 const SHA256 = /^[0-9a-f]{64}$/
 
+const CONFLICT_RULES: readonly ExamsConflictRule[] = ['duplicate_name', 'in_use', 'stale_version', 'attempt_in_progress', 'attempt_expired', 'attempt_closed', 'answer_locked']
+const VALIDATION_RULES = ['invalid_text', 'range'] as const
+
+/** A rule the server named in `code` or `message` when it sent no `details`. */
+const ruleNamedBy = <R extends string>(rules: readonly R[], err: WireError['error']): R | undefined =>
+  rules.find((rule) => err?.code === rule) ?? rules.find((rule) => new RegExp(`\\b${rule}\\b`).test(err?.message ?? ''))
+
 /** HTTP failures → the port's domain errors; status codes never leave the adapter. */
 function translateError(e: unknown): Error {
   if (!(e instanceof HttpError)) return e instanceof Error ? e : new Error(String(e))
   const err = (e.body as WireError | null)?.error
   const details = Array.isArray(err?.details) ? err.details : []
   if (e.status === 422 && details.length) return new ExamsValidationError(details, err?.message)
+  if (e.status === 422) {
+    const rule = ruleNamedBy(VALIDATION_RULES, err)
+    if (rule) return new ExamsValidationError([{ field: '', rule, message: err?.message ?? rule }], err?.message)
+  }
   if (e.status === 409 && details.length) {
     const [first] = details
     if (first.rule === 'attempt_in_progress') {
       return new ExamsAttemptInProgressError(first.message.match(UUID)?.[0] ?? err?.message?.match(UUID)?.[0] ?? '', first.message || err?.message)
     }
     return new ExamsConflictError(first.field, first.rule as ExamsConflictRule, first.message || err?.message || 'conflict')
+  }
+  if (e.status === 409) {
+    const rule = ruleNamedBy(CONFLICT_RULES, err)
+    if (rule === 'attempt_in_progress') return new ExamsAttemptInProgressError(err?.message?.match(UUID)?.[0] ?? '', err?.message)
+    if (rule) return new ExamsConflictError('', rule, err?.message || rule)
   }
   if (e.status === 404) return new ExamsNotFoundError(err?.message)
   return new Error(err?.message || details.map((d) => d.message).join('; ') || 'The request failed')
@@ -257,9 +272,15 @@ export class ExamsHttpAdapter implements IExamsService {
 
   async answerItem(attemptId: string, position: number, answer: AnswerInput): Promise<AnswerOutcome> {
     return this.call(async () => {
-      const res = await this.http.put<{ data: WireReveal & AnswerInput & { position: number } }>(`/attempts/${encodeURIComponent(attemptId)}/items/${position}`, answer)
+      const res = await this.http.put<{ data: WireReveal & AnswerInput & { position: number; remainingSeconds?: number } }>(`/attempts/${encodeURIComponent(attemptId)}/items/${position}`, answer)
       const reveal = toReveal(res.data)
-      return { position: res.data.position, selected: res.data.selected, flagged: res.data.flagged, ...(reveal && { reveal }) }
+      return {
+        position: res.data.position,
+        selected: res.data.selected,
+        flagged: res.data.flagged,
+        ...(res.data.remainingSeconds !== undefined && { remainingSeconds: res.data.remainingSeconds }),
+        ...(reveal && { reveal }),
+      }
     })
   }
 
@@ -267,30 +288,17 @@ export class ExamsHttpAdapter implements IExamsService {
     return this.call(async () => (await this.http.post<{ data: AttemptResult }>(`/attempts/${encodeURIComponent(attemptId)}/submit`, {})).data)
   }
 
+  /** The closed attempt's own `result` (the server's exact values) plus one review for the items. */
   async getAttemptReport(attemptId: string): Promise<AttemptReport> {
     const attempt = await this.getAttempt(attemptId)
     if (attempt.status === 'in_progress') throw new ExamsAttemptInProgressError(attemptId)
-    const [history, review] = await Promise.all([
-      this.listAttempts(attempt.examId),
-      this.call(async () => (await this.http.get<{ data: WireReviewItem[] }>(`/attempts/${encodeURIComponent(attemptId)}/review`)).data.map(fromWireReview)).catch((e: unknown) => {
+    if (!attempt.result) throw new Error('The server sent a closed attempt without its result')
+    const review = await this.call(async () => (await this.http.get<{ data: WireReviewItem[] }>(`/attempts/${encodeURIComponent(attemptId)}/review`)).data.map(fromWireReview)).catch(
+      (e: unknown) => {
         throw e instanceof ExamsAttemptInProgressError ? new ExamsAttemptInProgressError(attemptId, e.message) : e
-      }),
-    ])
-    const summary = history.attempts.find((a) => a.id === attemptId)
-    const correctCount = review.filter((r) => r.reveal.correct).length
-    return {
-      examId: attempt.examId,
-      selectionKind: attempt.config.selection.kind,
-      review,
-      result: {
-        scorePercent: summary?.scorePercent ?? (review.length ? Math.round((10000 * correctCount) / review.length) / 100 : 0),
-        passed: summary?.passed ?? null,
-        correctCount,
-        total: review.length,
-        durationSeconds: summary?.durationSeconds ?? 0,
-        breakdown: buildBreakdown(review),
-      },
-    }
+      }
+    )
+    return { examId: attempt.examId, selectionKind: attempt.config.selection.kind, review, result: attempt.result }
   }
 
   mediaUrl(sha256: string): string | null {

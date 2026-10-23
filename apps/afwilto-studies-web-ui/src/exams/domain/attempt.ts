@@ -68,6 +68,8 @@ export interface Attempt {
   remainingSeconds?: number
   suggestedMinutes: number
   items: AttemptItem[]
+  /** Once the attempt is closed: the server's score, exactly as the submit returned it. */
+  result?: AttemptResult
 }
 
 export interface AnswerInput {
@@ -79,6 +81,8 @@ export interface AnswerOutcome {
   position: number
   selected: string[]
   flagged: boolean
+  /** Timed attempts only: the server's clock, so the runner resyncs its countdown after every save. */
+  remainingSeconds?: number
   /** Present only under feedback `each` for a non-empty selection. */
   reveal?: AttemptReveal
 }

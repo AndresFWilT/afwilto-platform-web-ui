@@ -3,6 +3,7 @@
 import {
   apportion,
   buildBreakdown,
+  percentOf,
   feedbackOf,
   primaryClassification,
   type AnswerInput,
@@ -56,7 +57,6 @@ export function shuffled<T>(items: T[], rng: () => number): T[] {
   return copy
 }
 
-const round2 = (value: number) => Math.round(value * 100) / 100
 const violation = (field: string, rule: string, message: string, extra: Partial<ExamsViolation> = {}): ExamsViolation => ({ field, rule, message, ...extra })
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
 
@@ -235,7 +235,13 @@ export class MemoryAttempts {
     item.answered = selected.length > 0
     if (attempt.feedback === 'each' && selected.length > 0) item.revealed = true
     const reveal = item.revealed ? this.reveal(item) : undefined
-    return { position, selected: [...item.selected], flagged: item.flagged, ...(reveal && { reveal }) }
+    return {
+      position,
+      selected: [...item.selected],
+      flagged: item.flagged,
+      ...(attempt.deadlineAt !== undefined && { remainingSeconds: Math.max(0, Math.ceil((attempt.deadlineAt - this.deps.now()) / 1000)) }),
+      ...(reveal && { reveal }),
+    }
   }
 
   submit(attemptId: string): AttemptResult {
@@ -410,8 +416,9 @@ export class MemoryAttempts {
   private close(attempt: StoredAttempt, status: 'submitted' | 'expired', at: number) {
     attempt.items.forEach((item) => (item.correct = this.reveal(item).correct))
     const correct = attempt.items.filter((i) => i.correct).length
-    attempt.scorePercent = attempt.items.length ? round2((100 * correct) / attempt.items.length) : 0
-    attempt.passed = attempt.config.selection.kind === 'simulation' ? attempt.scorePercent >= attempt.passPercent : null
+    attempt.scorePercent = percentOf(correct, attempt.items.length)
+    // Like the server: hundredths against the frozen pass mark, never floats.
+    attempt.passed = attempt.config.selection.kind === 'simulation' ? Math.round(attempt.scorePercent * 100) >= attempt.passPercent * 100 : null
     attempt.status = status
     attempt.submittedAt = at
   }
@@ -451,6 +458,7 @@ export class MemoryAttempts {
         answered: item.answered,
         ...(item.revealed && { reveal: this.reveal(item) }),
       })),
+      ...(attempt.status !== 'in_progress' && { result: this.result(attempt) }),
     }
   }
 
@@ -479,7 +487,7 @@ export class MemoryAttempts {
       passed: attempt.passed ?? null,
       correctCount: review.filter((r) => r.reveal.correct).length,
       total: review.length,
-      durationSeconds: Math.round((attempt.submittedAt! - attempt.startedAt) / 1000),
+      durationSeconds: Math.floor((attempt.submittedAt! - attempt.startedAt) / 1000),
       breakdown: buildBreakdown(review),
     }
   }

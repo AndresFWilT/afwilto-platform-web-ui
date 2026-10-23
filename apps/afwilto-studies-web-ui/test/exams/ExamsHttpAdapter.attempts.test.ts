@@ -243,7 +243,7 @@ describe('ExamsHttpAdapter.getAttemptReport: the closed attempt\'s result plus o
   })
 
   it('a closed attempt without a result is an error, never a fabricated zero score', async () => {
-    const { result: _result, ...withoutResult } = closed()
+    const { result: _result, ...withoutResult } = closed() as Record<string, unknown>
     respond(withoutResult, [reviewItem(0, true)])
     const error = await adapter.getAttemptReport(ATTEMPT_ID).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(Error)
