@@ -680,6 +680,48 @@ describe('RunnerPage: saves are ordered and deduped against what is queued (R1, 
   })
 })
 
+describe('RunnerPage: review mode stays locked while any save of the item is in flight (R7)', () => {
+  const allDisabled = () => options().every((o) => o.getAttribute('aria-disabled') === 'true')
+
+  it('flag PUT in flight, then the revealing PUT queued: resolving the flag PUT keeps the options disabled and a click on C sends nothing', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(5, { feedback: 'each' }))
+    press('f')
+    await waitFor(() => expect(pending).toHaveLength(1))
+    fireEvent.click(options()[1])
+    expect(allDisabled()).toBe(true)
+    await act(async () => pending[0].release())
+    await waitFor(() => expect(pending).toHaveLength(2))
+    expect(allDisabled()).toBe(true)
+
+    fireEvent.click(options()[2])
+    await settle()
+    expect(pending).toHaveLength(2)
+    expect(checked()).toEqual([options()[1]])
+
+    await act(async () => pending[1].release())
+    expect(await screen.findByText('Explicación')).toBeTruthy()
+    expect(pending).toHaveLength(2)
+    expect(pending.map((p) => p.answer)).toEqual([{ selected: [], flagged: true }, { selected: ['B'], flagged: true }])
+  })
+
+  it('a failed flag PUT does not unlock the item while the revealing PUT is still queued; its own failure does', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(5, { feedback: 'each' }))
+    press('f')
+    await waitFor(() => expect(pending).toHaveLength(1))
+    fireEvent.click(options()[1])
+    await act(async () => pending[0].fail(new Error('sin conexión')))
+    await waitFor(() => expect(pending).toHaveLength(2))
+    expect(allDisabled()).toBe(true)
+
+    await act(async () => pending[1].fail(new Error('sin conexión')))
+    await waitFor(() => expect(options().some((o) => o.getAttribute('aria-disabled') === 'true')).toBe(false))
+  })
+})
+
 describe('RunnerPage: failed saves are a set, retried before submitting (R3)', () => {
   const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
 
