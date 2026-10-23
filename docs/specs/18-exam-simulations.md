@@ -478,9 +478,9 @@ never declares it.
 | `GET / DELETE /api/v1/questions/{id}` | full question / logical delete |
 | `GET /api/v1/media/{sha256}` | image bytes |
 | `POST /api/v1/exams/{id}/sessions/preview` | `{config}` → pool size and suggested time (FR-7/8), with no side effects |
-| `POST /api/v1/exams/{id}/attempts` | start `{config, seed?}` |
-| `GET /api/v1/attempts/{id}` | state and `remainingSeconds` |
-| `PUT /api/v1/attempts/{id}/items/{position}` | answer and flag |
+| `POST /api/v1/exams/{id}/attempts` | start `{config, seed?}`; finalizes the exam's open attempt first when it is past `deadlineAt` + 5 s (slice 06b) |
+| `GET /api/v1/attempts/{id}` | state and `remainingSeconds`; `result` too once the attempt is closed (slice 06b) |
+| `PUT /api/v1/attempts/{id}/items/{position}` | answer and flag; returns `remainingSeconds` on timed attempts (slice 06b) |
 | `POST /api/v1/attempts/{id}/submit` | close and score |
 | `GET /api/v1/attempts/{id}/review` | review (only after close, or for answered items with `each` feedback) |
 | `GET /api/v1/exams/{id}/attempts` | history |

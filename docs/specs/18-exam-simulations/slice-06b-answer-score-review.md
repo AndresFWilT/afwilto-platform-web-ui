@@ -79,3 +79,21 @@ None. `attempt_items.revealed` already exists from slice 06a's `0013`.
 | `exams/app/usecase/answer_test.go`, `submit_test.go` | unit (fake clock) | AC-19, S06b-1–S06b-3, S06b-8 |
 | `exams/adapter/in/http/attempts_api_test.go` (extended) | `httptest` + contract | AC-18 (no-leak walk), S06b-2 |
 | `exams/adapter/out/postgres/review_repo_test.go` | integration | S06b-6, S06b-7 |
+
+## 5. Amendments
+
+- 2026-10-23 (coordinator decisions, extend §1; contract is additive, OpenAPI 0.3.0):
+  - **Result on read.** `GET /api/v1/attempts/{id}` on a closed attempt (`submitted` or `expired`) also returns `result`, the same `AttemptResult` the submit returns. The frontend used to compose it from three calls.
+  - **Clock resync on save.** The `PUT .../items/{position}` response also returns `remainingSeconds` (the GET formula) for timed attempts, and omits it for untimed ones, so the runner resyncs its countdown after every save. With `feedback: end` this is the only field beyond `position`, `selected` and `flagged` (BR-A4 forbids correctness, not time).
+  - **Start finalizes an expired open attempt.** Lazy expiry also runs at `POST /exams/{id}/attempts`: when the exam's `in_progress` attempt is past `deadlineAt + 5 s`, it is scored and set to `expired` first, and the new attempt starts instead of answering 409 `attempt_in_progress`. This replaces the last bullet of 06a §5 for that case; an attempt still inside its grace period keeps blocking the start.
+  - **CORS.** The preflight allows `PUT`.
+- 2026-10-23: details the slice left open, fixed by the tests.
+  - **`PUT` check order.** Expiry (`attempt_expired`), then closed (`attempt_closed`), then an unknown `position` (404), then the labels (422), then the lock (`answer_locked`).
+  - **Labels.** A repeated label is `invalid_label` (field `selected[i]` of the second one); there is no rule of its own. When any label is invalid or repeated, only those violations come back; `too_many_selected` (field `selected`) is reported when every label is valid and the count passes the limit. `single` allows 1 label, `multi` allows `chooseCount`.
+  - **Lock.** An item locks on its first non-empty answer under `feedback: each`. A later `PUT` is allowed when its `selected` is the same set (order ignored), so only `flagged` changes; the response again carries the reveal fields. Clearing the selection of a locked item is a different set, so `answer_locked`. A `PUT` with an empty selection never reveals.
+  - **Expiry time.** An attempt that expires is closed with `submittedAt = deadlineAt`, however late the request that finds it, so `durationSeconds` is the time the taker had and not the time until someone looked. `durationSeconds` is `submittedAt − startedAt` in whole seconds (rounded down).
+  - **Scoring.** The percent is exact: `round2` is half-up on integer hundredths (`(20000 × correct + total) / (2 × total)`), and `passed` compares those hundredths with `passPercent × 100`, using the `pass_percent` frozen at the start. An item with no categories in a classification is not part of that classification's breakdown. Classifications are sorted by name, categories by percent ascending, then name (case-insensitive, then bytewise).
+  - **GET items.** Every item carries `selected`, `flagged` and `answered` (the start response too, with empty values). Reveal fields appear only on items with `revealed = true`, on open and closed attempts alike. `remainingSeconds` of a closed timed attempt is 0.
+  - **Review.** `correct` is the stored value, `correctLabels` come from the snapshot, `rationales` holds the non-empty ones by label (`{}` when none), `explanation` is `null` when absent. `noteId` matches the stripped `noteRef` (`\s*\(diap\.[^)]*\)\s*$` removed, then trimmed) by exact, case-sensitive title among the alive notes of the exam's subject.
+  - **History.** `timingKind` and `feedback` of a `simulation` are `timed` and `end` (the forced values), even though its stored config omits them. `passed` is absent for non-simulations. `meta.trend[].at` is `submittedAt`. The history is a pure read: it does not finalize an open attempt.
+  - **`lastSimulation`.** The latest closed simulation by `submittedAt`; it appears in the exam detail and in the subject's exam list, which share the `ExamSummary` schema.
