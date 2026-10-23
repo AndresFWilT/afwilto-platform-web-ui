@@ -87,9 +87,15 @@ The structure of a purchased set is extracted **by code**, and a model only labe
   labels, `categories` = `{primary: [domain], secondary: services}`, keys
   `<prefix>-<set-slug>-NNN`, `origin {set, number}`. Unreadable questions are left out and
   listed. The validator runs on the result.
-- **Review.** An **independent Sonnet review** gets the skeleton and the labels and checks every
-  `correct` against the explanation and every `services` list for plausibility. It edits only
-  what is wrong, and reports `number: before → after`.
+- **Review.** An **independent Sonnet review** gets the skeleton and the labels. To keep it
+  cheap, the full question (stem, options, explanation) is sent only for questions the
+  deterministic answer sentence (§1.5) does not resolve, or resolves differently from a
+  candidate. Every other question is sent compact: a stem excerpt (≤ 300 chars), the settled
+  answer and the candidates' `services`, so the reviewer checks the services only. It edits
+  only what is wrong, and reports `number: before → after`.
+- **Guard.** `merge_labels.py` never trusts a label over the answer sentence: when §1.5's
+  matcher resolves a question and the label differs, the question is listed as unreadable with
+  the reason "label contradicts the explanation's answer sentence".
 - **Run handling.** It stops on "hit your session limit" and is resumable, like the notes
   pipeline.
 
@@ -133,7 +139,10 @@ the dry-run report and applies only with `--apply` and no errors.
   yields 3 skeletons with verbatim stems, options and explanations and the mapped domain. The
   reference matcher resolves 2 of them and returns "unresolved" for the third. A block with no
   option lines makes the splitter exit 1 naming the question number. Merging labels where one
-  `correct` is `null` yields 2 questions plus `unreadable: [n]`. Nothing is fabricated.
+  `correct` is `null` yields 2 questions plus `unreadable: [n]`. Nothing is fabricated. A label
+  that contradicts a resolved answer sentence is listed as unreadable. The review prompt carries
+  the full explanation only for the unresolved question, and for any question whose candidates
+  disagree with the answer sentence.
 - **S10-3** The pilot on the first TD set produces `pilot.md` with both models' agreement numbers
   and the adopted model, applying the §1.5 threshold.
 - **S10-4** A run interrupted by the session limit resumes and converts only the missing or
@@ -149,3 +158,6 @@ the dry-run report and applies only with `--apply` and no errors.
   explanations are verbatim by construction and the pilot measures only the judgement the model
   actually makes. The `.html` input was dropped because the owner could not save it and the
   `.txt` was sufficient.
+- **2026-10-22.** The review cost more than the labelling (USD 0.51 vs 0.17 for 65 questions)
+  while 53 answers were already settled by the answer sentence, so the review gets full
+  questions only where the answer is not settled, and a merge guard enforces the settled ones.
