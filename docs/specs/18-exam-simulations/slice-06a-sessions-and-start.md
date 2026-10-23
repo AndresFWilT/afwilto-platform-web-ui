@@ -75,7 +75,8 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
 
 `0013_create_attempts.{up,down}.sql`:
 - `attempts` (`id`, `exam_id`, `config jsonb`, `status`, `seed bigint`, `started_at`,
-  `deadline_at`, `submitted_at`, `score_percent numeric(5,2)`, `passed`), with a partial
+  `deadline_at`, `submitted_at`, `score_percent numeric(5,2)`, `passed`,
+  `suggested_minutes integer`, `pass_percent integer`), with a partial
   unique index on `(exam_id) WHERE status = 'in_progress'` to enforce BR-A1 in the DB;
 - `attempt_items` (`attempt_id`, `position`, `question_id`, `snapshot jsonb`, `selected
   text[]`, `flagged`, `answered_at`, `revealed boolean` (used by 06b), `correct`), primary key
@@ -91,3 +92,17 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
 | `exams/app/usecase/start_test.go` | unit (fakes, fake clock) | AC-15, S06a-5, S06a-6 |
 | `exams/adapter/in/http/attempts_api_test.go` | `httptest` + contract | S06a-4, S06a-7 |
 | `exams/adapter/out/postgres/attempt_repo_test.go` | integration | the BR-A1 unique index, snapshot round-trip |
+
+## 5. Amendments
+
+- 2026-10-23: `attempts` gains `suggested_minutes` and `pass_percent`, both frozen when the attempt starts. 06b's `GET` must return the same `suggestedMinutes` the start did, and a simulation's value is the exam's `timeLimitMin`, which a later exam edit could change; `passed` must compare against the pass mark the taker faced, for the same reason as the snapshot (AC-8: a later edit never changes a past attempt). Both are in `0013`, so 06b needs no migration.
+- 2026-10-23: the item snapshot also holds `key`, `type` and `origin` (`set`, `number`, `noteRef`) next to the fields §1.3 lists. 06b's review needs `noteRef` for the note link, and `type`/`chooseCount` come from the options' correct flags.
+- 2026-10-23: details the slice left open, fixed by the tests.
+  - Rule fields are body paths: `config.timing`, `config.feedback` for `locked_by_simulation`; `config` for `insufficient_questions`.
+  - `random`, `categories` and `origin-set` have a shortage too when their pool is empty, so the preview and the start agree: `{category: "banco"}` for `random`, the chosen category names joined by ", " for `categories`, the set name for `origin-set`, each with `needed: 1, available: 0`. A `simulation` whose primary classification has no category with weight > 0 reports `{category: "categorías con peso", needed: questionCount, available: 0}`.
+  - A `count` above the pool size draws the whole pool; it is not a shortage.
+  - A `simulation` preview and start report `suggestedMinutes` = the exam's `timeLimitMin` (FR-8), or 0 when nothing can be drawn.
+  - The draw consumes one PCG stream (`rand.NewPCG(seed, seed)`) in this order: per-category shuffles (simulation) or the pool shuffle (random, categories), then the final question shuffle (simulation only), then one option shuffle per drawn question in final order.
+  - The seed is a uint64 on the wire (0 to 18446744073709551615) and its bit pattern is stored in the `bigint` column.
+  - `suggestedMinutes` sums the paces as floats and rounds up after subtracting 1e-9, so `3 × 10/3` is 10 and not 11.
+  - An attempt past its deadline stays `in_progress` (and blocks a new start with BR-A1) until 06b's lazy finalize touches it, i.e. until the next `GET`/`PUT`/`POST submit` on that attempt. Starting does not finalize other attempts.
