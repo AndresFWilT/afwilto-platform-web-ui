@@ -242,15 +242,17 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   }
   const settleSaves = () => Promise.allSettled([...queues.current.values()])
 
+  // While submitting (`closing`) nothing may be enqueued: `settleSaves` has already snapshotted the queue.
   const toggleOption = (label: string) => {
     const item = itemsRef.current[position]
-    if (item.reveal || lockedRef.current.has(position)) return
+    if (closing.current || item.reveal || lockedRef.current.has(position)) return
     const selected = toggleSelection(itemView(item), item.selected, label)
     if (selected === item.selected) return
     patchItem(position, { selected })
     save(position)
   }
   const toggleFlag = () => {
+    if (closing.current) return
     patchItem(position, { flagged: !itemsRef.current[position].flagged })
     save(position)
   }
@@ -355,7 +357,7 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
             question={itemView(item)}
             selected={item.selected}
             onToggle={toggleOption}
-            disabled={itemLocked}
+            disabled={itemLocked || submitting}
             reveal={item.reveal && { correctLabels: item.reveal.correctLabels, rationales: item.reveal.rationales, explanation: item.reveal.explanation }}
             resolveMediaUrl={resolveMediaUrl}
           />

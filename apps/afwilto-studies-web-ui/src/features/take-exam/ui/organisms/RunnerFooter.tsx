@@ -17,7 +17,7 @@ export function RunnerFooter({ hasPrevious, hasNext, flagged, submitting, onPrev
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" onClick={onPrevious} disabled={!hasPrevious}>Anterior</Button>
         <Button variant="secondary" onClick={onNext} disabled={!hasNext}>Siguiente</Button>
-        <Button variant={flagged ? 'info' : 'ghost'} aria-pressed={flagged} onClick={onFlag}>Marcar para revisión</Button>
+        <Button variant={flagged ? 'info' : 'ghost'} aria-pressed={flagged} onClick={onFlag} disabled={submitting}>Marcar para revisión</Button>
       </div>
       <Button variant="primary" onClick={onSubmit} loading={submitting}>Entregar</Button>
     </footer>
