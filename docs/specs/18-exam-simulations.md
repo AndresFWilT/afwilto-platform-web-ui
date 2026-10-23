@@ -373,7 +373,7 @@ never declares it.
 | BR-C1 | At most 2 classifications per exam | 422, rule `too_many_classifications` |
 | BR-C2 | At most 1 category per question in the primary classification | 422, rule `primary_single_valued` |
 | BR-C3 | Manual weights on the primary are integers from 0 to 100 that sum to 100 | 422, rule `range` (a weight outside 0–100, checked before summing) or `weights_sum` |
-| BR-C4 | Pace is set as a pair: both `paceQuestions` and `paceMinutes` (each 1–10,000), or neither | 422, rule `pace_pair` (not a pair, or below 1) or `range` (above 10,000) |
+| BR-C4 | Pace is set as a pair: both `paceQuestions` and `paceMinutes` (each 1–10,000), or neither | 422, rule `pace_pair` (not a pair) or `range` (a value outside 1–10,000) |
 | BR-C5 | A merge requires two alive categories of the same classification | 422, rule `merge_scope` |
 | BR-Q1 | `single`: exactly 1 correct option. `multi`: 3–6 options, at least 2 correct and at least 1 wrong. | 422, rule `correct_count` |
 | BR-Q2 | Every option has `text` or `image`; `image` requires `alt` | 422, rule `option_content` |
