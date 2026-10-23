@@ -107,6 +107,11 @@ export function contentViolations(rel: string, source: string): string[] {
   return found
 }
 
+/** Stub of the red commit. */
+export function templateViolations(_entries: Array<{ rel: string; source: string }>): string[] {
+  return []
+}
+
 describe('exams architecture checker (self-test, S07-6)', () => {
   it('flags the three planted violations', () => {
     expect(edgeViolations('pages/Library/LibraryPage.tsx', 'exams/infrastructure/http/ExamsHttpAdapter')).not.toEqual([])
@@ -138,6 +143,17 @@ describe('exams architecture checker (self-test, S07-6)', () => {
     expect(contentViolations('features/take-exam/ui/organisms/O.tsx', 'const data = useAsync(() => load(), [])')).not.toEqual([])
     expect(contentViolations('shared/ui/molecules/M.tsx', "import { useAsync } from '@/hooks/useAsync'")).not.toEqual([])
     expect(contentViolations('features/take-exam/ui/pages/P.tsx', 'const data = useAsync(() => load(), [])')).toEqual([])
+  })
+
+  it('flags a feature with pages and no templates, and a page that imports no template (review fix 12)', () => {
+    const page = (feature: string, source: string) => ({ rel: `features/${feature}/ui/pages/P.tsx`, source })
+    const tpl = (feature: string) => ({ rel: `features/${feature}/ui/templates/PTemplate.tsx`, source: 'export const T = 1' })
+    expect(templateViolations([page('take-exam', "import { x } from '../organisms/X'")])).not.toEqual([])
+    expect(templateViolations([page('take-exam', "import { x } from '../organisms/X'"), tpl('take-exam')])).not.toEqual([])
+    expect(templateViolations([page('take-exam', "import { PTemplate } from '../templates/PTemplate'"), tpl('take-exam')])).toEqual([])
+    expect(templateViolations([page('take-exam', "import { PTemplate } from '@/features/take-exam/ui/templates/PTemplate'"), tpl('take-exam')])).toEqual([])
+    // a page of another feature's templates does not count
+    expect(templateViolations([page('take-exam', "import { PTemplate } from '../../../manage-exams/ui/templates/PTemplate'"), tpl('take-exam'), tpl('manage-exams')])).not.toEqual([])
   })
 
   it('allows the permitted edges', () => {
@@ -200,6 +216,11 @@ describe('src/ keeps the legacy layout and the new area follows the standard', (
   it('features are named after use cases, never a technical role', () => {
     const features = new Set(underNew.filter((r) => r.startsWith('features/')).map((r) => r.split('/')[1]))
     expect([...features].filter((f) => /^(forms?|tables?|components?|utils?|helpers?|common|core)$/.test(f))).toEqual([])
+  })
+
+  it('every feature with pages has templates, and each page imports one (pages orchestrate, templates lay out)', () => {
+    const entries = underNew.filter((r) => r.startsWith('features/')).map((r) => ({ rel: r, source: readFileSync(path.join(SRC, r), 'utf8') }))
+    expect(templateViolations(entries)).toEqual([])
   })
 
   it('no import edge or source breaks the bridges or rules 2-3', () => {
