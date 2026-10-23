@@ -13,7 +13,7 @@ describe('route table (parent §9.1, Slice 07 scope)', () => {
     expect(routes[0].children).toBe(childRoutes)
   })
 
-  it('declares exactly the read-path and exam-management routes, all relative', () => {
+  it('declares exactly the read-path, exam-management and exam-taking routes, all relative', () => {
     const paths = childRoutes.map((r) => r.path)
     expect(paths).toEqual([
       '',
@@ -28,6 +28,9 @@ describe('route table (parent §9.1, Slice 07 scope)', () => {
       'exams/:examId/edit',
       'exams/:examId/import',
       'exams/:examId/questions',
+      'exams/:examId/start',
+      'attempts/:attemptId',
+      'attempts/:attemptId/result',
       'notes/:noteId',
       'notes/:noteId/edit',
       'tags/:tag',
