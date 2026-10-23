@@ -780,6 +780,56 @@ describe('RunnerPage: a manual submit in flight when the clock hits 0 (R8)', () 
   })
 })
 
+describe('RunnerPage: nothing is enqueued while submitting (R9)', () => {
+  const flagButton = () => screen.getByRole('button', { name: 'Marcar para revisión' }) as HTMLButtonElement
+
+  it('a click on an option while the submit waits for a save in flight sends no PUT, and the options are disabled', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(1))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(pending).toHaveLength(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true))
+
+    fireEvent.click(options()[1])
+    expect(checked()).toEqual([options()[0]])
+    await act(async () => pending[0].release())
+    await settle()
+    expect(pending).toHaveLength(1)
+  })
+
+  it('F and the flag button do nothing while submitting', async () => {
+    const { exams } = setup()
+    const pending = gated(exams)
+    await open(exams, random(1))
+    fireEvent.click(options()[0])
+    await waitFor(() => expect(pending).toHaveLength(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('¿Entregar el simulacro?')).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(flagButton().disabled).toBe(true))
+
+    press('f')
+    await act(async () => pending[0].release())
+    await settle()
+    expect(pending).toHaveLength(1)
+  })
+
+  it('a click on an option while the submit request itself is pending sends no PUT', async () => {
+    const { exams } = setup()
+    const put = vi.spyOn(exams, 'answerItem')
+    vi.spyOn(exams, 'submitAttempt').mockImplementation(() => new Promise(() => {}))
+    await open(exams, random(2))
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar' }))
+    fireEvent.click(within(await findDialog('Te quedan 2 sin responder. ¿Entregar?')).getByRole('button', { name: 'Sí, entregar' }))
+    await waitFor(() => expect(options().every((o) => o.getAttribute('aria-disabled') === 'true')).toBe(true))
+    fireEvent.click(options()[0])
+    await settle()
+    expect(put).not.toHaveBeenCalled()
+  })
+})
+
 describe('RunnerPage: failed saves are a set, retried before submitting (R3)', () => {
   const fakeTime = () => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date', 'performance'] })
 
