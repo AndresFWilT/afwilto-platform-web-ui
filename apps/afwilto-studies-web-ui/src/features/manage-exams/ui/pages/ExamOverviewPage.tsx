@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, EmptyState, Text, useToast } from '@afwilto/design-system'
 import { useServices } from '@/di'
 import { useAsync } from '@/hooks/useAsync'
-import { unclassifiedCount, type Exam } from '@/exams/domain'
+import type { Exam } from '@/exams/domain'
 import { ExamsConflictError, ExamsNotFoundError } from '@/exams/application/ports'
 import { countLabel } from '@/shared/lib/format'
 import { ButtonLink } from '@/shared/ui/atoms/ButtonLink'
@@ -18,6 +18,8 @@ export function ExamOverviewPage() {
   const { examsService } = useServices()
   const exam = useAsync(() => examsService.getExam(examId), [examsService, examId])
   const history = useAsync(() => examsService.listAttempts(examId), [examsService, examId])
+  // The server counts the unclassified questions; the overview never derives it from the classifications.
+  const unclassified = useAsync(() => examsService.countUnclassified(examId), [examsService, examId])
 
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
@@ -28,7 +30,7 @@ export function ExamOverviewPage() {
     )
   }
   return (
-    <Overview exam={exam.data}>
+    <Overview exam={exam.data} unclassified={unclassified.status === 'success' ? unclassified.data : 0}>
       {history.status === 'loading' && <LoadingRows />}
       {history.status === 'error' && <LoadError error={history.error} title="No se pudo cargar el historial" />}
       {history.status === 'success' && <ExamHistory history={history.data} />}
@@ -36,12 +38,11 @@ export function ExamOverviewPage() {
   )
 }
 
-function Overview({ exam, children }: { exam: Exam; children: React.ReactNode }) {
+function Overview({ exam, unclassified, children }: { exam: Exam; unclassified: number; children: React.ReactNode }) {
   const { examsService } = useServices()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [deleting, setDeleting] = useState(false)
-  const unclassified = unclassifiedCount(exam)
   const base = `/studies/exams/${exam.id}`
 
   return (

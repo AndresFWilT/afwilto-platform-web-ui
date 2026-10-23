@@ -1,6 +1,7 @@
 import {
   inferWeights,
   primaryClassification,
+  unclassifiedCount,
   type AnswerInput,
   type AnswerOutcome,
   type Attempt,
@@ -317,6 +318,11 @@ export class InMemoryExamsAdapter implements IExamsService {
         version: q.version,
         updatedAt: this.touched.get(q.id) ?? this.createdAt,
       }))
+  }
+
+  /** Derived from the bank here; the HTTP adapter asks the server. */
+  async countUnclassified(examId: string): Promise<number> {
+    return unclassifiedCount(this.view(this.stored(examId)))
   }
 
   async getQuestion(questionId: string): Promise<ExamQuestion> {
