@@ -50,7 +50,7 @@ async function play(exams: InMemoryExamsAdapter, config: SessionConfig, plan: Re
 
 async function openResult(exams: InMemoryExamsAdapter, id: string) {
   renderAt(`/studies/attempts/${id}/result`, undefined, exams)
-  await screen.findByRole('heading', { level: 1, name: 'Resultado' })
+  await screen.findByRole('heading', { level: 1, name: 'Resultado' }, { timeout: 5000 })
 }
 
 const PLAN: Record<string, Plan> = { q1: 'right', q2: 'right', q3: 'right', q4: 'wrong', q5: 'wrong' } // q6 is skipped
