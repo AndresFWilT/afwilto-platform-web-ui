@@ -227,7 +227,9 @@ Inference runs on every import, in the dry run and in the apply.
 ### FR-5 Export
 - `GET /api/v1/exams/{id}/questions/export` returns a `.zip` with `questions.json` (the FR-2
   format) and `img/<sha256>.<ext>`.
-- Re-importing the export into the same exam reports every question as `unchanged`.
+- Re-importing the export into the same exam reports every question as `unchanged`. The
+  guarantee holds for exams with 1–2,000 questions (the import limit); an empty exam exports an
+  empty list, which the import rejects.
 
 ### FR-6 Media
 - **The zip is checked before anything is read.**
@@ -422,8 +424,9 @@ never declares it.
   `![Señal](media:img/r101.png)`. After the import, the stored stem holds `media:<sha256>`
   and `GET /media/<sha256>` returns `image/png` with the immutable cache headers.
 - **AC-11** The same image is used by 40 questions. One `Media` row and one file are stored.
-- **AC-12** A zip contains an entry `../evil.png`, or a `.png` whose bytes are an SVG. It is
-  rejected before anything is written.
+- **AC-12** A zip contains an entry `../evil.png`, or a referenced `.png` whose bytes are an
+  SVG. It is rejected before anything is written. Unreferenced entries are never inspected or
+  stored and are listed in `media.unused`.
 - **AC-13** A stem references `media:img/missing.png`. The dry run lists it under
   `media.missing`, and the apply returns 422 with rule `media_missing`.
 
@@ -486,7 +489,7 @@ New error rules, a closed set and the slice that introduces each:
 
 | Rules | Slice |
 |---|---|
-| `range` | 02, 04 |
+| `range` | 02, 03, 04 |
 | `json`, `schema`, `file_type`, `too_many_classifications`, `primary_single_valued`, `correct_count`, `option_content`, `duplicate_key`, `media_missing`, `invalid_text` | 03 |
 | `weights_sum`, `pace_pair`, `merge_scope` | 04 |
 | `zip_entries`, `zip_size`, `zip_path`, `zip_layout`, `media_type`, `media_size`, `media_dimensions` | 05 |

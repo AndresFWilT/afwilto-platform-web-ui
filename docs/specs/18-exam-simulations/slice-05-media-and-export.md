@@ -19,7 +19,8 @@
    All four map to 422, field `file`.
 2. **Images.**
    - Every non-JSON entry referenced by `media:<path>` is sniffed by its magic bytes and must
-     be PNG, JPEG or WebP. Anything else → `media_type`. A `.png` holding SVG text is rejected.
+     be PNG, JPEG or WebP. Anything else → `media_type`. A referenced `.png` holding SVG text is rejected;
+     unreferenced entries are never inspected.
    - Each image is ≤ 2 MiB (`media_size`) and ≤ 4096 px per side (`media_dimensions`), read
      from the image header with `image.DecodeConfig`.
    - Entries that are not referenced are listed in `media.unused` and **not stored**.
@@ -61,7 +62,8 @@ The parent's AC-10 to AC-13 apply, plus these:
   `/abs.png`, a symlink entry, two root JSON files, a 3 MiB PNG and a 5000×10 PNG. Each one is
   rejected with its own rule, and nothing is written.
 - **S05-3** Export, then re-import into the same exam → every question is `unchanged`, with 0
-  new categories and 0 missing media.
+  new categories and 0 missing media. This holds for exams with 1–2,000 questions (the import
+  limit); an empty exam exports an empty list that the import rejects.
 - **S05-4** `GET /media/<sha>` twice returns the same bytes and headers. `GET /media/xyz` → 404.
 - **S05-5** `/readyz` → 503 when `MEDIA_DIR` is read-only.
 
