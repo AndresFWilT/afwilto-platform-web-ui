@@ -3,9 +3,9 @@ import { filterReview, type ReviewFilter, type ReviewItem } from '@/exams/domain
 import { ReviewEntry } from './ReviewEntry'
 
 const FILTERS: Array<{ value: ReviewFilter; label: string; empty: string }> = [
-  { value: 'incorrect', label: 'Incorrectas', empty: 'No hay preguntas incorrectas.' },
-  { value: 'flagged', label: 'Marcadas', empty: 'No hay preguntas marcadas.' },
-  { value: 'all', label: 'Todas', empty: 'No hay preguntas.' },
+  { value: 'incorrect', label: 'Incorrect', empty: 'No incorrect questions.' },
+  { value: 'flagged', label: 'Flagged', empty: 'No flagged questions.' },
+  { value: 'all', label: 'All', empty: 'No questions.' },
 ]
 
 interface Props {
@@ -19,9 +19,9 @@ interface Props {
 export function ReviewList({ review, filter, onFilter, resolveMediaUrl }: Props) {
   const shown = filterReview(review, filter)
   return (
-    <section aria-label="Revisión" className="flex flex-col gap-3">
-      <Text variant="h2" color="default">Revisión</Text>
-      <div role="group" aria-label="Filtrar preguntas" className="flex flex-wrap gap-2">
+    <section aria-label="Review" className="flex flex-col gap-3">
+      <Text variant="h2" color="default">Review</Text>
+      <div role="group" aria-label="Filter questions" className="flex flex-wrap gap-2">
         {FILTERS.map(({ value, label }) => (
           <Button key={value} size="sm" variant={filter === value ? 'primary' : 'ghost'} aria-pressed={filter === value} onClick={() => onFilter(value)}>
             {label}

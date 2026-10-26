@@ -21,9 +21,9 @@ export function ImportWizardPage() {
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
     return exam.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Examen no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={exam.error} title="No se pudo cargar el examen" />
+      <LoadError error={exam.error} title="Could not load the exam" />
     )
   }
   return <Wizard exam={exam.data} />
@@ -98,7 +98,7 @@ function Wizard({ exam }: { exam: Exam }) {
       const result = await examsService.importQuestions(exam.id, file, chosen ? { dryRun: false, primary: chosen } : { dryRun: false })
       if (result.applied) {
         const c = result.counts
-        showToast(`Importación completada: ${c.create} creadas, ${c.update} actualizadas, ${c.unchanged} sin cambios`, 'success')
+        showToast(`Import complete: ${c.create} created, ${c.update} updated, ${c.unchanged} unchanged`, 'success')
         navigate(`/studies/exams/${exam.id}`)
         return
       }
@@ -115,7 +115,7 @@ function Wizard({ exam }: { exam: Exam }) {
   const nothingToDo = report !== null && report.counts.create + report.counts.update === 0
 
   return (
-    <ImportWizardTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="Importar preguntas" steps={<StepIndicator current={step} />}>
+    <ImportWizardTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="Import questions" steps={<StepIndicator current={step} />}>
 
       {step === 'file' && <FilePicker onFile={chooseFile} busy={busy} error={error} />}
 
@@ -123,7 +123,7 @@ function Wizard({ exam }: { exam: Exam }) {
         <>
           <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-300">
             <span>{file.name}</span>
-            <Button size="sm" variant="ghost" onClick={restart}>Elegir otro archivo</Button>
+            <Button size="sm" variant="ghost" onClick={restart}>Choose another file</Button>
           </div>
           {error && <Alert variant="error">{error}</Alert>}
           <ImportReportView
@@ -135,24 +135,24 @@ function Wizard({ exam }: { exam: Exam }) {
             busy={busy}
             resolveMediaUrl={resolveMediaUrl}
           />
-          {nothingToDo && report.errors.length === 0 && <Text variant="body" color="muted">No hay cambios que importar: todas las preguntas ya están en el banco.</Text>}
+          {nothingToDo && report.errors.length === 0 && <Text variant="body" color="muted">Nothing to import: all the questions are already in the bank.</Text>}
           <div className="flex gap-2">
-            <Button disabled={busy || report.errors.length > 0 || nothingToDo} onClick={() => setStep('confirm')}>Importar</Button>
+            <Button disabled={busy || report.errors.length > 0 || nothingToDo} onClick={() => setStep('confirm')}>Import</Button>
           </div>
         </>
       )}
 
       {step === 'confirm' && report && (
-        <section aria-label="Confirmación" className="flex max-w-xl flex-col gap-3">
+        <section aria-label="Confirmation" className="flex max-w-xl flex-col gap-3">
           <Text variant="body" color="default">
-            {`Se crearán ${countLabel(report.counts.create, 'pregunta', 'preguntas')} y se actualizarán ${report.counts.update}.`}
-            {report.counts.unchanged > 0 && ` ${report.counts.unchanged} ${report.counts.unchanged === 1 ? 'ya está igual' : 'ya están iguales'}.`}
+            {`${countLabel(report.counts.create, 'question', 'questions')} will be created and ${report.counts.update} updated.`}
+            {report.counts.unchanged > 0 && ` ${report.counts.unchanged} ${report.counts.unchanged === 1 ? 'is' : 'are'} already up to date.`}
           </Text>
-          <Text variant="small" color="muted">Todo o nada: si algo falla no se escribe nada.</Text>
+          <Text variant="small" color="muted">All or nothing: if anything fails, nothing is written.</Text>
           {error && <Alert variant="error">{error}</Alert>}
           <div className="flex gap-2">
-            <Button onClick={() => void apply()} loading={busy}>Confirmar importación</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setStep('report')}>Volver</Button>
+            <Button onClick={() => void apply()} loading={busy}>Confirm import</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setStep('report')}>Back</Button>
           </div>
         </section>
       )}

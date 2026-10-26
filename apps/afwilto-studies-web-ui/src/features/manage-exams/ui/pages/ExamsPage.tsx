@@ -15,15 +15,15 @@ export function ExamsPage() {
 
   return (
     <ManageExamTemplate
-      back={{ to: `/studies/subjects/${subjectId}`, label: 'Volver a la materia' }}
-      title="Simulacros"
-      actions={<ButtonLink to={`/studies/subjects/${subjectId}/exams/new`}>Nuevo examen</ButtonLink>}
+      back={{ to: `/studies/subjects/${subjectId}`, label: 'Back to the subject' }}
+      title="Practice Exams"
+      actions={<ButtonLink to={`/studies/subjects/${subjectId}/exams/new`}>New exam</ButtonLink>}
     >
       {exams.status === 'loading' && <LoadingRows />}
-      {exams.status === 'error' && <LoadError error={exams.error} title="No se pudieron cargar los exámenes" />}
+      {exams.status === 'error' && <LoadError error={exams.error} title="Could not load the exams" />}
       {exams.status === 'success' &&
         (exams.data.length === 0 ? (
-          <EmptyState icon="📝" title="Esta materia aún no tiene exámenes" description="Crea uno para importar preguntas y hacer simulacros." />
+          <EmptyState icon="📝" title="This subject has no exams yet" description="Create one to import questions and take practice exams." />
         ) : (
           <ExamList exams={exams.data} />
         ))}

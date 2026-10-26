@@ -38,7 +38,7 @@ export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onClos
       title={title}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={confirm} loading={busy}>{confirmLabel}</Button>
         </>
       }

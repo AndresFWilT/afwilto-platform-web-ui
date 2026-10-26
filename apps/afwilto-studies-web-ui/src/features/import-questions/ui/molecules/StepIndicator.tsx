@@ -1,15 +1,15 @@
 export type WizardStep = 'file' | 'report' | 'confirm'
 
 const STEPS: Array<{ id: WizardStep; label: string }> = [
-  { id: 'file', label: '1. Archivo' },
-  { id: 'report', label: '2. Reporte' },
-  { id: 'confirm', label: '3. Confirmar' },
+  { id: 'file', label: '1. File' },
+  { id: 'report', label: '2. Report' },
+  { id: 'confirm', label: '3. Confirm' },
 ]
 
 /** The three steps of the wizard; the current one is marked in text and with aria-current. */
 export function StepIndicator({ current }: { current: WizardStep }) {
   return (
-    <ol aria-label="Pasos" className="flex flex-wrap gap-2 text-sm">
+    <ol aria-label="Steps" className="flex flex-wrap gap-2 text-sm">
       {STEPS.map((step) => (
         <li
           key={step.id}

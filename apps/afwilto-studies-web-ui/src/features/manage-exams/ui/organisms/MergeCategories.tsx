@@ -23,26 +23,26 @@ export function MergeCategories({ classification, onMerge }: Props) {
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="flex min-w-40 grow basis-48 flex-col gap-1">
-        <label htmlFor={`${id}-from`} className="text-xs text-neutral-400">Combinar desde ({classification.name})</label>
+        <label htmlFor={`${id}-from`} className="text-xs text-neutral-400">Merge from ({classification.name})</label>
         <Select id={`${id}-from`} selectSize="sm" value={fromId} onChange={(e) => { setFromId(e.target.value); if (e.target.value === intoId) setIntoId('') }}>
-          <option value="">Elige una categoría</option>
+          <option value="">Choose a category</option>
           {classification.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
       </div>
       <div className="flex min-w-40 grow basis-48 flex-col gap-1">
-        <label htmlFor={`${id}-into`} className="text-xs text-neutral-400">Combinar en ({classification.name})</label>
+        <label htmlFor={`${id}-into`} className="text-xs text-neutral-400">Merge into ({classification.name})</label>
         <Select id={`${id}-into`} selectSize="sm" value={intoId} onChange={(e) => setIntoId(e.target.value)}>
-          <option value="">Elige una categoría</option>
+          <option value="">Choose a category</option>
           {classification.categories.filter((c) => c.id !== fromId).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
       </div>
-      <Button size="sm" variant="secondary" disabled={!ready} onClick={() => setConfirming(true)}>Combinar categorías de «{classification.name}»</Button>
+      <Button size="sm" variant="secondary" disabled={!ready} onClick={() => setConfirming(true)}>Merge categories of “{classification.name}”</Button>
 
       {confirming && ready && (
         <ConfirmDialog
           danger
-          title={`¿Combinar «${from.name}» en «${into.name}»?`}
-          confirmLabel="Combinar"
+          title={`Merge “${from.name}” into “${into.name}”?`}
+          confirmLabel="Merge"
           onClose={() => setConfirming(false)}
           onConfirm={async () => {
             await onMerge(from, into)
@@ -52,7 +52,7 @@ export function MergeCategories({ classification, onMerge }: Props) {
           }}
         >
           <p className="text-sm text-neutral-300">
-            Las preguntas de «{from.name}» pasarán a «{into.name}» y «{from.name}» se eliminará. Esto no se puede deshacer desde la aplicación.
+            The questions of “{from.name}” will move to “{into.name}” and “{from.name}” will be deleted. This cannot be undone from the app.
           </p>
         </ConfirmDialog>
       )}

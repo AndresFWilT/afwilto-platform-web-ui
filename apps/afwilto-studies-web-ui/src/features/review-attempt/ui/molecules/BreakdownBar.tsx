@@ -5,7 +5,7 @@ interface Props {
   percent: number
 }
 
-/** "Seguridad 12/20 (60%)" as text, with a bar for the eye (the text carries the meaning). */
+/** "Security 12/20 (60%)" as text, with a bar for the eye (the text carries the meaning). */
 export function BreakdownBar({ name, correct, total, percent }: Props) {
   const tone = percent >= 70 ? 'bg-green-500' : percent >= 50 ? 'bg-amber-500' : 'bg-red-500'
   return (

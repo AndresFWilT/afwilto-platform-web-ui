@@ -9,7 +9,7 @@ interface Props {
 
 export function QuestionList({ questions, openId, onOpen }: Props) {
   return (
-    <ul aria-label="Preguntas" className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
+    <ul aria-label="Questions" className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
       {questions.map((q) => (
         <li key={q.id}>
           <button
@@ -21,7 +21,7 @@ export function QuestionList({ questions, openId, onOpen }: Props) {
             <span className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
               <code>{q.key}</code>
               {q.difficulty && <span>{DIFFICULTY_LABEL[q.difficulty]}</span>}
-              {q.origin?.set && <span>{q.origin.number ? `${q.origin.set} · n.º ${q.origin.number}` : q.origin.set}</span>}
+              {q.origin?.set && <span>{q.origin.number ? `${q.origin.set} · #${q.origin.number}` : q.origin.set}</span>}
             </span>
             <span className="text-sm text-neutral-100">{q.stemExcerpt}</span>
             {q.categories.length > 0 && (

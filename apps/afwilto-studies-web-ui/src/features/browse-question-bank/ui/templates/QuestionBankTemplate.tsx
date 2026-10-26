@@ -29,7 +29,7 @@ export function QuestionBankTemplate({ back, title, filters, list, detail, overl
           <div className="flex flex-wrap items-start gap-4">
             <div className="flex basis-[24rem] grow flex-col gap-2">{list}</div>
             {detail && (
-              <section aria-label="Pregunta seleccionada" className="flex basis-[28rem] grow flex-col gap-3 rounded-lg border border-surface-border p-4">
+              <section aria-label="Selected question" className="flex basis-[28rem] grow flex-col gap-3 rounded-lg border border-surface-border p-4">
                 {detail}
               </section>
             )}

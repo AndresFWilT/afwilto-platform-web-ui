@@ -8,7 +8,7 @@ export function BreakdownBars({ breakdown }: { breakdown: ClassificationScore[] 
   return (
     <div className="flex flex-col gap-4">
       {breakdown.map((c) => (
-        <section key={c.classification} aria-label={`Desglose por ${c.classification}`} className="flex flex-col gap-2">
+        <section key={c.classification} aria-label={`Breakdown by ${c.classification}`} className="flex flex-col gap-2">
           <Text variant="h3" color="default">{c.classification}</Text>
           <ul className="flex flex-col gap-2">
             {c.categories.map((category) => (

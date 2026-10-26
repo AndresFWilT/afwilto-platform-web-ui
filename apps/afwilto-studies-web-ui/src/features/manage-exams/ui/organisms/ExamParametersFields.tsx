@@ -3,10 +3,10 @@ import { FormField } from '@afwilto/design-system'
 import { EXAM_NAME_MAX, type ExamFormValues } from '@/exams/domain'
 
 const FIELDS: Array<{ name: keyof ExamFormValues; label: string; numeric: boolean }> = [
-  { name: 'name', label: 'Nombre', numeric: false },
-  { name: 'questionCount', label: 'Preguntas del simulacro', numeric: true },
-  { name: 'timeLimitMin', label: 'Tiempo límite (min)', numeric: true },
-  { name: 'passPercent', label: 'Aprobado con (%)', numeric: true },
+  { name: 'name', label: 'Name', numeric: false },
+  { name: 'questionCount', label: 'Questions in the full simulation', numeric: true },
+  { name: 'timeLimitMin', label: 'Time limit (min)', numeric: true },
+  { name: 'passPercent', label: 'Pass mark (%)', numeric: true },
 ]
 
 interface Props {

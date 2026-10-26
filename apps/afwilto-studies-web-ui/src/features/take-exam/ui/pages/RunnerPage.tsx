@@ -39,9 +39,9 @@ export function RunnerPage() {
   if (loaded.status === 'loading') return <LoadingRows />
   if (loaded.status === 'error') {
     return loaded.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Simulacro no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Practice exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={loaded.error} title="No se pudo cargar el simulacro" />
+      <LoadError error={loaded.error} title="Could not load the practice exam" />
     )
   }
   const { attempt, examName } = loaded.data
@@ -349,7 +349,7 @@ function Runner({ attempt, examName }: { attempt: Attempt; examName: string }) {
   return (
     <RunnerTemplate
       header={<RunnerHeader examName={examName} position={position} total={total} remainingSeconds={remaining} />}
-      notice={submitError && <Alert variant="error" title="No se pudo entregar el simulacro">{submitError}</Alert>}
+      notice={submitError && <Alert variant="error" title="Could not submit the practice exam">{submitError}</Alert>}
       question={
         <>
           <QuestionView

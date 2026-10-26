@@ -32,11 +32,11 @@ export function NewExamPage() {
     setSaving(true)
     try {
       const exam = await examsService.createExam(subjectId, check.value)
-      showToast('Examen creado', 'success')
+      showToast('Exam created', 'success')
       navigate(`/studies/exams/${exam.id}`)
     } catch (err) {
       if (err instanceof ExamsConflictError && err.rule === 'duplicate_name') {
-        setErrors({ name: 'Ya existe un examen con ese nombre' })
+        setErrors({ name: 'An exam with that name already exists' })
       } else if (err instanceof ExamsValidationError) {
         const { problems, unmapped } = violationProblems(undefined, err.details)
         setErrors(Object.fromEntries(Object.entries(problems).filter(([field]) => FORM_FIELDS.includes(field))) as FieldErrors)
@@ -50,12 +50,12 @@ export function NewExamPage() {
 
   return (
     <form onSubmit={submit} noValidate>
-      <ManageExamTemplate title="Nuevo examen" width="narrow">
+      <ManageExamTemplate title="New exam" width="narrow">
         <ExamParametersFields values={values} errors={errors} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} disabled={saving} />
         {alert && <Alert variant="error">{alert}</Alert>}
         <div className="flex gap-2">
-          <Button type="submit" loading={saving}>Crear examen</Button>
-          <ButtonLink to={`/studies/subjects/${subjectId}/exams`} variant="ghost">Cancelar</ButtonLink>
+          <Button type="submit" loading={saving}>Create exam</Button>
+          <ButtonLink to={`/studies/subjects/${subjectId}/exams`} variant="ghost">Cancel</ButtonLink>
         </div>
       </ManageExamTemplate>
     </form>

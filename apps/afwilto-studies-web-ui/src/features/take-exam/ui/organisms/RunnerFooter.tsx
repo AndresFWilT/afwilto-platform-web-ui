@@ -15,11 +15,11 @@ export function RunnerFooter({ hasPrevious, hasNext, flagged, submitting, onPrev
   return (
     <footer className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={onPrevious} disabled={!hasPrevious}>Anterior</Button>
-        <Button variant="secondary" onClick={onNext} disabled={!hasNext}>Siguiente</Button>
-        <Button variant={flagged ? 'info' : 'ghost'} aria-pressed={flagged} onClick={onFlag} disabled={submitting}>Marcar para revisión</Button>
+        <Button variant="secondary" onClick={onPrevious} disabled={!hasPrevious}>Previous</Button>
+        <Button variant="secondary" onClick={onNext} disabled={!hasNext}>Next</Button>
+        <Button variant={flagged ? 'info' : 'ghost'} aria-pressed={flagged} onClick={onFlag} disabled={submitting}>Flag for review</Button>
       </div>
-      <Button variant="primary" onClick={onSubmit} loading={submitting}>Entregar</Button>
+      <Button variant="primary" onClick={onSubmit} loading={submitting}>Submit</Button>
     </footer>
   )
 }

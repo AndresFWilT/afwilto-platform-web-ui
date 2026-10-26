@@ -6,12 +6,12 @@ interface Props {
   onClose: () => void
 }
 
-/** "Te quedan 5 sin responder. ¿Entregar?" — submitting is final. */
+/** "You have 5 unanswered. Submit?" — submitting is final. */
 export function SubmitConfirm({ unanswered, onConfirm, onClose }: Props) {
-  const title = unanswered > 0 ? `Te quedan ${unanswered} sin responder. ¿Entregar?` : '¿Entregar el simulacro?'
+  const title = unanswered > 0 ? `You have ${unanswered} unanswered. Submit?` : 'Submit the practice exam?'
   return (
-    <ConfirmDialog title={title} confirmLabel="Sí, entregar" onConfirm={onConfirm} onClose={onClose}>
-      <p className="text-sm text-neutral-300">Después de entregar no podrás cambiar tus respuestas.</p>
+    <ConfirmDialog title={title} confirmLabel="Yes, submit" onConfirm={onConfirm} onClose={onClose}>
+      <p className="text-sm text-neutral-300">After you submit you cannot change your answers.</p>
     </ConfirmDialog>
   )
 }

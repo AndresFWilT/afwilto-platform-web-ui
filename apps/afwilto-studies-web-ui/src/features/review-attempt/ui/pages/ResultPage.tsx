@@ -30,29 +30,29 @@ export function ResultPage() {
   if (loaded.status === 'loading') return <LoadingRows />
   if (loaded.status === 'error') {
     if (loaded.error instanceof ExamsNotFoundError) {
-      return <EmptyState icon="🔎" title="Resultado no encontrado" description="Puede que el simulacro se haya eliminado." />
+      return <EmptyState icon="🔎" title="Result not found" description="The practice exam may have been deleted." />
     }
     if (loaded.error instanceof ExamsAttemptInProgressError) {
       return (
         <div className="flex flex-col items-start gap-3">
-          <Text variant="h2" color="default">Este simulacro sigue en curso</Text>
-          <ButtonLink to={`/studies/attempts/${attemptId}`}>Continuar</ButtonLink>
+          <Text variant="h2" color="default">This practice exam is still in progress</Text>
+          <ButtonLink to={`/studies/attempts/${attemptId}`}>Continue</ButtonLink>
         </div>
       )
     }
-    return <LoadError error={loaded.error} title="No se pudo cargar el resultado" />
+    return <LoadError error={loaded.error} title="Could not load the result" />
   }
   const { report, examName } = loaded.data
   return (
     <ResultTemplate
       examName={examName}
-      title="Resultado"
+      title="Result"
       notice={
         unsavedAnswers > 0 && (
-          <Alert variant="warning">{unsavedAnswers === 1 ? '1 respuesta no se pudo guardar' : `${unsavedAnswers} respuestas no se pudieron guardar`}</Alert>
+          <Alert variant="warning">{unsavedAnswers === 1 ? '1 answer could not be saved' : `${unsavedAnswers} answers could not be saved`}</Alert>
         )
       }
-      footer={<ButtonLink to={`/studies/exams/${report.examId}`} variant="ghost">Volver al examen</ButtonLink>}
+      footer={<ButtonLink to={`/studies/exams/${report.examId}`} variant="ghost">Back to the exam</ButtonLink>}
     >
       <ScoreSummary result={report.result} />
       <BreakdownBars breakdown={report.result.breakdown} />

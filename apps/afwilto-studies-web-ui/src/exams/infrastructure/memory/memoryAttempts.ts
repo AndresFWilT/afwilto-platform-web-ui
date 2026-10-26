@@ -164,7 +164,7 @@ export class MemoryAttempts {
     if (selection.kind === 'simulation') {
       const { quotas, shortages } = this.quotas(exam, questions)
       if (shortages.length) throw this.insufficient(shortages)
-      if (quotas.length === 0) throw this.insufficient([{ category: 'categorías con peso', needed: 1, available: 0 }])
+      if (quotas.length === 0) throw this.insufficient([{ category: 'weighted categories', needed: 1, available: 0 }])
       drawn = shuffled(
         quotas.flatMap(({ name, quota }) => {
           const mine = this.byId(questions.filter((q) => q.categories.some((r) => r.classification === primaryClassification(exam)!.name && r.name === name)))
@@ -177,7 +177,7 @@ export class MemoryAttempts {
       drawn = questions
     } else {
       const wanted = this.drawCount(selection, questions.length)
-      if (wanted === 0) throw this.insufficient([{ category: 'banco', needed: 1, available: 0 }])
+      if (wanted === 0) throw this.insufficient([{ category: 'bank', needed: 1, available: 0 }])
       drawn = shuffled(shuffled(this.byId(questions), rng).slice(0, wanted), rng)
     }
 
@@ -368,7 +368,7 @@ export class MemoryAttempts {
 
   private insufficient(shortages: Shortage[]): ExamsValidationError {
     return new ExamsValidationError(
-      shortages.map((s) => violation('selection', 'insufficient_questions', `faltan ${s.needed - s.available} en ${s.category}`, s))
+      shortages.map((s) => violation('selection', 'insufficient_questions', `${s.needed - s.available} more needed in ${s.category}`, s))
     )
   }
 

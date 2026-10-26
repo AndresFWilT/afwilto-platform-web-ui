@@ -56,7 +56,7 @@ export interface IExamsService {
   /** @throws ExamsNotFoundError */
   deleteQuestion(questionId: string): Promise<void>
 
-  /** How many alive questions have no category in the primary classification ("sin clasificar"). @throws ExamsNotFoundError */
+  /** How many alive questions have no category in the primary classification ("unclassified"). @throws ExamsNotFoundError */
   countUnclassified(examId: string): Promise<number>
 
   /** Attempts of the exam, newest first, with the simulation-only trend. */

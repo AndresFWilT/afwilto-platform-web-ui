@@ -1,9 +1,9 @@
-/** `78.5 %`, `60 %`: one decimal at most. */
+/** `78.5%`, `60%`: one decimal at most. */
 export function formatPercent(value: number): string {
-  return `${Number.isInteger(value) ? value : Math.round(value * 10) / 10} %`
+  return `${Number.isInteger(value) ? value : Math.round(value * 10) / 10}%`
 }
 
-/** Plural-aware count: `1 pregunta`, `13 preguntas`. */
+/** Plural-aware count: `1 question`, `13 questions`. */
 export function countLabel(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`
 }
@@ -34,7 +34,7 @@ export function formatDuration(seconds: number): string {
   return `${s} s`
 }
 
-/** The server's score with its two decimals and a decimal comma: `69,96 %`, `70,00 %`. */
+/** The server's score with its two decimals: `69.96%`, `70.00%`. */
 export function formatScore(value: number): string {
-  return `${value.toFixed(2).replace('.', ',')} %`
+  return `${value.toFixed(2)}%`
 }

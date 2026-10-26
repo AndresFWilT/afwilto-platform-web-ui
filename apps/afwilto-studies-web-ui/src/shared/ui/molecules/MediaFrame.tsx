@@ -11,7 +11,7 @@ export function MediaFrame({ src, alt }: { src: string | null; alt: string }) {
     <figure className="m-0">
       <button
         type="button"
-        aria-label={`Ampliar imagen: ${alt}`}
+        aria-label={`Enlarge image: ${alt}`}
         disabled={!canZoom}
         onClick={() => setZoomed(true)}
         className="block w-full cursor-zoom-in rounded-lg border border-surface-border bg-surface-raised p-2 disabled:cursor-default"
@@ -25,7 +25,7 @@ export function MediaFrame({ src, alt }: { src: string | null; alt: string }) {
           title={alt}
           footer={
             <Button variant="secondary" onClick={() => setZoomed(false)}>
-              Cerrar
+              Close
             </Button>
           }
         >

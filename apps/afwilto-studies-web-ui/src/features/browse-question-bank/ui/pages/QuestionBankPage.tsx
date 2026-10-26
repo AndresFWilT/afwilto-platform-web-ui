@@ -24,9 +24,9 @@ export function QuestionBankPage() {
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
     return exam.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Examen no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={exam.error} title="No se pudo cargar el examen" />
+      <LoadError error={exam.error} title="Could not load the exam" />
     )
   }
   return <Bank exam={exam.data} />
@@ -76,14 +76,14 @@ function Bank({ exam }: { exam: Exam }) {
   return (
     <QuestionBankTemplate
       back={{ to: `/studies/exams/${exam.id}`, label: exam.name }}
-      title="Banco de preguntas"
+      title="Question bank"
       empty={
         empty ? (
           <EmptyState
             icon="📝"
-            title="Este examen aún no tiene preguntas"
-            description="Impórtalas desde un archivo .json o .zip."
-            action={<ButtonLink to={`/studies/exams/${exam.id}/import`}>Importar preguntas</ButtonLink>}
+            title="This exam has no questions yet"
+            description="Import them from a .json or .zip file."
+            action={<ButtonLink to={`/studies/exams/${exam.id}/import`}>Import questions</ButtonLink>}
           />
         ) : undefined
       }
@@ -91,14 +91,14 @@ function Bank({ exam }: { exam: Exam }) {
       list={
         <>
           {list.status === 'loading' && <LoadingRows />}
-          {list.status === 'error' && <LoadError error={list.error} title="No se pudo cargar el banco" />}
+          {list.status === 'error' && <LoadError error={list.error} title="Could not load the question bank" />}
           {list.status === 'success' && (
             <>
               <Text variant="small" color="muted">
-                {list.data.length} de {everything.status === 'success' ? everything.data.length : list.data.length} preguntas
+                {list.data.length} of {everything.status === 'success' ? everything.data.length : list.data.length} questions
               </Text>
               {list.data.length === 0 ? (
-                <EmptyState icon="🔎" title="No hay preguntas con estos filtros" />
+                <EmptyState icon="🔎" title="No questions match these filters" />
               ) : (
                 <QuestionList questions={list.data} openId={openId} onOpen={setOpenId} />
               )}
@@ -110,7 +110,7 @@ function Bank({ exam }: { exam: Exam }) {
         openId && (
           <>
             {open.status === 'loading' && <LoadingRows />}
-            {open.status === 'error' && <LoadError error={open.error} title="No se pudo cargar la pregunta" />}
+            {open.status === 'error' && <LoadError error={open.error} title="Could not load the question" />}
             {open.status === 'success' && open.data && (
               <QuestionDetail question={open.data} resolveMediaUrl={resolveMediaUrl} onDelete={() => setDeleting(true)} onClose={() => setOpenId(null)} />
             )}
@@ -121,18 +121,18 @@ function Bank({ exam }: { exam: Exam }) {
         deleting && open.status === 'success' && open.data ? (
           <ConfirmDialog
             danger
-            title={`¿Eliminar la pregunta «${open.data.key}»?`}
-            confirmLabel="Eliminar pregunta"
+            title={`Delete the question “${open.data.key}”?`}
+            confirmLabel="Delete question"
             onClose={() => setDeleting(false)}
             onConfirm={async () => {
               await examsService.deleteQuestion(open.data!.id)
-              showToast('Pregunta eliminada', 'success')
+              showToast('Question deleted', 'success')
               setDeleting(false)
               setOpenId(null)
               setRevision((n) => n + 1)
             }}
           >
-            <p className="text-sm text-neutral-300">Se elimina del banco; los intentos pasados conservan su copia.</p>
+            <p className="text-sm text-neutral-300">It is removed from the bank; past attempts keep their copy.</p>
           </ConfirmDialog>
         ) : undefined
       }

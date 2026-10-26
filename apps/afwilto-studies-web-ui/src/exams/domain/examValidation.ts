@@ -33,8 +33,8 @@ export const WEIGHT_MAX = 100
 export function validateExamInput(values: ExamFormValues): ExamFormCheck {
   const errors: ExamFormCheck['errors'] = {}
   const name = values.name.trim()
-  if (name === '') errors.name = 'El nombre es obligatorio'
-  else if (name.length > EXAM_NAME_MAX) errors.name = `El nombre admite hasta ${EXAM_NAME_MAX} caracteres`
+  if (name === '') errors.name = 'The name is required'
+  else if (name.length > EXAM_NAME_MAX) errors.name = `The name can have up to ${EXAM_NAME_MAX} characters`
 
   const numbers = {} as Record<keyof typeof RANGES, number>
   for (const field of Object.keys(RANGES) as Array<keyof typeof RANGES>) {
@@ -42,7 +42,7 @@ export function validateExamInput(values: ExamFormValues): ExamFormCheck {
     const raw = values[field].trim()
     const n = /^\d+$/.test(raw) ? Number(raw) : NaN
     if (n >= min && n <= max) numbers[field] = n
-    else errors[field] = `Debe estar entre ${min} y ${max}`
+    else errors[field] = `Must be between ${min} and ${max}`
   }
   return Object.keys(errors).length ? { errors } : { errors, value: { name, ...numbers } }
 }

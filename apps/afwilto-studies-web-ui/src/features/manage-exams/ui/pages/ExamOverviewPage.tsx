@@ -25,15 +25,15 @@ export function ExamOverviewPage() {
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
     return exam.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Examen no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={exam.error} title="No se pudo cargar el examen" />
+      <LoadError error={exam.error} title="Could not load the exam" />
     )
   }
   return (
     <Overview exam={exam.data} unclassified={unclassified.status === 'success' ? unclassified.data : 0}>
       {history.status === 'loading' && <LoadingRows />}
-      {history.status === 'error' && <LoadError error={history.error} title="No se pudo cargar el historial" />}
+      {history.status === 'error' && <LoadError error={history.error} title="Could not load the history" />}
       {history.status === 'success' && <ExamHistory history={history.data} />}
     </Overview>
   )
@@ -48,38 +48,38 @@ function Overview({ exam, unclassified, children }: { exam: Exam; unclassified: 
 
   return (
     <ManageExamTemplate
-      back={{ to: `/studies/subjects/${exam.subjectId}/exams`, label: 'Simulacros' }}
+      back={{ to: `/studies/subjects/${exam.subjectId}/exams`, label: 'Practice Exams' }}
       title={exam.name}
       meta={
         <>
           <Text variant="body" color="muted">
-            {exam.questionCount} preguntas · {exam.timeLimitMin} min · aprobado con {exam.passPercent} %
+            {exam.questionCount} questions · {exam.timeLimitMin} min · pass at {exam.passPercent}%
           </Text>
           <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-300">
-            <span>{countLabel(exam.questionTotal, 'pregunta', 'preguntas')} en el banco</span>
-            {unclassified > 0 && <span className="text-amber-300">{unclassified} sin clasificar</span>}
+            <span>{countLabel(exam.questionTotal, 'question', 'questions')} in the bank</span>
+            {unclassified > 0 && <span className="text-amber-300">{unclassified} unclassified</span>}
           </div>
         </>
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink to={`${base}/start`}>Nuevo simulacro</ButtonLink>
-          <ButtonLink to={`${base}/import`} variant="ghost">Importar</ButtonLink>
-          <ButtonLink to={`${base}/questions`} variant="ghost">Banco</ButtonLink>
-          <ButtonLink to={`${base}/edit`} variant="ghost">Editar</ButtonLink>
+          <ButtonLink to={`${base}/start`}>New practice exam</ButtonLink>
+          <ButtonLink to={`${base}/import`} variant="ghost">Import</ButtonLink>
+          <ButtonLink to={`${base}/questions`} variant="ghost">Question bank</ButtonLink>
+          <ButtonLink to={`${base}/edit`} variant="ghost">Edit</ButtonLink>
           <a
             href={examsService.exportUrl(exam.id)}
             download={`${exam.name}.json`}
             className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-neutral-300 hover:bg-brand-800 hover:text-neutral-100"
           >
-            Exportar
+            Export
           </a>
-          <Button size="sm" variant="ghost" onClick={() => setDeleting(true)}>Eliminar</Button>
+          <Button size="sm" variant="ghost" onClick={() => setDeleting(true)}>Delete</Button>
         </div>
       }
     >
       {exam.classifications.length === 0 ? (
-        <Text variant="body" color="muted">Aún no hay clasificaciones. Importa preguntas para inferirlas.</Text>
+        <Text variant="body" color="muted">No classifications yet. Import questions to infer them.</Text>
       ) : (
         exam.classifications.map((c) => <ClassificationSection key={c.id} classification={c} exam={exam} />)
       )}
@@ -89,23 +89,23 @@ function Overview({ exam, unclassified, children }: { exam: Exam; unclassified: 
       {deleting && (
         <ConfirmDialog
           danger
-          title={`¿Eliminar el examen «${exam.name}»?`}
-          confirmLabel="Eliminar examen"
+          title={`Delete the exam “${exam.name}”?`}
+          confirmLabel="Delete exam"
           onClose={() => setDeleting(false)}
           describeError={(e) =>
             e instanceof ExamsConflictError && e.rule === 'in_use'
-              ? 'No se puede eliminar: el examen aún tiene preguntas. Elimínalas primero.'
+              ? 'Cannot delete: the exam still has questions. Delete them first.'
               : e instanceof Error
                 ? e.message
                 : String(e)
           }
           onConfirm={async () => {
             await examsService.deleteExam(exam.id)
-            showToast('Examen eliminado', 'success')
+            showToast('Exam deleted', 'success')
             navigate(`/studies/subjects/${exam.subjectId}/exams`)
           }}
         >
-          <p className="text-sm text-neutral-300">Esta acción no se puede deshacer desde la aplicación.</p>
+          <p className="text-sm text-neutral-300">This cannot be undone from the app.</p>
         </ConfirmDialog>
       )}
     </ManageExamTemplate>

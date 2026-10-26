@@ -4,13 +4,13 @@ import type { AttemptHistory, AttemptSummary } from '@/exams/domain'
 import { formatDate, formatMinutes, formatPercent } from '@/shared/lib/format'
 
 const SELECTION: Record<AttemptSummary['selectionKind'], string> = {
-  simulation: 'Simulacro',
-  random: 'Aleatorio',
-  categories: 'Por categorías',
-  'origin-set': 'Por conjunto',
+  simulation: 'Full simulation',
+  random: 'Random',
+  categories: 'By category',
+  'origin-set': 'By set',
 }
-const TIMING: Record<AttemptSummary['timingKind'], string> = { timed: 'Con tiempo', untimed: 'Sin tiempo' }
-const FEEDBACK: Record<AttemptSummary['feedback'], string> = { end: 'Respuestas al final', each: 'Respuestas tras cada pregunta' }
+const TIMING: Record<AttemptSummary['timingKind'], string> = { timed: 'Timed', untimed: 'Untimed' }
+const FEEDBACK: Record<AttemptSummary['feedback'], string> = { end: 'Answers at the end', each: 'Answers after each question' }
 
 function Sparkline({ points }: { points: AttemptHistory['trend'] }) {
   const width = 240
@@ -28,10 +28,10 @@ function Sparkline({ points }: { points: AttemptHistory['trend'] }) {
 export function ExamHistory({ history }: { history: AttemptHistory }) {
   return (
     <>
-      <section aria-label="Historial" className="flex flex-col gap-2">
-        <Text variant="h3" color="default">Historial</Text>
+      <section aria-label="History" className="flex flex-col gap-2">
+        <Text variant="h3" color="default">History</Text>
         {history.attempts.length === 0 ? (
-          <Text variant="body" color="muted">Aún no hay intentos</Text>
+          <Text variant="body" color="muted">No attempts yet</Text>
         ) : (
           <ul className="flex flex-col divide-y divide-surface-border rounded-lg border border-surface-border">
             {history.attempts.map((a) => (
@@ -43,13 +43,13 @@ export function ExamHistory({ history }: { history: AttemptHistory }) {
                 </span>
                 <span className="flex flex-wrap items-center gap-3">
                   {a.status === 'in_progress' ? (
-                    <Link to={`/studies/attempts/${a.id}`} className="text-primary-300 hover:text-primary-200">En curso</Link>
+                    <Link to={`/studies/attempts/${a.id}`} className="text-primary-300 hover:text-primary-200">In progress</Link>
                   ) : (
                     <>
                       {a.scorePercent !== undefined && <span className="text-neutral-100">{formatPercent(a.scorePercent)}</span>}
-                      {a.passed !== undefined && <span className={a.passed ? 'text-green-400' : 'text-red-400'}>{a.passed ? 'Aprobado' : 'No aprobado'}</span>}
+                      {a.passed !== undefined && <span className={a.passed ? 'text-green-400' : 'text-red-400'}>{a.passed ? 'Passed' : 'Not passed'}</span>}
                       {a.durationSeconds !== undefined && <span className="text-neutral-400">{formatMinutes(a.durationSeconds)}</span>}
-                      <Link to={`/studies/attempts/${a.id}/result`} className="text-primary-300 hover:text-primary-200">Ver resultado</Link>
+                      <Link to={`/studies/attempts/${a.id}/result`} className="text-primary-300 hover:text-primary-200">View result</Link>
                     </>
                   )}
                 </span>
@@ -59,11 +59,11 @@ export function ExamHistory({ history }: { history: AttemptHistory }) {
         )}
       </section>
       {history.trend.length > 0 && (
-        <section aria-label="Tendencia" className="flex flex-col gap-2">
-          <Text variant="h3" color="default">Tendencia</Text>
-          <p className="text-xs text-neutral-500">Solo cuentan los simulacros reales.</p>
+        <section aria-label="Trend" className="flex flex-col gap-2">
+          <Text variant="h3" color="default">Trend</Text>
+          <p className="text-xs text-neutral-500">Only full simulations count.</p>
           {history.trend.length > 1 && <Sparkline points={history.trend} />}
-          <ol aria-label="Tendencia de simulacros" className="flex flex-col gap-1 text-sm text-neutral-300">
+          <ol aria-label="Simulation trend" className="flex flex-col gap-1 text-sm text-neutral-300">
             {history.trend.map((p) => (
               <li key={p.at}>{formatDate(p.at)} · {formatPercent(p.scorePercent)}</li>
             ))}

@@ -13,18 +13,18 @@ interface Props {
 export function ReviewEntry({ item, resolveMediaUrl }: Props) {
   const { reveal } = item
   return (
-    <article aria-label={`Pregunta ${item.position + 1}`} className="flex flex-col gap-3 rounded-lg border border-surface-border p-4">
+    <article aria-label={`Question ${item.position + 1}`} className="flex flex-col gap-3 rounded-lg border border-surface-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="font-semibold text-neutral-100">{`Pregunta ${item.position + 1}`}</span>
+        <span className="font-semibold text-neutral-100">{`Question ${item.position + 1}`}</span>
         <span className="flex flex-wrap items-center gap-3">
           {item.flagged && (
             <span className="text-amber-300">
-              <span aria-hidden="true">⚑</span> Marcada
+              <span aria-hidden="true">⚑</span> Flagged
             </span>
           )}
-          {item.selected.length === 0 && <span className="text-neutral-400">Sin responder</span>}
+          {item.selected.length === 0 && <span className="text-neutral-400">Unanswered</span>}
           {item.noteId && (
-            <Link to={`/studies/notes/${item.noteId}`} className="text-primary-300 hover:text-primary-200">Ver nota</Link>
+            <Link to={`/studies/notes/${item.noteId}`} className="text-primary-300 hover:text-primary-200">View note</Link>
           )}
         </span>
       </div>

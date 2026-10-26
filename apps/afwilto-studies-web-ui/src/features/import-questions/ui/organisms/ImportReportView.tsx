@@ -46,11 +46,11 @@ export function ImportReportView({ report, firstImport, manualWeights, primary, 
   return (
     <div className="flex flex-col gap-6">
       {report.errors.length > 0 && (
-        <Section name="Errores">
+        <Section name="Errors">
           {groupByRule(report.errors).map(([rule, errors]) => (
             <div key={rule} className="flex flex-col gap-1">
               <h4 className="font-mono text-sm font-semibold text-red-300">{rule}</h4>
-              <ul aria-label={`Regla ${rule}`} className={list}>
+              <ul aria-label={`Rule ${rule}`} className={list}>
                 {errors.map((e) => (
                   <li key={`${e.path}:${e.message}`} className="flex flex-wrap gap-2">
                     <code className="text-red-200">{e.path}</code>
@@ -63,20 +63,20 @@ export function ImportReportView({ report, firstImport, manualWeights, primary, 
         </Section>
       )}
 
-      <Section name="Conteos">
+      <Section name="Counts">
         <ul className={list}>
-          <li>{counts.create} por crear</li>
-          <li>{counts.update} por actualizar</li>
-          <li>{counts.unchanged} sin cambios</li>
-          {counts.invalid > 0 && <li>{counts.invalid} no válidas</li>}
+          <li>{counts.create} to create</li>
+          <li>{counts.update} to update</li>
+          <li>{counts.unchanged} unchanged</li>
+          {counts.invalid > 0 && <li>{counts.invalid} invalid</li>}
         </ul>
       </Section>
 
       {report.newClassifications.length > 0 && (
-        <Section name="Clasificaciones nuevas">
+        <Section name="New classifications">
           {firstImport ? (
-            <div role="radiogroup" aria-label="Clasificación principal" className={list}>
-              <p className="text-xs text-neutral-400">Elige la clasificación principal: sus categorías llevan peso en el simulacro real.</p>
+            <div role="radiogroup" aria-label="Primary classification" className={list}>
+              <p className="text-xs text-neutral-400">Choose the primary classification: its categories carry weight in the full simulation.</p>
               {report.newClassifications.map((c) => (
                 <label key={c.name} className="flex items-center gap-2">
                   <input type="radio" name="primary-classification" value={c.name} checked={chosen === c.name} disabled={busy} onChange={() => onPrimaryChange(c.name)} />
@@ -91,16 +91,16 @@ export function ImportReportView({ report, firstImport, manualWeights, primary, 
       )}
 
       {report.newCategories.length > 0 && (
-        <Section name="Categorías nuevas">
+        <Section name="New categories">
           {manualWeights && (
-            <Alert variant="info">Las categorías nuevas entran con peso 0 hasta que les asignes uno: no forman parte del simulacro real.</Alert>
+            <Alert variant="info">New categories start with weight 0 until you assign one: they are not part of the full simulation.</Alert>
           )}
           <ul className={list}>
             {report.newCategories.map((c) => (
               <li key={`${c.classification}/${c.name}`}>
                 {c.classification} / {c.name}
                 {c.similarTo.length > 0 && (
-                  <span className="ml-2 text-amber-300">«{c.name}» se parece a {c.similarTo.map((s) => `«${s}»`).join(', ')}</span>
+                  <span className="ml-2 text-amber-300">“{c.name}” is similar to {c.similarTo.map((s) => `“${s}”`).join(', ')}</span>
                 )}
               </li>
             ))}
@@ -109,10 +109,10 @@ export function ImportReportView({ report, firstImport, manualWeights, primary, 
       )}
 
       {(report.weightsAfter.length > 0 || report.warnings.length > 0) && (
-        <Section name="Pesos resultantes">
+        <Section name="Resulting weights">
           <ul className={list}>
             {report.weightsAfter.map((w) => (
-              <li key={w.category}>{`${w.category}: ${w.percent} % (${w.mode === 'inferred' ? 'inferido' : 'manual'})`}</li>
+              <li key={w.category}>{`${w.category}: ${w.percent}% (${w.mode === 'inferred' ? 'inferred' : 'manual'})`}</li>
             ))}
           </ul>
           {report.warnings.map((w) => (
@@ -122,29 +122,29 @@ export function ImportReportView({ report, firstImport, manualWeights, primary, 
       )}
 
       {report.duplicateStems.length > 0 && (
-        <Section name="Duplicados">
+        <Section name="Duplicates">
           <ul className={list}>
             {report.duplicateStems.map((d) => (
-              <li key={d.key}>«{d.key}» tiene el mismo enunciado que «{d.existingKey}»</li>
+              <li key={d.key}>“{d.key}” has the same stem as “{d.existingKey}”</li>
             ))}
           </ul>
         </Section>
       )}
 
       {hasMedia && (
-        <Section name="Medios">
+        <Section name="Media">
           <ul className={list}>
-            <li>{media.referenced} referenciadas · {media.inZip} en el zip</li>
-            {media.missing.length > 0 && <li className="text-red-300">Faltan: {media.missing.join(', ')}</li>}
-            {media.unused.length > 0 && <li className="text-amber-300">Sin usar: {media.unused.join(', ')}</li>}
+            <li>{media.referenced} referenced · {media.inZip} in the zip</li>
+            {media.missing.length > 0 && <li className="text-red-300">Missing: {media.missing.join(', ')}</li>}
+            {media.unused.length > 0 && <li className="text-amber-300">Unused: {media.unused.join(', ')}</li>}
           </ul>
         </Section>
       )}
 
       {report.preview.length > 0 && (
-        <Section name="Vista previa">
+        <Section name="Preview">
           {report.preview.slice(0, 5).map((q) => (
-            <article key={q.key} aria-label={`Pregunta ${q.key}`} className="flex flex-col gap-2 rounded-lg border border-surface-border p-4">
+            <article key={q.key} aria-label={`Question ${q.key}`} className="flex flex-col gap-2 rounded-lg border border-surface-border p-4">
               <code className="text-xs text-neutral-400">{q.key}</code>
               <QuestionView question={toViewQuestion(q)} selected={NO_SELECTION} onToggle={noop} disabled reveal={toRevealInfo(q)} resolveMediaUrl={resolveMediaUrl} />
             </article>

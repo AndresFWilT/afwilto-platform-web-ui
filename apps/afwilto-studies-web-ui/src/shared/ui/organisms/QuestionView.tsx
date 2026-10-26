@@ -59,7 +59,7 @@ export function QuestionView({ question, selected, onToggle, disabled = false, r
   })
 
   const group = (className: string, Item: typeof OptionRow | typeof OptionCard) => (
-    <div role={multi ? 'group' : 'radiogroup'} aria-label="Opciones de respuesta" className={className}>
+    <div role={multi ? 'group' : 'radiogroup'} aria-label="Answer options" className={className}>
       {question.options.map((option) => (
         <Item key={option.label} option={option} {...optionProps(option.label)} />
       ))}
@@ -91,8 +91,8 @@ export function QuestionView({ question, selected, onToggle, disabled = false, r
       {template === 'option-cards' && group('grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3', OptionCard)}
 
       {reveal?.explanation && (
-        <section aria-label="Explicación" className="rounded-lg border border-surface-border bg-surface-raised p-4">
-          <h4 className="mb-2 font-semibold text-neutral-100">Explicación</h4>
+        <section aria-label="Explanation" className="rounded-lg border border-surface-border bg-surface-raised p-4">
+          <h4 className="mb-2 font-semibold text-neutral-100">Explanation</h4>
           <MarkdownView content={reveal.explanation} resolveMediaUrl={resolveMediaUrl} />
         </section>
       )}

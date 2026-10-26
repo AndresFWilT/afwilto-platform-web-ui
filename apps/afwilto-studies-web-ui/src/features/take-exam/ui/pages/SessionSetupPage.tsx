@@ -37,9 +37,9 @@ export function SessionSetupPage() {
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
     return exam.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Examen no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={exam.error} title="No se pudo cargar el examen" />
+      <LoadError error={exam.error} title="Could not load the exam" />
     )
   }
   const sets = bank.status === 'success' ? [...new Set(bank.data.flatMap((q) => (q.origin?.set ? [q.origin.set] : [])))].sort() : []
@@ -105,18 +105,18 @@ function SessionSetup({ exam, sets }: { exam: Exam; sets: string[] }) {
   }
 
   return (
-    <SessionSetupTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="Nuevo simulacro">
+    <SessionSetupTemplate back={{ to: `/studies/exams/${exam.id}`, label: exam.name }} title="New practice exam">
 
-      <div role="radiogroup" aria-label="Tipo de simulacro" className="flex flex-wrap gap-3">
+      <div role="radiogroup" aria-label="Practice exam type" className="flex flex-wrap gap-3">
         <div className="min-w-[16rem] flex-1 rounded-lg border border-surface-border bg-surface-raised p-4">
           <ChoiceInput type="radio" name="mode" checked={form.mode === 'simulation'} onChange={() => change({ mode: 'simulation' })}>
-            <span className="font-semibold">Simulacro real</span>
-            <span className="text-neutral-400">{`${exam.questionCount} preguntas · ${exam.timeLimitMin} min · respuestas al final`}</span>
+            <span className="font-semibold">Full simulation</span>
+            <span className="text-neutral-400">{`${exam.questionCount} questions · ${exam.timeLimitMin} min · answers at the end`}</span>
           </ChoiceInput>
         </div>
         <div className="min-w-[16rem] flex-1 rounded-lg border border-surface-border bg-surface-raised p-4">
           <ChoiceInput type="radio" name="mode" checked={form.mode === 'custom'} onChange={() => change({ mode: 'custom' })}>
-            <span className="font-semibold">Personalizado</span>
+            <span className="font-semibold">Custom</span>
           </ChoiceInput>
         </div>
       </div>
@@ -139,13 +139,13 @@ function SessionSetup({ exam, sets }: { exam: Exam; sets: string[] }) {
 
       {inProgress !== undefined && <AttemptInProgressNotice attemptId={inProgress} />}
       {failure.length > 0 && (
-        <Alert variant="error" title="No se pudo empezar">
+        <Alert variant="error" title="Could not start">
           {failure.join('; ')}
         </Alert>
       )}
 
       <div>
-        <Button onClick={start} disabled={!canStart} loading={starting}>Empezar</Button>
+        <Button onClick={start} disabled={!canStart} loading={starting}>Start</Button>
       </div>
     </SessionSetupTemplate>
   )

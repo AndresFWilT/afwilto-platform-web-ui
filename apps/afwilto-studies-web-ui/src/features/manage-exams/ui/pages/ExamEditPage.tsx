@@ -15,7 +15,7 @@ import { WeightsTable } from '../organisms/WeightsTable'
 import { ManageExamTemplate } from '../templates/ManageExamTemplate'
 
 const PARAM_FIELDS = ['name', 'questionCount', 'timeLimitMin', 'passPercent'] as const
-const STALE = 'El examen cambió mientras lo editabas. Recarga para ver la última versión.'
+const STALE = 'The exam changed while you were editing it. Reload to see the latest version.'
 
 export function ExamEditPage() {
   const { examId = '' } = useParams()
@@ -26,9 +26,9 @@ export function ExamEditPage() {
   if (exam.status === 'loading') return <LoadingRows />
   if (exam.status === 'error') {
     return exam.error instanceof ExamsNotFoundError ? (
-      <EmptyState icon="🔎" title="Examen no encontrado" description="Puede que se haya eliminado." />
+      <EmptyState icon="🔎" title="Exam not found" description="It may have been deleted." />
     ) : (
-      <LoadError error={exam.error} title="No se pudo cargar el examen" />
+      <LoadError error={exam.error} title="Could not load the exam" />
     )
   }
   return <EditForm initial={exam.data} onReload={() => setRevision((n) => n + 1)} />
@@ -65,19 +65,19 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
     setAlert(undefined)
     try {
       await examsService.updateExam(base.id, check.patch)
-      showToast('Cambios guardados', 'success')
+      showToast('Changes saved', 'success')
       navigate(`/studies/exams/${base.id}`)
     } catch (e) {
       if (e instanceof ExamsConflictError && e.rule === 'stale_version') setStale(true)
       else if (e instanceof ExamsConflictError && e.rule === 'duplicate_name') {
-        if (e.field === 'name') setServerErrors({ name: 'Ya existe un examen con ese nombre' })
-        else setAlert(e.field === 'classifications' ? 'Ya existe una clasificación con ese nombre.' : 'Ya existe una categoría con ese nombre en su clasificación.')
+        if (e.field === 'name') setServerErrors({ name: 'An exam with that name already exists' })
+        else setAlert(e.field === 'classifications' ? 'A classification with that name already exists.' : 'A category with that name already exists in its classification.')
       } else if (e instanceof ExamsValidationError) {
         // Each violation lands on its field (parameters, names, pace rows, weights); the rest is one alert.
         const { problems, unmapped } = violationProblems(check.patch, e.details)
         setServerErrors(problems)
         if (unmapped.length) setAlert(unmapped.join('; '))
-      } else if (e instanceof ExamsNotFoundError) setAlert('El examen ya no existe.')
+      } else if (e instanceof ExamsNotFoundError) setAlert('The exam no longer exists.')
       else setAlert(e instanceof Error ? e.message : String(e))
       setSaving(false)
     }
@@ -90,7 +90,7 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
       const updated = await examsService.updateExam(base.id, { version: base.version, weightMode: 'inferred' })
       setBase(updated)
       setDraft((d) => ({ ...d, weights: draftFrom(updated).weights }))
-      showToast('Pesos inferidos de nuevo', 'success')
+      showToast('Weights inferred again', 'success')
     } catch (e) {
       if (e instanceof ExamsConflictError && e.rule === 'stale_version') setStale(true)
       else setAlert(e instanceof Error ? e.message : String(e))
@@ -103,7 +103,7 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
     const merged = await examsService.mergeCategories(base.id, { from: fromId, into: intoId })
     setBase(merged)
     setDraft((d) => ({ ...draftFrom(merged), params: d.params, classificationNames: d.classificationNames, primaryId: d.primaryId }))
-    showToast('Categorías combinadas', 'success')
+    showToast('Categories merged', 'success')
   }
 
   return (
@@ -114,22 +114,22 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
         void save()
       }}
     >
-      <ManageExamTemplate back={{ to: `/studies/exams/${base.id}`, label: base.name }} title="Editar examen" width="form">
+      <ManageExamTemplate back={{ to: `/studies/exams/${base.id}`, label: base.name }} title="Edit exam" width="form">
 
-      <section aria-label="Parámetros" className="flex max-w-xl flex-col gap-4">
+      <section aria-label="Parameters" className="flex max-w-xl flex-col gap-4">
         <ExamParametersFields values={draft.params} errors={paramErrors} onChange={(field, value) => edit((d) => ({ ...d, params: { ...d.params, [field]: value } }))} disabled={saving} />
       </section>
 
       {base.classifications.length === 0 ? (
-        <Text variant="body" color="muted">Importa preguntas para definir clasificaciones, pesos y ritmos.</Text>
+        <Text variant="body" color="muted">Import questions to define classifications, weights and pace.</Text>
       ) : (
         <>
-          <section aria-label="Clasificaciones" className="flex max-w-xl flex-col gap-3">
-            <Text variant="h3" color="default">Clasificaciones</Text>
+          <section aria-label="Classifications" className="flex max-w-xl flex-col gap-3">
+            <Text variant="h3" color="default">Classifications</Text>
             {base.classifications.map((c) => (
               <div key={c.id} className="flex flex-col gap-1">
                 <Input
-                  aria-label={`Nombre de la clasificación ${c.position === 0 ? 'principal' : 'secundaria'}`}
+                  aria-label={`Name of the ${c.position === 0 ? 'primary' : 'secondary'} classification`}
                   maxLength={CLASSIFICATION_NAME_MAX}
                   value={draft.classificationNames[c.id] ?? ''}
                   error={Boolean(errors[`classification:${c.id}`])}
@@ -140,7 +140,7 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
             ))}
             {base.classifications.length === 2 && (
               <div className="flex flex-col gap-1">
-                <label htmlFor="primary-classification" className="text-sm text-neutral-300">Clasificación principal</label>
+                <label htmlFor="primary-classification" className="text-sm text-neutral-300">Primary classification</label>
                 <Select id="primary-classification" value={draft.primaryId ?? ''} onChange={(e) => edit((d) => ({ ...d, primaryId: e.target.value }))}>
                   {base.classifications.map((c) => <option key={c.id} value={c.id}>{draft.classificationNames[c.id] || c.name}</option>)}
                 </Select>
@@ -159,11 +159,11 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
               onResetToInferred={() => void resetWeights()}
             />
           )}
-          {swapped && <Text variant="body" color="muted">Los pesos se infieren de nuevo al cambiar la clasificación principal.</Text>}
+          {swapped && <Text variant="body" color="muted">Weights are inferred again when the primary classification changes.</Text>}
 
           {base.classifications.map((c) => (
-            <section key={c.id} aria-label={`Categorías de ${c.name}`} className="flex flex-col gap-2">
-              <Text variant="h3" color="default">Categorías de «{c.name}»</Text>
+            <section key={c.id} aria-label={`Categories of ${c.name}`} className="flex flex-col gap-2">
+              <Text variant="h3" color="default">Categories of “{c.name}”</Text>
               <CategoryRows
                 classification={c}
                 draft={draft}
@@ -179,14 +179,14 @@ function EditForm({ initial, onReload }: { initial: Exam; onReload: () => void }
       {stale && (
         <Alert variant="warning">
           {STALE}
-          <span className="ml-2"><Button size="sm" variant="secondary" onClick={onReload}>Recargar</Button></span>
+          <span className="ml-2"><Button size="sm" variant="secondary" onClick={onReload}>Reload</Button></span>
         </Alert>
       )}
       {alert && <Alert variant="error">{alert}</Alert>}
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={!check.patch} loading={saving}>Guardar cambios</Button>
-        <ButtonLink to={`/studies/exams/${base.id}`} variant="ghost">Cancelar</ButtonLink>
+        <Button type="submit" disabled={!check.patch} loading={saving}>Save changes</Button>
+        <ButtonLink to={`/studies/exams/${base.id}`} variant="ghost">Cancel</ButtonLink>
       </div>
       </ManageExamTemplate>
     </form>

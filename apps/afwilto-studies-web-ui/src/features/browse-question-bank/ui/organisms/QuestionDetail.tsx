@@ -17,10 +17,10 @@ export function QuestionDetail({ question, resolveMediaUrl, onDelete, onClose }:
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Text variant="small" color="muted"><code>{question.key}</code> · versión {question.version}</Text>
+        <Text variant="small" color="muted"><code>{question.key}</code> · version {question.version}</Text>
         <span className="flex gap-2">
-          <Button size="sm" variant="danger" onClick={onDelete}>Eliminar pregunta</Button>
-          <Button size="sm" variant="ghost" onClick={onClose}>Cerrar</Button>
+          <Button size="sm" variant="danger" onClick={onDelete}>Delete question</Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
         </span>
       </div>
       <QuestionView question={toViewQuestion(question)} selected={NO_SELECTION} onToggle={noop} disabled reveal={toRevealInfo(question)} resolveMediaUrl={resolveMediaUrl} />

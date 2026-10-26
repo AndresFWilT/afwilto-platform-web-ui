@@ -72,7 +72,7 @@ export function primaryClassification(exam: Exam): Classification | undefined {
   return exam.classifications.find((c) => c.position === 0)
 }
 
-/** Alive questions with no category in the primary classification ("sin clasificar"). */
+/** Alive questions with no category in the primary classification ("unclassified"). */
 export function unclassifiedCount(exam: Exam): number {
   const primary = primaryClassification(exam)
   if (!primary) return exam.questionTotal

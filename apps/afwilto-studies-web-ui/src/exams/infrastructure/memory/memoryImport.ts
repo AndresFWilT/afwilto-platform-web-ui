@@ -180,7 +180,7 @@ export function planImport(input: { exam: Exam; bank: ExamQuestion[]; text: stri
   const primaryClassification = next.classifications.find((c) => c.position === 0)
   const warnings =
     primaryClassification?.weightMode === 'manual'
-      ? newCategories.filter((c) => c.classification === primaryClassification.name).map((c) => `"${c.name}" no entra al simulacro real hasta que le asignes peso`)
+      ? newCategories.filter((c) => c.classification === primaryClassification.name).map((c) => `"${c.name}" is not part of the full simulation until you assign it a weight`)
       : []
 
   return {

@@ -10,7 +10,7 @@ interface Props {
 /** Failed saves keep the local choice; this lists them and offers to send them again. */
 export function SaveFailedToast({ questions, onRetry, onDismiss }: Props) {
   const message =
-    questions.length === 1 ? `No se pudo guardar la pregunta ${questions[0]}` : `No se pudieron guardar las preguntas ${questions.join(', ')}`
+    questions.length === 1 ? `Could not save question ${questions[0]}` : `Could not save questions ${questions.join(', ')}`
   return (
     <div
       role="alert"
@@ -18,8 +18,8 @@ export function SaveFailedToast({ questions, onRetry, onDismiss }: Props) {
       style={{ backgroundColor: 'var(--color-surface-overlay)' }}
     >
       <span>{message}</span>
-      <Button size="sm" variant="secondary" onClick={onRetry}>Reintentar</Button>
-      <Button size="sm" variant="ghost" onClick={onDismiss}>Cerrar</Button>
+      <Button size="sm" variant="secondary" onClick={onRetry}>Retry</Button>
+      <Button size="sm" variant="ghost" onClick={onDismiss}>Close</Button>
     </div>
   )
 }

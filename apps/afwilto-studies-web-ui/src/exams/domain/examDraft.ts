@@ -32,12 +32,12 @@ export interface DraftCheck {
   weightsSum: number
 }
 
-const PACE_MESSAGE = 'Indica ambos valores del ritmo o ninguno (enteros desde 1)'
-const PACE_RANGE_MESSAGE = 'El ritmo admite enteros de 1 a 10 000'
-const WEIGHT_RANGE_MESSAGE = `Los pesos son enteros de 0 a ${WEIGHT_MAX}`
-const WEIGHTS_SUM_MESSAGE = 'Los pesos deben sumar 100'
-const INVALID_TEXT_MESSAGE = 'El texto contiene caracteres no permitidos'
-const nameTooLong = (max: number) => `El nombre admite hasta ${max} caracteres`
+const PACE_MESSAGE = 'Enter both pace values or neither (whole numbers from 1)'
+const PACE_RANGE_MESSAGE = 'The pace takes whole numbers from 1 to 10,000'
+const WEIGHT_RANGE_MESSAGE = `Weights are whole numbers from 0 to ${WEIGHT_MAX}`
+const WEIGHTS_SUM_MESSAGE = 'Weights must add up to 100'
+const INVALID_TEXT_MESSAGE = 'The text contains characters that are not allowed'
+const nameTooLong = (max: number) => `The name can have up to ${max} characters`
 const INTEGER = /^\d+$/
 
 function allCategories(exam: Exam) {
@@ -84,7 +84,7 @@ export function checkDraft(exam: Exam, draft: ExamDraft): DraftCheck {
   const renamedClassifications: NonNullable<UpdateExamInput['classifications']> = []
   for (const c of exam.classifications) {
     const name = (draft.classificationNames[c.id] ?? c.name).trim()
-    if (name === '') problems[`classification:${c.id}`] = 'El nombre es obligatorio'
+    if (name === '') problems[`classification:${c.id}`] = 'The name is required'
     else if (name.length > CLASSIFICATION_NAME_MAX) problems[`classification:${c.id}`] = nameTooLong(CLASSIFICATION_NAME_MAX)
     else if (name !== c.name) renamedClassifications.push({ id: c.id, name })
   }
@@ -100,7 +100,7 @@ export function checkDraft(exam: Exam, draft: ExamDraft): DraftCheck {
     if (!d) continue
     const edit: NonNullable<UpdateExamInput['categories']>[number] = { id: c.id }
     const name = d.name.trim()
-    if (name === '') problems[`category:${c.id}`] = 'El nombre es obligatorio'
+    if (name === '') problems[`category:${c.id}`] = 'The name is required'
     else if (name.length > CATEGORY_NAME_MAX) problems[`category:${c.id}`] = nameTooLong(CATEGORY_NAME_MAX)
     else if (name !== c.name) edit.name = name
 
@@ -180,7 +180,7 @@ function messageOf(target: Target, v: FieldViolation): string {
       if (v.rule !== 'range') return v.message
       if (target.field === 'name') return nameTooLong(EXAM_NAME_MAX)
       const [min, max] = EXAM_RANGES[target.field as keyof typeof EXAM_RANGES]
-      return `Debe estar entre ${min} y ${max}`
+      return `Must be between ${min} and ${max}`
     }
     case 'name-classification':
       return v.rule === 'range' ? nameTooLong(CLASSIFICATION_NAME_MAX) : v.message

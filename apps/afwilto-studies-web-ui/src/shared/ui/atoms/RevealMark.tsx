@@ -2,9 +2,9 @@
 export type RevealMarkKind = 'correct' | 'wrong' | 'right'
 
 const MARKS: Record<RevealMarkKind, { icon: string; text: string; tone: string }> = {
-  correct: { icon: '✓', text: 'Correcta', tone: 'text-green-400' },
-  right: { icon: '✓', text: 'Tu respuesta', tone: 'text-green-400' },
-  wrong: { icon: '✗', text: 'Tu respuesta', tone: 'text-red-400' },
+  correct: { icon: '✓', text: 'Correct', tone: 'text-green-400' },
+  right: { icon: '✓', text: 'Your answer', tone: 'text-green-400' },
+  wrong: { icon: '✗', text: 'Your answer', tone: 'text-red-400' },
 }
 
 /** Icon + colour + text, never colour alone (FR-11). */

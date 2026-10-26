@@ -9,9 +9,9 @@ export function cellState(item: Pick<AttemptItem, 'answered' | 'flagged'>): Cell
   return item.flagged ? 'flagged' : 'blank'
 }
 
-/** "Pregunta 7, respondida, marcada" (position is 0-based; the label is 1-based). */
+/** "Question 7, answered, flagged" (position is 0-based; the label is 1-based). */
 export function cellLabel(item: Pick<AttemptItem, 'position' | 'answered' | 'flagged'>): string {
-  return [`Pregunta ${item.position + 1}`, item.answered ? 'respondida' : 'sin responder', ...(item.flagged ? ['marcada'] : [])].join(', ')
+  return [`Question ${item.position + 1}`, item.answered ? 'answered' : 'unanswered', ...(item.flagged ? ['flagged'] : [])].join(', ')
 }
 
 /** Items with no answer. */
