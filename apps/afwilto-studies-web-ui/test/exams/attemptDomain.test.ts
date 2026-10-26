@@ -53,14 +53,14 @@ describe('navigator cells (S09-6)', () => {
     expect(cellState(item(true, true))).toBe('answered-flagged')
   })
 
-  it('labels an answered, flagged item "Pregunta 3, respondida, marcada" (0-based position 2)', () => {
-    expect(cellLabel(item(true, true))).toBe('Pregunta 3, respondida, marcada')
+  it('labels an answered, flagged item "Question 3, answered, flagged" (0-based position 2)', () => {
+    expect(cellLabel(item(true, true))).toBe('Question 3, answered, flagged')
   })
 
   it('labels the other states in words, never by colour', () => {
-    expect(cellLabel(item(false, false, 6))).toBe('Pregunta 7, sin responder')
-    expect(cellLabel(item(true, false, 6))).toBe('Pregunta 7, respondida')
-    expect(cellLabel(item(false, true, 6))).toBe('Pregunta 7, sin responder, marcada')
+    expect(cellLabel(item(false, false, 6))).toBe('Question 7, unanswered')
+    expect(cellLabel(item(true, false, 6))).toBe('Question 7, answered')
+    expect(cellLabel(item(false, true, 6))).toBe('Question 7, unanswered, flagged')
   })
 })
 

@@ -16,11 +16,11 @@ function open(exams: InMemoryExamsAdapter, ...reports: ImportReport[]) {
   renderAt(URL, undefined, exams)
   return spy
 }
-const step1 = () => screen.findByLabelText('Archivo de preguntas')
+const step1 = () => screen.findByLabelText('Questions file')
 async function choose(file: File = FILE_JSON()) {
   fireEvent.change(await step1(), { target: { files: [file] } })
 }
-const importar = () => screen.getByRole('button', { name: 'Importar' }) as HTMLButtonElement
+const importar = () => screen.getByRole('button', { name: 'Import' }) as HTMLButtonElement
 const sectionNames = () => screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
 
 const twoErrors = reportFixture({
@@ -33,14 +33,14 @@ const twoErrors = reportFixture({
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('ImportWizardPage: step 1, Archivo', () => {
-  it('shows the three steps with Archivo current, a file input for .json and .zip and the size hint', async () => {
+describe('ImportWizardPage: step 1, File', () => {
+  it('shows the three steps with File current, a file input for .json and .zip and the size hint', async () => {
     open(populated())
     const input = (await step1()) as HTMLInputElement
     expect(input.getAttribute('accept')).toBe('.json,.zip')
-    expect(screen.getByText('Admite .json (hasta 10 MiB) o .zip con imágenes (hasta 50 MiB).')).toBeTruthy()
-    const steps = within(screen.getByRole('list', { name: 'Pasos' })).getAllByRole('listitem')
-    expect(steps.map((s) => s.textContent)).toEqual(['1. Archivo', '2. Reporte', '3. Confirmar'])
+    expect(screen.getByText('Accepts .json (up to 10 MiB) or .zip with images (up to 50 MiB).')).toBeTruthy()
+    const steps = within(screen.getByRole('list', { name: 'Steps' })).getAllByRole('listitem')
+    expect(steps.map((s) => s.textContent)).toEqual(['1. File', '2. Report', '3. Confirm'])
     expect(steps.map((s) => s.getAttribute('aria-current'))).toEqual(['step', null, null])
   })
 
@@ -49,13 +49,13 @@ describe('ImportWizardPage: step 1, Archivo', () => {
     const spy = open(populated(), reportFixture())
     await choose(file)
     await waitFor(() => expect(spy).toHaveBeenCalledWith(EXAM_ID, file, { dryRun: true }))
-    expect(await screen.findByRole('button', { name: 'Importar' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Import' })).toBeTruthy()
   })
 
   it('a file that is neither .json nor .zip is refused without a request', async () => {
     const spy = open(populated())
     await choose(new File(['x'], 'notas.txt'))
-    expect(await screen.findByText('Elige un archivo .json o .zip')).toBeTruthy()
+    expect(await screen.findByText('Choose a .json or .zip file')).toBeTruthy()
     expect(spy).not.toHaveBeenCalled()
   })
 
@@ -64,7 +64,7 @@ describe('ImportWizardPage: step 1, Archivo', () => {
     const big = FILE_JSON()
     Object.defineProperty(big, 'size', { value: 10 * 1024 * 1024 + 1 })
     await choose(big)
-    expect(await screen.findByText('Un archivo .json admite hasta 10 MiB')).toBeTruthy()
+    expect(await screen.findByText('A .json file can be up to 10 MiB')).toBeTruthy()
     expect(spy).not.toHaveBeenCalled()
   })
 
@@ -74,16 +74,16 @@ describe('ImportWizardPage: step 1, Archivo', () => {
     spy.mockRejectedValueOnce(new ExamsValidationError([{ field: 'file', rule: 'json', message: 'el archivo no es JSON válido' }]))
     await choose()
     expect(await screen.findByText('el archivo no es JSON válido')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Importar' })).toBeNull()
-    expect(screen.getByLabelText('Archivo de preguntas')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Import' })).toBeNull()
+    expect(screen.getByLabelText('Questions file')).toBeTruthy()
   })
 })
 
-describe('ImportWizardPage: step 2, Reporte (S08-2)', () => {
-  it('2 errors list both paths grouped by rule and disable "Importar" (S08-2)', async () => {
+describe('ImportWizardPage: step 2, Report (S08-2)', () => {
+  it('2 errors list both paths grouped by rule and disable "Import" (S08-2)', async () => {
     open(populated(), twoErrors)
     await choose()
-    const errors = within(await screen.findByRole('region', { name: 'Errores' }))
+    const errors = within(await screen.findByRole('region', { name: 'Errors' }))
     expect(errors.getByText('correct_count')).toBeTruthy()
     expect(errors.getByText('questions[3].options')).toBeTruthy()
     expect(errors.getByText('questions[5].options')).toBeTruthy()
@@ -97,24 +97,24 @@ describe('ImportWizardPage: step 2, Reporte (S08-2)', () => {
       { path: 'questions[1].categories', rule: 'primary_single_valued', message: 'm2' },
     ] }))
     await choose()
-    const errors = within(await screen.findByRole('region', { name: 'Errores' }))
-    expect(errors.getAllByRole('list', { name: /Regla / }).map((l) => l.getAttribute('aria-label'))).toEqual(['Regla correct_count', 'Regla primary_single_valued'])
+    const errors = within(await screen.findByRole('region', { name: 'Errors' }))
+    expect(errors.getAllByRole('list', { name: /Rule / }).map((l) => l.getAttribute('aria-label'))).toEqual(['Rule correct_count', 'Rule primary_single_valued'])
   })
 
-  it('0 errors and 3 creates enable "Importar" and show the counts (S08-2)', async () => {
+  it('0 errors and 3 creates enable "Import" and show the counts (S08-2)', async () => {
     open(populated(), reportFixture())
     await choose()
-    expect(await screen.findByText('3 por crear')).toBeTruthy()
-    expect(screen.getByText('0 por actualizar')).toBeTruthy()
-    expect(screen.getByText('0 sin cambios')).toBeTruthy()
-    expect(screen.queryByRole('region', { name: 'Errores' })).toBeNull()
+    expect(await screen.findByText('3 to create')).toBeTruthy()
+    expect(screen.getByText('0 to update')).toBeTruthy()
+    expect(screen.getByText('0 unchanged')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Errors' })).toBeNull()
     expect(importar().disabled).toBe(false)
   })
 
-  it('nothing to create or update disables "Importar" and says why', async () => {
+  it('nothing to create or update disables "Import" and says why', async () => {
     open(populated(), reportFixture({ counts: { create: 0, update: 0, unchanged: 3, invalid: 0 }, keys: { create: [], update: [], unchanged: ['a', 'b', 'c'] } }))
     await choose()
-    expect(await screen.findByText('No hay cambios que importar: todas las preguntas ya están en el banco.')).toBeTruthy()
+    expect(await screen.findByText('Nothing to import: all the questions are already in the bank.')).toBeTruthy()
     expect(importar().disabled).toBe(true)
   })
 
@@ -131,24 +131,24 @@ describe('ImportWizardPage: step 2, Reporte (S08-2)', () => {
     })
     open(emptyExam(), full)
     await choose()
-    await screen.findByRole('region', { name: 'Vista previa' })
-    expect(sectionNames()).toEqual(['Conteos', 'Clasificaciones nuevas', 'Categorías nuevas', 'Pesos resultantes', 'Duplicados', 'Medios', 'Vista previa'])
+    await screen.findByRole('region', { name: 'Preview' })
+    expect(sectionNames()).toEqual(['Counts', 'New classifications', 'New categories', 'Resulting weights', 'Duplicates', 'Media', 'Preview'])
   })
 
   it('errors come first when there are any', async () => {
     open(populated(), twoErrors)
     await choose()
-    await screen.findByRole('region', { name: 'Errores' })
-    expect(sectionNames()[0]).toBe('Errores')
-    expect(sectionNames()[1]).toBe('Conteos')
+    await screen.findByRole('region', { name: 'Errors' })
+    expect(sectionNames()[0]).toBe('Errors')
+    expect(sectionNames()[1]).toBe('Counts')
   })
 
-  it('"Elegir otro archivo" goes back to step 1', async () => {
+  it('"Choose another file" goes back to step 1', async () => {
     open(populated(), reportFixture())
     await choose()
-    fireEvent.click(await screen.findByRole('button', { name: 'Elegir otro archivo' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose another file' }))
     expect(await step1()).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Importar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Import' })).toBeNull()
   })
 })
 
@@ -162,7 +162,7 @@ describe('ImportWizardPage: new classifications and the primary (S08-3)', () => 
   it('on a first import a radio list sets the primary, defaulting to the server choice', async () => {
     open(emptyExam(), first)
     await choose()
-    const group = await screen.findByRole('radiogroup', { name: 'Clasificación principal' })
+    const group = await screen.findByRole('radiogroup', { name: 'Primary classification' })
     expect((within(group).getByRole('radio', { name: 'Dominio' }) as HTMLInputElement).checked).toBe(true)
     expect((within(group).getByRole('radio', { name: 'Servicio' }) as HTMLInputElement).checked).toBe(false)
   })
@@ -181,30 +181,30 @@ describe('ImportWizardPage: new classifications and the primary (S08-3)', () => 
   it('when the exam already has a primary, the new classifications are a plain list and nothing is asked', async () => {
     open(populated(), reportFixture({ primary: 'Dominio', newClassifications: [] }))
     await choose()
-    await screen.findByRole('button', { name: 'Importar' })
+    await screen.findByRole('button', { name: 'Import' })
     expect(screen.queryByRole('radiogroup')).toBeNull()
-    expect(screen.queryByRole('region', { name: 'Clasificaciones nuevas' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'New classifications' })).toBeNull()
   })
 })
 
 describe('ImportWizardPage: categories, weights, duplicates, media', () => {
-  it('lists new categories with their "se parece a" warnings', async () => {
+  it('lists new categories with their "is similar to" warnings', async () => {
     open(populated(), reportFixture({ newCategories: [
       { classification: 'Dominio', name: 'Alto rendimeinto', similarTo: ['Alto rendimiento'] },
       { classification: 'Servicio', name: 'Lambda', similarTo: [] },
     ] }))
     await choose()
-    const section = within(await screen.findByRole('region', { name: 'Categorías nuevas' }))
+    const section = within(await screen.findByRole('region', { name: 'New categories' }))
     expect(section.getByText('Dominio / Alto rendimeinto')).toBeTruthy()
-    expect(section.getByText('«Alto rendimeinto» se parece a «Alto rendimiento»')).toBeTruthy()
+    expect(section.getByText('“Alto rendimeinto” is similar to “Alto rendimiento”')).toBeTruthy()
     expect(section.getByText('Servicio / Lambda')).toBeTruthy()
-    expect(section.getAllByText(/se parece a/)).toHaveLength(1)
+    expect(section.getAllByText(/is similar to/)).toHaveLength(1)
   })
 
   it('with manual weights, new categories get a callout saying they weigh 0', async () => {
     open(populated(), reportFixture({ newCategories: [{ classification: 'Dominio', name: 'Migración', similarTo: [] }] }))
     await choose()
-    expect(await screen.findByText(/entran con peso 0 hasta que les asignes uno/)).toBeTruthy()
+    expect(await screen.findByText(/start with weight 0 until you assign one/)).toBeTruthy()
   })
 
   it('with inferred weights there is no such callout', async () => {
@@ -212,43 +212,43 @@ describe('ImportWizardPage: categories, weights, duplicates, media', () => {
     exam.classifications[0].weightMode = 'inferred'
     open(new InMemoryExamsAdapter(examsSeedFixture({ exams: [exam] })), reportFixture({ newCategories: [{ classification: 'Dominio', name: 'Migración', similarTo: [] }] }))
     await choose()
-    await screen.findByRole('region', { name: 'Categorías nuevas' })
-    expect(screen.queryByText(/entran con peso 0/)).toBeNull()
+    await screen.findByRole('region', { name: 'New categories' })
+    expect(screen.queryByText(/start with weight 0/)).toBeNull()
   })
 
   it('shows the weights after, with their mode, and the server warnings', async () => {
     open(populated(), reportFixture({
       weightsAfter: [{ category: 'Seguridad', percent: 46, mode: 'inferred' }, { category: 'Migración', percent: 0, mode: 'manual' }],
-      warnings: ['"Migración" no entra al simulacro real hasta que le asignes peso'],
+      warnings: ['"Migración" is not part of the full simulation until you assign it a weight'],
     }))
     await choose()
-    const section = within(await screen.findByRole('region', { name: 'Pesos resultantes' }))
-    expect(section.getByText('Seguridad: 46 % (inferido)')).toBeTruthy()
-    expect(section.getByText('Migración: 0 % (manual)')).toBeTruthy()
-    expect(section.getByText('"Migración" no entra al simulacro real hasta que le asignes peso')).toBeTruthy()
+    const section = within(await screen.findByRole('region', { name: 'Resulting weights' }))
+    expect(section.getByText('Seguridad: 46% (inferred)')).toBeTruthy()
+    expect(section.getByText('Migración: 0% (manual)')).toBeTruthy()
+    expect(section.getByText('"Migración" is not part of the full simulation until you assign it a weight')).toBeTruthy()
   })
 
   it('lists duplicate stems naming both keys', async () => {
     open(populated(), reportFixture({ duplicateStems: [{ key: 'td-timed-3-q1', existingKey: 'td-review-3-q1' }] }))
     await choose()
-    const section = within(await screen.findByRole('region', { name: 'Duplicados' }))
-    expect(section.getByText('«td-timed-3-q1» tiene el mismo enunciado que «td-review-3-q1»')).toBeTruthy()
+    const section = within(await screen.findByRole('region', { name: 'Duplicates' }))
+    expect(section.getByText('“td-timed-3-q1” has the same stem as “td-review-3-q1”')).toBeTruthy()
   })
 
   it('lists missing and unused media', async () => {
     open(populated(), reportFixture({ media: { referenced: 3, inZip: 2, missing: ['img/falta.png'], unused: ['img/sobra.png'] } }))
     await choose()
-    const section = within(await screen.findByRole('region', { name: 'Medios' }))
-    expect(section.getByText('3 referenciadas · 2 en el zip')).toBeTruthy()
-    expect(section.getByText('Faltan: img/falta.png')).toBeTruthy()
-    expect(section.getByText('Sin usar: img/sobra.png')).toBeTruthy()
+    const section = within(await screen.findByRole('region', { name: 'Media' }))
+    expect(section.getByText('3 referenced · 2 in the zip')).toBeTruthy()
+    expect(section.getByText('Missing: img/falta.png')).toBeTruthy()
+    expect(section.getByText('Unused: img/sobra.png')).toBeTruthy()
   })
 
   it('shows no media section when the file has no media at all', async () => {
     open(populated(), reportFixture())
     await choose()
-    await screen.findByRole('button', { name: 'Importar' })
-    expect(screen.queryByRole('region', { name: 'Medios' })).toBeNull()
+    await screen.findByRole('button', { name: 'Import' })
+    expect(screen.queryByRole('region', { name: 'Media' })).toBeNull()
   })
 })
 
@@ -257,37 +257,37 @@ describe('ImportWizardPage: preview', () => {
     const preview = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].map((k) => questionFixture(k))
     open(populated(), reportFixture({ preview }))
     await choose()
-    const section = within(await screen.findByRole('region', { name: 'Vista previa' }))
+    const section = within(await screen.findByRole('region', { name: 'Preview' }))
     const articles = section.getAllByRole('article')
     expect(articles).toHaveLength(5)
     expect(within(articles[0]).getByText('Pregunta p1: ¿cuál opción es correcta?')).toBeTruthy()
-    expect(within(articles[0]).getByText('Correcta')).toBeTruthy()
+    expect(within(articles[0]).getByText('Correct')).toBeTruthy()
     expect(within(articles[0]).getByText('Sí: B es correcta.')).toBeTruthy()
     expect(within(articles[0]).getByText('Explicación de p1.')).toBeTruthy()
   })
 })
 
-describe('ImportWizardPage: step 3, Confirmar', () => {
+describe('ImportWizardPage: step 3, Confirm', () => {
   async function toConfirm(exams: InMemoryExamsAdapter, ...reports: ImportReport[]) {
     const file = FILE_JSON()
     const spy = open(exams, ...reports)
     await choose(file)
-    fireEvent.click(await screen.findByRole('button', { name: 'Importar' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Import' }))
     return { spy, file }
   }
 
-  it('"Importar" moves to Confirmar, which summarizes what will happen', async () => {
+  it('"Import" moves to Confirm, which summarizes what will happen', async () => {
     await toConfirm(populated(), reportFixture({ counts: { create: 3, update: 2, unchanged: 1, invalid: 0 } }))
-    expect(await screen.findByRole('button', { name: 'Confirmar importación' })).toBeTruthy()
-    expect(screen.getByText('Se crearán 3 preguntas y se actualizarán 2. 1 ya está igual.')).toBeTruthy()
-    const steps = within(screen.getByRole('list', { name: 'Pasos' })).getAllByRole('listitem')
+    expect(await screen.findByRole('button', { name: 'Confirm import' })).toBeTruthy()
+    expect(screen.getByText('3 questions will be created and 2 updated. 1 is already up to date.')).toBeTruthy()
+    const steps = within(screen.getByRole('list', { name: 'Steps' })).getAllByRole('listitem')
     expect(steps.map((s) => s.getAttribute('aria-current'))).toEqual([null, null, 'step'])
   })
 
-  it('"Volver" returns to the report', async () => {
+  it('"Back" returns to the report', async () => {
     await toConfirm(populated(), reportFixture())
-    fireEvent.click(await screen.findByRole('button', { name: 'Volver' }))
-    expect(await screen.findByRole('button', { name: 'Importar' })).toBeTruthy()
+    fireEvent.click(await screen.findByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('button', { name: 'Import' })).toBeTruthy()
   })
 
   it('confirming applies the same file with the chosen primary, toasts the counts and opens the overview', async () => {
@@ -300,25 +300,25 @@ describe('ImportWizardPage: step 3, Confirmar', () => {
     fireEvent.click(await screen.findByRole('radio', { name: 'Servicio' }))
     await waitFor(() => expect(spy).toHaveBeenCalledTimes(2))
     await waitFor(() => expect((screen.getByRole('radio', { name: 'Servicio' }) as HTMLInputElement).checked).toBe(true))
-    fireEvent.click(screen.getByRole('button', { name: 'Importar' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm import' }))
     await waitFor(() => expect(spy).toHaveBeenNthCalledWith(3, EXAM_ID, file, { dryRun: false, primary: 'Servicio' }))
     await waitFor(() => expect(currentLocation()).toBe(`/studies/exams/${EXAM_ID}`))
-    expect(await screen.findByText('Importación completada: 3 creadas, 1 actualizadas, 2 sin cambios')).toBeTruthy()
+    expect(await screen.findByText('Import complete: 3 created, 1 updated, 2 unchanged')).toBeTruthy()
   })
 
   it('when the exam already has a primary the apply sends no primary', async () => {
     const applied = reportFixture({ dryRun: false, applied: true })
     const { spy, file } = await toConfirm(populated(), reportFixture({ primary: 'Dominio' }), applied)
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm import' }))
     await waitFor(() => expect(spy).toHaveBeenNthCalledWith(2, EXAM_ID, file, { dryRun: false }))
   })
 
   it('a refused apply (422 with a report) returns to the report with the new errors', async () => {
     const refused = { ...twoErrors, dryRun: false, applied: false }
     await toConfirm(populated(), reportFixture(), refused)
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }))
-    const errors = within(await screen.findByRole('region', { name: 'Errores' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm import' }))
+    const errors = within(await screen.findByRole('region', { name: 'Errors' }))
     expect(errors.getByText('questions[3].options')).toBeTruthy()
     expect(importar().disabled).toBe(true)
     expect(currentLocation()).toBe(URL)
@@ -327,9 +327,9 @@ describe('ImportWizardPage: step 3, Confirmar', () => {
   it('an apply that fails outright shows the message and keeps the confirmation', async () => {
     const { spy } = await toConfirm(populated(), reportFixture())
     spy.mockRejectedValueOnce(new Error('database is down'))
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm import' }))
     expect(await screen.findByText('database is down')).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Confirmar importación' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'Confirm import' }) as HTMLButtonElement).disabled).toBe(false)
   })
 })
 
@@ -342,10 +342,10 @@ describe('ImportWizardPage with the in-memory importer', () => {
       options: [{ text: 'uno', correct: true }, { text: 'dos', correct: false }],
     }))
     await choose(new File([JSON.stringify({ format: 'afwilto-questions', formatVersion: 1, questions: qs })], 'q.json'))
-    expect(await screen.findByText('3 por crear')).toBeTruthy()
+    expect(await screen.findByText('3 to create')).toBeTruthy()
     expect(await screen.findByRole('radio', { name: 'Dominio' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Importar' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar importación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm import' }))
     await waitFor(() => expect(currentLocation()).toBe(`/studies/exams/${EXAM_ID}`))
     expect(await exams.listQuestions(EXAM_ID)).toHaveLength(3)
   })

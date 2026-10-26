@@ -117,7 +117,7 @@ describe('ExamsHttpAdapter: sessions and attempts (slice 09)', () => {
   })
 
   it('startAttempt: a 422 insufficient_questions keeps category, needed and available on each detail', async () => {
-    const detail = { field: 'config', rule: 'insufficient_questions', message: 'faltan 8 en Seguridad', category: 'Seguridad', needed: 20, available: 12 }
+    const detail = { field: 'config', rule: 'insufficient_questions', message: '8 more needed in Seguridad', category: 'Seguridad', needed: 20, available: 12 }
     vi.mocked(http.post).mockRejectedValue(new HttpError(422, 'Unprocessable', envelope('validation_failed', 'not enough questions', [detail])))
     const error = (await adapter.startAttempt(EXAM_ID, config).catch((e: unknown) => e)) as ExamsValidationError
     expect(error).toBeInstanceOf(ExamsValidationError)

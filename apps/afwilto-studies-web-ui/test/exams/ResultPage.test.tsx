@@ -50,7 +50,7 @@ async function play(exams: InMemoryExamsAdapter, config: SessionConfig, plan: Re
 
 async function openResult(exams: InMemoryExamsAdapter, id: string) {
   renderAt(`/studies/attempts/${id}/result`, undefined, exams)
-  await screen.findByRole('heading', { level: 1, name: 'Resultado' })
+  await screen.findByRole('heading', { level: 1, name: 'Result' })
 }
 
 const PLAN: Record<string, Plan> = { q1: 'right', q2: 'right', q3: 'right', q4: 'wrong', q5: 'wrong' } // q6 is skipped
@@ -64,23 +64,23 @@ describe('ResultPage: summary (S09-9)', () => {
     const { clock, exams } = setup()
     const attempt = await play(exams, random(6), PLAN, { clock })
     await openResult(exams, attempt.id)
-    expect(screen.getByText('50,00 %')).toBeTruthy()
-    expect(screen.getByText('3 de 6 correctas')).toBeTruthy()
-    expect(screen.getByText('Duración: 1 min 30 s')).toBeTruthy()
-    expect(screen.getByText(/porcentaje bruto/)).toBeTruthy()
-    expect(screen.getByText(/no la puntuación escalada/)).toBeTruthy()
+    expect(screen.getByText('50.00%')).toBeTruthy()
+    expect(screen.getByText('3 of 6 correct')).toBeTruthy()
+    expect(screen.getByText('Duration: 1 min 30 s')).toBeTruthy()
+    expect(screen.getByText(/raw percentage/)).toBeTruthy()
+    expect(screen.getByText(/not the provider's scaled score/)).toBeTruthy()
   })
 
   it('the result of a random attempt shows no pass/fail (S09-9)', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), { q1: 'right', q2: 'right', q3: 'right', q4: 'right', q5: 'right', q6: 'right' })
     await openResult(exams, attempt.id)
-    expect(screen.getByText('100,00 %')).toBeTruthy()
-    expect(screen.queryByText('Aprobado')).toBeNull()
-    expect(screen.queryByText('No aprobado')).toBeNull()
+    expect(screen.getByText('100.00%')).toBeTruthy()
+    expect(screen.queryByText('Passed')).toBeNull()
+    expect(screen.queryByText('Not passed')).toBeNull()
   })
 
-  it('a simulation that reached the pass mark shows "Aprobado" (S09-9)', async () => {
+  it('a simulation that reached the pass mark shows "Passed" (S09-9)', async () => {
     const exams = new InMemoryExamsAdapter(bigSeed())
     const reference = await exams.startAttempt(EXAM_ID, SIMULATION, 3)
     await exams.submitAttempt(reference.id)
@@ -89,25 +89,25 @@ describe('ResultPage: summary (S09-9)', () => {
     for (let i = 0; i < 50; i++) await exams.answerItem(attempt.id, i, { selected: key[i], flagged: false })
     await exams.submitAttempt(attempt.id)
     await openResult(exams, attempt.id)
-    expect(screen.getByText('76,92 %')).toBeTruthy()
-    expect(screen.getByText('Aprobado')).toBeTruthy()
-    expect(screen.queryByText('No aprobado')).toBeNull()
+    expect(screen.getByText('76.92%')).toBeTruthy()
+    expect(screen.getByText('Passed')).toBeTruthy()
+    expect(screen.queryByText('Not passed')).toBeNull()
   })
 
-  it('a simulation below the pass mark shows "No aprobado"', async () => {
+  it('a simulation below the pass mark shows "Not passed"', async () => {
     const exams = new InMemoryExamsAdapter(bigSeed())
     const attempt = await exams.startAttempt(EXAM_ID, SIMULATION, 3)
     await exams.submitAttempt(attempt.id)
     await openResult(exams, attempt.id)
-    expect(screen.getByText('No aprobado')).toBeTruthy()
-    expect(screen.queryByText('Aprobado')).toBeNull()
+    expect(screen.getByText('Not passed')).toBeTruthy()
+    expect(screen.queryByText('Passed')).toBeNull()
   })
 
-  it('"Volver al examen" goes to the exam overview', async () => {
+  it('"Back to the exam" goes to the exam overview', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), PLAN)
     await openResult(exams, attempt.id)
-    expect(screen.getByRole('link', { name: 'Volver al examen' }).getAttribute('href')).toBe(`/studies/exams/${EXAM_ID}`)
+    expect(screen.getByRole('link', { name: 'Back to the exam' }).getAttribute('href')).toBe(`/studies/exams/${EXAM_ID}`)
   })
 })
 
@@ -116,7 +116,7 @@ describe('ResultPage: breakdown', () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), { q1: 'right', q2: 'right', q3: 'right', q4: 'wrong', q5: 'wrong' })
     await openResult(exams, attempt.id)
-    const dominio = within(screen.getByRole('region', { name: 'Desglose por Dominio' }))
+    const dominio = within(screen.getByRole('region', { name: 'Breakdown by Dominio' }))
     const rows = dominio.getAllByRole('listitem').map((li) => li.textContent)
     expect(rows).toEqual(['Costos 0/3 (0%)', 'Seguridad 3/3 (100%)'])
   })
@@ -125,17 +125,17 @@ describe('ResultPage: breakdown', () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), { q1: 'right', q2: 'right', q4: 'right' })
     await openResult(exams, attempt.id)
-    const dominio = within(screen.getByRole('region', { name: 'Desglose por Dominio' }))
+    const dominio = within(screen.getByRole('region', { name: 'Breakdown by Dominio' }))
     expect(dominio.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Costos 1/3 (33%)', 'Seguridad 2/3 (67%)'])
   })
 })
 
 describe('ResultPage: review list (S09-10)', () => {
-  it('lists "Incorrectas" by default: only the items answered wrong or not at all', async () => {
+  it('lists "Incorrect" by default: only the items answered wrong or not at all', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), PLAN)
     await openResult(exams, attempt.id)
-    expect(screen.getByRole('button', { name: 'Incorrectas' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Incorrect' }).getAttribute('aria-pressed')).toBe('true')
     expect(stems().sort()).toEqual(['q4', 'q5', 'q6'])
   })
 
@@ -144,48 +144,48 @@ describe('ResultPage: review list (S09-10)', () => {
     const attempt = await play(exams, random(6), PLAN)
     await openResult(exams, attempt.id)
     const first = within(articles()[0])
-    expect(first.getAllByText('Correcta').length).toBeGreaterThan(0)
-    expect(first.getByText('Explicación')).toBeTruthy()
+    expect(first.getAllByText('Correct').length).toBeGreaterThan(0)
+    expect(first.getByText('Explanation')).toBeTruthy()
     const option = articles()[0].querySelector('[role=radio]') as HTMLElement
     expect(option.getAttribute('aria-disabled')).toBe('true')
   })
 
-  it('an item that was skipped says "Sin responder"', async () => {
+  it('an item that was skipped says "Unanswered"', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), PLAN)
     await openResult(exams, attempt.id)
     const skipped = articles().find((a) => a.textContent?.includes('Pregunta q6'))!
-    expect(within(skipped).getByText('Sin responder')).toBeTruthy()
+    expect(within(skipped).getByText('Unanswered')).toBeTruthy()
     const answered = articles().find((a) => a.textContent?.includes('Pregunta q4'))!
-    expect(within(answered).queryByText('Sin responder')).toBeNull()
-    expect(within(answered).getByText('Tu respuesta')).toBeTruthy()
+    expect(within(answered).queryByText('Unanswered')).toBeNull()
+    expect(within(answered).getByText('Your answer')).toBeTruthy()
   })
 
-  it('"Marcadas" lists the flagged items, right or wrong', async () => {
+  it('"Flagged" lists the flagged items, right or wrong', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), PLAN, { flag: ['q2', 'q5'] })
     await openResult(exams, attempt.id)
-    fireEvent.click(screen.getByRole('button', { name: 'Marcadas' }))
-    expect(screen.getByRole('button', { name: 'Marcadas' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Flagged' }))
+    expect(screen.getByRole('button', { name: 'Flagged' }).getAttribute('aria-pressed')).toBe('true')
     expect(stems().sort()).toEqual(['q2', 'q5'])
-    expect(within(articles()[0]).getByText('Marcada')).toBeTruthy()
+    expect(within(articles()[0]).getByText('Flagged')).toBeTruthy()
   })
 
-  it('"Todas" lists every item in position order', async () => {
+  it('"All" lists every item in position order', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), PLAN)
     await openResult(exams, attempt.id)
-    fireEvent.click(screen.getByRole('button', { name: 'Todas' }))
+    fireEvent.click(screen.getByRole('button', { name: 'All' }))
     const labels = articles().map((a) => a.getAttribute('aria-label'))
-    expect(labels).toEqual(['Pregunta 1', 'Pregunta 2', 'Pregunta 3', 'Pregunta 4', 'Pregunta 5', 'Pregunta 6'])
+    expect(labels).toEqual(['Question 1', 'Question 2', 'Question 3', 'Question 4', 'Question 5', 'Question 6'])
   })
 
-  it('an item with a noteId has a "Ver nota" link to the note (S09-10)', async () => {
+  it('an item with a noteId has a "View note" link to the note (S09-10)', async () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), { q1: 'right', q3: 'right' })
     await openResult(exams, attempt.id)
-    fireEvent.click(screen.getByRole('button', { name: 'Todas' }))
-    const links = screen.getAllByRole('link', { name: 'Ver nota' })
+    fireEvent.click(screen.getByRole('button', { name: 'All' }))
+    const links = screen.getAllByRole('link', { name: 'View note' })
     expect(links).toHaveLength(1)
     expect(links[0].getAttribute('href')).toBe(`/studies/notes/${NOTE_ID}`)
     expect(within(links[0].closest('article')!).getByText(/Pregunta q2/)).toBeTruthy()
@@ -195,9 +195,9 @@ describe('ResultPage: review list (S09-10)', () => {
     const { exams } = setup()
     const attempt = await play(exams, random(6), { q1: 'right', q2: 'right', q3: 'right', q4: 'right', q5: 'right', q6: 'right' })
     await openResult(exams, attempt.id)
-    expect(screen.getByText('No hay preguntas incorrectas.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Marcadas' }))
-    expect(screen.getByText('No hay preguntas marcadas.')).toBeTruthy()
+    expect(screen.getByText('No incorrect questions.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Flagged' }))
+    expect(screen.getByText('No flagged questions.')).toBeTruthy()
   })
 })
 
@@ -206,12 +206,12 @@ describe('ResultPage: states', () => {
     const { exams } = setup()
     const attempt = await exams.startAttempt(EXAM_ID, random(3), 1)
     renderAt(`/studies/attempts/${attempt.id}/result`, undefined, exams)
-    expect(await screen.findByText('Este simulacro sigue en curso')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Continuar' }).getAttribute('href')).toBe(`/studies/attempts/${attempt.id}`)
+    expect(await screen.findByText('This practice exam is still in progress')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Continue' }).getAttribute('href')).toBe(`/studies/attempts/${attempt.id}`)
   })
 
   it('an unknown attempt says it was not found', async () => {
     renderAt('/studies/attempts/nope/result', undefined, setup().exams)
-    expect(await screen.findByText('Resultado no encontrado')).toBeTruthy()
+    expect(await screen.findByText('Result not found')).toBeTruthy()
   })
 })

@@ -187,7 +187,7 @@ describe('InMemoryExamsAdapter.importQuestions: the dev importer (AC-1, AC-2)', 
     const report = await adapter().importQuestions(EXAM_ID, jsonFile([q('x', { categories: { Dominio: ['Migración'] } })]), { dryRun: true })
     expect(report.weightsAfter.find((w) => w.category === 'Migración')).toEqual({ category: 'Migración', percent: 0, mode: 'manual' })
     expect(report.weightsAfter.find((w) => w.category === 'Seguridad')?.percent).toBe(40)
-    expect(report.warnings.join(' ')).toMatch(/Migración.*no entra al simulacro real hasta que le asignes peso/)
+    expect(report.warnings.join(' ')).toMatch(/Migración.*is not part of the full simulation until you assign it a weight/)
   })
 
   it('a single question with two correct options is an error at questions[i].options, and an apply writes nothing (AC-4)', async () => {

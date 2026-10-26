@@ -114,19 +114,19 @@ describe('QuestionView — selection (S07-4, AC-23)', () => {
     expect(onToggle).not.toHaveBeenCalled()
   })
 
-  it('a multi question is a group of checkboxes that shows "Elige 2" and a k/N counter', () => {
+  it('a multi question is a group of checkboxes that shows "Choose 2" and a k/N counter', () => {
     render(<Harness question={multi2} />)
     expect(screen.getByRole('group')).toBeTruthy()
     expect(screen.getAllByRole('checkbox')).toHaveLength(4)
-    expect(screen.getByText('Elige 2')).toBeTruthy()
+    expect(screen.getByText('Choose 2')).toBeTruthy()
     expect(screen.getByText('0/2')).toBeTruthy()
     fireEvent.click(item('A'))
     expect(screen.getByText('1/2')).toBeTruthy()
   })
 
-  it('a single question shows no "Elige" badge', () => {
+  it('a single question shows no "Choose" badge', () => {
     render(<Harness question={t1} />)
-    expect(screen.queryByText(/^Elige/)).toBeNull()
+    expect(screen.queryByText(/^Choose/)).toBeNull()
   })
 
   it('with 2/2 selected the other options are aria-disabled and ignore clicks and keys, including 3', () => {
@@ -165,21 +165,21 @@ describe('QuestionView — disabled (S07-5)', () => {
 })
 
 describe('QuestionView — review marks (AC-24)', () => {
-  it('marks the correct option ✓ with the text "Correcta" and a wrong selection ✗ with "Tu respuesta"', () => {
+  it('marks the correct option ✓ with the text "Correct" and a wrong selection ✗ with "Your answer"', () => {
     render(<Harness question={t1} initial={['C']} disabled reveal={t1Reveal} />)
     expect(item('B').textContent).toContain('✓')
-    expect(within(item('B')).getByText('Correcta')).toBeTruthy()
+    expect(within(item('B')).getByText('Correct')).toBeTruthy()
     expect(item('C').textContent).toContain('✗')
-    expect(within(item('C')).getByText('Tu respuesta')).toBeTruthy()
+    expect(within(item('C')).getByText('Your answer')).toBeTruthy()
     expect(item('A').textContent).not.toMatch(/[✓✗]/)
-    expect(within(item('A')).queryByText(/Correcta|Tu respuesta/)).toBeNull()
+    expect(within(item('A')).queryByText(/Correct|Your answer/)).toBeNull()
   })
 
-  it('a correct selection reads "Tu respuesta" with ✓', () => {
+  it('a correct selection reads "Your answer" with ✓', () => {
     render(<Harness question={t1} initial={['B']} disabled reveal={t1Reveal} />)
     expect(item('B').textContent).toContain('✓')
-    expect(within(item('B')).getByText('Tu respuesta')).toBeTruthy()
-    expect(within(item('B')).queryByText('Correcta')).toBeNull()
+    expect(within(item('B')).getByText('Your answer')).toBeTruthy()
+    expect(within(item('B')).queryByText('Correct')).toBeNull()
   })
 
   it('shows each option rationale and then the explanation', () => {
@@ -193,14 +193,14 @@ describe('QuestionView — review marks (AC-24)', () => {
 
   it('exam mode (no reveal) shows only the selection: no marks, rationales or explanation', () => {
     render(<Harness question={t1} initial={['B']} />)
-    expect(document.body.textContent).not.toMatch(/Correcta|Tu respuesta|[✓✗]|Explicación/)
+    expect(document.body.textContent).not.toMatch(/Correct|Your answer|[✓✗]|Explanation/)
     expect(checked()).toEqual([item('B').textContent])
   })
 
   it('the review marks work on cards too', () => {
     render(<Harness question={t3} initial={['B']} disabled reveal={{ correctLabels: ['A'], rationales: {} }} />)
-    expect(within(item('A')).getByText('Correcta')).toBeTruthy()
-    expect(within(item('B')).getByText('Tu respuesta')).toBeTruthy()
+    expect(within(item('A')).getByText('Correct')).toBeTruthy()
+    expect(within(item('B')).getByText('Your answer')).toBeTruthy()
     expect(item('B').textContent).toContain('✗')
   })
 })
@@ -229,16 +229,16 @@ describe('QuestionView — images (AC-25)', () => {
   it('the zoom button opens the image in a dialog and closing it removes the copy', () => {
     render(<Harness question={t2} />)
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /ampliar/i }))
+    fireEvent.click(screen.getByRole('button', { name: /enlarge/i }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByAltText('Disco rojo con una barra horizontal blanca').getAttribute('src')).toBe(`/media/${SIGN_SHA}`)
-    fireEvent.click(within(dialog).getByRole('button', { name: /cerrar/i }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('clicking a card image selects the card instead of opening a zoom', () => {
     render(<Harness question={t3} />)
-    expect(screen.queryByRole('button', { name: /ampliar/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /enlarge/i })).toBeNull()
     fireEvent.click(screen.getByAltText('Octágono rojo con la palabra STOP'))
     expect(checked()).toEqual([item('B').textContent])
   })

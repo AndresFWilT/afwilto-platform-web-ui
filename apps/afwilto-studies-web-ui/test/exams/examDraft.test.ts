@@ -54,7 +54,7 @@ describe('checkDraft: parameters', () => {
   it('an invalid parameter is a problem on its field and blocks the patch', () => {
     const check = checkDraft(exam(), draft((d) => { d.params.name = ''; d.params.timeLimitMin = '601' }))
     expect(check.patch).toBeUndefined()
-    expect(check.problems).toEqual({ name: 'El nombre es obligatorio', timeLimitMin: 'Debe estar entre 1 y 600' })
+    expect(check.problems).toEqual({ name: 'The name is required', timeLimitMin: 'Must be between 1 and 600' })
   })
 })
 
@@ -98,7 +98,7 @@ describe('checkDraft: names and pace', () => {
     { q: '2.5', m: '5', label: 'a fraction' },
   ])('$label is a pace problem and blocks the patch', ({ q, m }) => {
     const check = checkDraft(exam(), draft((d) => { d.categories[CAT.vpc].paceQuestions = q; d.categories[CAT.vpc].paceMinutes = m }))
-    expect(check.problems[`pace:${CAT.vpc}`]).toBe('Indica ambos valores del ritmo o ninguno (enteros desde 1)')
+    expect(check.problems[`pace:${CAT.vpc}`]).toBe('Enter both pace values or neither (whole numbers from 1)')
     expect(check.patch).toBeUndefined()
   })
 })
@@ -107,7 +107,7 @@ describe('checkDraft: weights (S08-4)', () => {
   it('weights that sum to 99 are a problem and show the sum', () => {
     const check = checkDraft(exam(), draft((d) => { d.weights[CAT.costos] = '19' }))
     expect(check.weightsSum).toBe(99)
-    expect(check.problems.weights).toBe('Los pesos deben sumar 100')
+    expect(check.problems.weights).toBe('Weights must add up to 100')
     expect(check.patch).toBeUndefined()
   })
 
@@ -129,7 +129,7 @@ describe('checkDraft: weights (S08-4)', () => {
 
   it.each(['-5', '2.5', 'abc'])('the weight "%s" is a problem', (value) => {
     const check = checkDraft(exam(), draft((d) => { d.weights[CAT.costos] = value }))
-    expect(check.problems.weights).toBe('Los pesos son enteros de 0 a 100')
+    expect(check.problems.weights).toBe('Weights are whole numbers from 0 to 100')
   })
 })
 
@@ -162,7 +162,7 @@ describe('checkDraft: everything at once', () => {
 })
 
 describe('checkDraft: client ranges mirror the server (contract 0.3.0, M4)', () => {
-  const PACE = 'El ritmo admite enteros de 1 a 10 000'
+  const PACE = 'The pace takes whole numbers from 1 to 10,000'
   const vpc = (q: string, m: string) => checkDraft(exam(), draft((d) => { d.categories[CAT.vpc].paceQuestions = q; d.categories[CAT.vpc].paceMinutes = m }))
 
   it('a pace value of 10,000 is sent, 10,001 is refused on either side', () => {
@@ -175,20 +175,20 @@ describe('checkDraft: client ranges mirror the server (contract 0.3.0, M4)', () 
   it('a weight of 100 is accepted, 101 is refused as out of range (not as a wrong sum)', () => {
     const weights = (seguridad: string) => checkDraft(exam(), draft((d) => { d.weights = { [CAT.seguridad]: seguridad, [CAT.rendimiento]: '0', [CAT.costos]: '0' } }))
     expect(weights('100').patch?.weights).toEqual([{ categoryId: CAT.seguridad, percent: 100 }, { categoryId: CAT.rendimiento, percent: 0 }, { categoryId: CAT.costos, percent: 0 }])
-    expect(weights('101').problems.weights).toBe('Los pesos son enteros de 0 a 100')
+    expect(weights('101').problems.weights).toBe('Weights are whole numbers from 0 to 100')
     expect(weights('101').patch).toBeUndefined()
   })
 
   it('a classification name of 40 characters is sent, 41 is refused', () => {
     const rename = (name: string) => checkDraft(exam(), draft((d) => { d.classificationNames[CLS.servicio] = name }))
     expect(rename('x'.repeat(40)).patch?.classifications).toEqual([{ id: CLS.servicio, name: 'x'.repeat(40) }])
-    expect(rename('x'.repeat(41)).problems[`classification:${CLS.servicio}`]).toBe('El nombre admite hasta 40 caracteres')
+    expect(rename('x'.repeat(41)).problems[`classification:${CLS.servicio}`]).toBe('The name can have up to 40 characters')
   })
 
   it('a category name of 80 characters is sent, 81 is refused', () => {
     const rename = (name: string) => checkDraft(exam(), draft((d) => { d.categories[CAT.vpc].name = name }))
     expect(rename('x'.repeat(80)).patch?.categories).toEqual([{ id: CAT.vpc, name: 'x'.repeat(80) }])
-    expect(rename('x'.repeat(81)).problems[`category:${CAT.vpc}`]).toBe('El nombre admite hasta 80 caracteres')
+    expect(rename('x'.repeat(81)).problems[`category:${CAT.vpc}`]).toBe('The name can have up to 80 characters')
   })
 })
 
@@ -202,24 +202,24 @@ describe('violationProblems: server 422 field errors land on the form fields (co
   const v = (field: string, rule: string, message = 'server text') => ({ field, rule, message })
 
   it('maps pace fields through the patch index to the category row', () => {
-    expect(violationProblems(patch, [v('categories[1].paceQuestions', 'range')]).problems).toEqual({ [`pace:${CAT.vpc}`]: 'El ritmo admite enteros de 1 a 10 000' })
-    expect(violationProblems(patch, [v('categories[1].pace', 'pace_pair')]).problems).toEqual({ [`pace:${CAT.vpc}`]: 'Indica ambos valores del ritmo o ninguno (enteros desde 1)' })
+    expect(violationProblems(patch, [v('categories[1].paceQuestions', 'range')]).problems).toEqual({ [`pace:${CAT.vpc}`]: 'The pace takes whole numbers from 1 to 10,000' })
+    expect(violationProblems(patch, [v('categories[1].pace', 'pace_pair')]).problems).toEqual({ [`pace:${CAT.vpc}`]: 'Enter both pace values or neither (whole numbers from 1)' })
   })
 
   it('maps weights[i].percent and weights_sum to the weights table', () => {
-    expect(violationProblems(patch, [v('weights[2].percent', 'range')]).problems).toEqual({ weights: 'Los pesos son enteros de 0 a 100' })
-    expect(violationProblems(patch, [v('weights', 'weights_sum')]).problems).toEqual({ weights: 'Los pesos deben sumar 100' })
+    expect(violationProblems(patch, [v('weights[2].percent', 'range')]).problems).toEqual({ weights: 'Weights are whole numbers from 0 to 100' })
+    expect(violationProblems(patch, [v('weights', 'weights_sum')]).problems).toEqual({ weights: 'Weights must add up to 100' })
   })
 
   it('maps invalid_text and range on names to their rows, with Spanish messages', () => {
-    expect(violationProblems(patch, [v('classifications[0].name', 'invalid_text')]).problems).toEqual({ [`classification:${CLS.servicio}`]: 'El texto contiene caracteres no permitidos' })
-    expect(violationProblems(patch, [v('categories[0].name', 'range')]).problems).toEqual({ [`category:${CAT.s3}`]: 'El nombre admite hasta 80 caracteres' })
+    expect(violationProblems(patch, [v('classifications[0].name', 'invalid_text')]).problems).toEqual({ [`classification:${CLS.servicio}`]: 'The text contains characters that are not allowed' })
+    expect(violationProblems(patch, [v('categories[0].name', 'range')]).problems).toEqual({ [`category:${CAT.s3}`]: 'The name can have up to 80 characters' })
   })
 
   it('maps the exam parameters: name invalid_text, questionCount range', () => {
     expect(violationProblems(patch, [v('name', 'invalid_text'), v('questionCount', 'range')]).problems).toEqual({
-      name: 'El texto contiene caracteres no permitidos',
-      questionCount: 'Debe estar entre 1 y 200',
+      name: 'The text contains characters that are not allowed',
+      questionCount: 'Must be between 1 and 200',
     })
   })
 
