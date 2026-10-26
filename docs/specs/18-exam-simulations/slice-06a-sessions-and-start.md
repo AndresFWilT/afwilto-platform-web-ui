@@ -1,6 +1,7 @@
 # Slice 06a — Session preview and attempt start
 
 > Status: Approved 2026-10-22 (module approval covers the roadmap slices)
+> UI language: English (owner, 2026-10-26); content is never translated.
 > Parent: `../18-exam-simulations.md` FR-7, FR-8, FR-9, AC-14–AC-17, AC-21
 > Repo: `backend/afwilto-studies-mngr`
 
@@ -101,10 +102,11 @@ The parent's AC-14, AC-15, AC-17 and AC-21 apply, plus these:
 - 2026-10-23 (phase-3 review): in the `origin-set` draw, questions with `origin.set` but no `origin.number` sort last, then by `key`, consistent with the bank browser; the spec only said "by `origin.number`, then `key`", which left their place undefined.
 - 2026-10-23: details the slice left open, fixed by the tests.
   - Rule fields are body paths: `config.timing`, `config.feedback` for `locked_by_simulation`; `config` for `insufficient_questions`.
-  - `random`, `categories` and `origin-set` have a shortage too when their pool is empty, so the preview and the start agree: `{category: "banco"}` for `random`, the chosen category names joined by ", " for `categories`, the set name for `origin-set`, each with `needed: 1, available: 0`. A `simulation` whose primary classification has no category with weight > 0 reports `{category: "categorías con peso", needed: questionCount, available: 0}`.
+  - `random`, `categories` and `origin-set` have a shortage too when their pool is empty, so the preview and the start agree: `{category: "bank"}` for `random`, the chosen category names joined by ", " for `categories`, the set name for `origin-set`, each with `needed: 1, available: 0`. A `simulation` whose primary classification has no category with weight > 0 reports `{category: "weighted categories", needed: questionCount, available: 0}`.
   - A `count` above the pool size draws the whole pool; it is not a shortage.
   - A `simulation` preview and start report `suggestedMinutes` = the exam's `timeLimitMin` (FR-8), or 0 when nothing can be drawn.
   - The draw consumes one PCG stream (`rand.NewPCG(seed, seed)`) in this order: per-category shuffles (simulation) or the pool shuffle (random, categories), then the final question shuffle (simulation only), then one option shuffle per drawn question in final order.
   - The seed is a uint64 on the wire (0 to 18446744073709551615) and its bit pattern is stored in the `bigint` column.
   - `suggestedMinutes` sums the paces as floats and rounds up after subtracting 1e-9, so `6 × 7/3`, which floats sum to 14.000000000000002, is 14 and not 15.
   - An attempt past its deadline stays `in_progress` (and blocks a new start with BR-A1) until 06b's lazy finalize touches it, i.e. until the next `GET`/`PUT`/`POST submit` on that attempt. Starting does not finalize other attempts.
+- 2026-10-26: UI language: English (owner, 2026-10-26); content is never translated. The shortage labels are now `"bank"` and `"weighted categories"` (were `"banco"` and `"categorías con peso"`), and the import warnings are English.

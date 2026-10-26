@@ -1,5 +1,12 @@
-# Spec 18 — Exam simulations ("simulacros") for any subject
+# Spec 18 — Exam simulations ("practice exams") for any subject
 
+> **UI language: English (owner, 2026-10-26); content is never translated.** Every user-visible
+> string of the exams area (labels, buttons, toasts, confirms, aria-labels, empty states, validation
+> and error messages, shortage labels, import warnings) is English. Exam names, question text,
+> classification/category names, notes and subject names are user data and stay as written. The
+> strings quoted below are the English ones; "Practice Exams" is the user-facing name of the
+> feature (a "full simulation" is the real-exam mode of a practice exam).
+>
 > Status: **Approved 2026-10-22** (owner chat). OQ-1..OQ-6 were resolved and moved to the decisions
 > log (§13). Approving the module spec also covers the roadmap slices in
 > `18-exam-simulations/slice-*.md` (§10), as with Spec 16.
@@ -188,13 +195,13 @@ Inference runs on every import, in the dry run and in the apply.
    - The import never merges categories on its own.
 3. **Primary classification.**
    - Each question has **at most 1** category in it (BR-C2).
-   - Questions with no primary category are counted as **"sin clasificar"**.
+   - Questions with no primary category are counted as **"unclassified"**.
 4. **Weights.**
    - With `weightMode = inferred`, each primary category weighs its share of the alive
      classified questions. The shares are rounded to integers with the largest-remainder method
      so they sum to 100, and they are recomputed after every import or delete.
    - With `weightMode = manual`, the weights are fixed. A category created later gets weight 0,
-     and the report warns: *"no entra al simulacro real hasta que le asignes peso"*.
+     and the report warns: *"\"<name>\" is not part of the full simulation until you assign it a weight"*.
 5. **Pace.**
    - A category without `paceQuestions/paceMinutes` uses the exam pace,
      `timeLimitMin / questionCount` (for example 130 / 65 = 2 min per question).
@@ -283,7 +290,7 @@ Inference runs on every import, in the dry run and in the apply.
     same bank give the same draw.
   - `simulation` sets the count per primary category to `questionCount × weight / 100`,
     apportioned by largest remainder.
-  - "Sin clasificar" questions and categories with weight 0 are never drawn in a simulation.
+  - "Unclassified" questions and categories with weight 0 are never drawn in a simulation.
 - **Shortage.** If a category has fewer alive questions than its quota, the start fails with
   422 `insufficient_questions`, listing `{category, needed, available}` for each one.
 - **Order.**
@@ -292,7 +299,7 @@ Inference runs on every import, in the dry run and in the apply.
     reassigned A, B, C… in that order.
 - **Deadline.** A timed attempt sets `deadlineAt = startedAt + timeLimitMin`.
 - **One at a time.** There is at most 1 `in_progress` attempt per exam. Starting another
-  returns 409 `attempt_in_progress` with its id, so the UI can offer "Continuar simulacro".
+  returns 409 `attempt_in_progress` with its id, so the UI can offer "Continue".
 
 ### FR-10 Answering, submit and scoring
 - **Answering.**
@@ -342,7 +349,7 @@ never declares it.
 
 - **Selection controls.**
   - `single` questions behave as a radio group; `multi` questions behave as a checkbox group
-    with an **"Elige N"** badge and a counter, such as "1/2".
+    with an **"Choose N"** badge and a counter, such as "1/2".
   - Once N options are selected, the others are disabled until one is deselected.
 - **States.**
   - In exam mode, only *selected* and *flagged* are shown.
@@ -457,10 +464,10 @@ never declares it.
 - **AC-22** Text options and a text stem render **T1**. A stem image with text options renders
   **T2**. Any option image renders **T3**, and text-only options in the same question become
   text cards.
-- **AC-23** A `multi` question with N = 2 shows "Elige 2". After 2 selections the other options
+- **AC-23** A `multi` question with N = 2 shows "Choose 2". After 2 selections the other options
   are disabled, and pressing `3` on a disabled option does nothing.
-- **AC-24** In the review, a correct option shows ✓ plus the text "Correcta", and a wrong
-  selection shows ✗ plus "Tu respuesta". The DOM assertion checks the text, not the colour.
+- **AC-24** In the review, a correct option shows ✓ plus the text "Correct", and a wrong
+  selection shows ✗ plus "Your answer". The DOM assertion checks the text, not the colour.
 - **AC-25** A broken image renders its `alt` inside the placeholder.
 
 ---
@@ -502,10 +509,10 @@ New error rules, a closed set and the slice that introduces each:
 
 | Path | Page |
 |---|---|
-| `subjects/:subjectId` | Existing (legacy) page plus a **"Simulacros"** link only |
-| `subjects/:subjectId/exams` | Exams of the subject: question counts, last simulation score, "Nuevo examen" |
+| `subjects/:subjectId` | Existing (legacy) page plus a **"Practice Exams"** link only |
+| `subjects/:subjectId/exams` | Exams of the subject: question counts, last simulation score, "New exam" |
 | `subjects/:subjectId/exams/new` | 4-field form |
-| `exams/:examId` | Overview: classifications, categories with counts, weights and pace; history with a trend; **"Nuevo simulacro"** |
+| `exams/:examId` | Overview: classifications, categories with counts, weights and pace; history with a trend; **"New practice exam"** |
 | `exams/:examId/edit` | Form: parameters, classification names, weights with a live sum, pace, rename and merge |
 | `exams/:examId/import` | Wizard: upload → dry-run report (errors, new categories and warnings, weights after, duplicates, media, 5-question preview via `QuestionView`) → choose the primary (first import only) → confirm |
 | `exams/:examId/questions` | Bank browser: filters, `QuestionView` preview, delete |

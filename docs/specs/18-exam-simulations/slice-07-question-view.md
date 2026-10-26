@@ -1,6 +1,7 @@
 # Slice 07 — `QuestionView`, `media:` rendering and the new feature area
 
 > Status: Approved 2026-10-22 (module approval covers the roadmap slices)
+> UI language: English (owner, 2026-10-26); content is never translated.
 > Parent: `../18-exam-simulations.md` FR-6 (rendering), FR-11, AC-22–AC-25, D-14
 > Repo: `frontend` · App: `apps/afwilto-studies-web-ui`
 > Test command: `pnpm --filter afwilto-studies-web-ui test`
@@ -69,9 +70,9 @@ The props carry data only:
   - `OptionCard` (badge + 4:3 `object-contain` image + optional text);
   - `MediaFrame` (max-h 50vh, a zoom button opening the design-system `Dialog`, and a
     broken-image placeholder showing `alt` inside a bordered box);
-  - `ChooseBadge` ("Elige N" + "k/N").
-- **Atoms:** `LetterBadge` and `RevealMark`. `RevealMark` is an icon + text: "Correcta" ✓,
-  "Tu respuesta" ✗, "Tu respuesta" ✓ when it is also correct.
+  - `ChooseBadge` ("Choose N" + "k/N").
+- **Atoms:** `LetterBadge` and `RevealMark`. `RevealMark` is an icon + text: "Correct" ✓,
+  "Your answer" ✗, "Your answer" ✓ when it is also correct.
 - **Selection.**
   - `single` questions use `role="radiogroup"` with `role="radio"` items; `multi` questions use
     `role="group"` with `role="checkbox"` items, both with `aria-checked`.
